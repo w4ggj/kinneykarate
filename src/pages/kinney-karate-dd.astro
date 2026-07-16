@@ -1,0 +1,113 @@
+---
+export const prerender = true;
+import Base from '../layouts/Base.astro';
+---
+<Base title="Kinney Karate D&D" description="Kinney Karate Dungeons & Dragons — combining martial arts values with tabletop adventure in St. Petersburg, FL.">
+
+<div class="belt"><span class="w"></span><span class="y"></span><span class="g"></span><span class="b"></span><span class="k"></span></div>
+
+<section class="page-hero">
+  <div class="container">
+    <p class="eyebrow">Something Different</p>
+    <h1 class="cond">Kinney Karate D&amp;D</h1>
+    <p>Martial arts values meet tabletop adventure.</p>
+  </div>
+</section>
+
+<section class="pad">
+  <div class="container two-col">
+
+    <div class="main-content">
+      <p class="kick">About the Program</p>
+      <p>Kinney Karate Dungeons &amp; Dragons is a unique program that brings together the discipline and values of traditional martial arts with the creativity, teamwork, and imagination of tabletop role-playing games.</p>
+      <p>In a typical Kinney Karate D&amp;D session, students experience the camaraderie and collaborative problem-solving of Dungeons &amp; Dragons — guided by the same values we teach in the dojo: respect, focus, teamwork, and perseverance. Characters face challenges that require strategy, empathy, and courage, not just combat.</p>
+      <p>The program is hosted at <a href="https://balancemartialarts.com" target="_blank" rel="noopener" style="color:var(--red)">Balance Martial Arts &amp; Gaming</a> in Pinellas Park — a space built for exactly this kind of community.</p>
+
+      <h2 class="cond" style="margin-top:32px;font-size:28px;font-weight:700;">Who Is This For?</h2>
+      <p>Kinney Karate D&amp;D is open to students of all experience levels — both in martial arts and in tabletop gaming. No prior D&amp;D experience is necessary. We welcome complete beginners and seasoned players alike.</p>
+      <p>It's a great fit for students who:</p>
+      <ul>
+        <li>Love storytelling, strategy, and creative problem-solving</li>
+        <li>Want to build friendships in a structured, supportive environment</li>
+        <li>Are looking for something that challenges the mind as well as the body</li>
+        <li>Are curious about tabletop gaming but don't know where to start</li>
+      </ul>
+
+      <h2 class="cond" style="margin-top:32px;font-size:28px;font-weight:700;">The Values Connection</h2>
+      <p>Martial arts and D&amp;D have more in common than you might think. Both require:</p>
+      <ul>
+        <li><strong>Discipline</strong> — following rules, respecting the group, staying focused</li>
+        <li><strong>Teamwork</strong> — no one succeeds alone in either the dojo or the dungeon</li>
+        <li><strong>Resilience</strong> — characters fail, plans fall apart, and you adapt</li>
+        <li><strong>Creativity</strong> — every situation offers multiple solutions; the best aren't always the obvious ones</li>
+      </ul>
+
+      <div class="cta-block">
+        <p>Interested in joining? Contact us to learn about current session schedules.</p>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:16px;">
+          <a href="/about#contact" class="btn">Contact Us</a>
+          <a href="https://balancemartialarts.com" target="_blank" rel="noopener" class="btn ghost">Balance Martial Arts →</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="sidebar">
+      <div class="info-card">
+        <h3>Program Details</h3>
+        <dl>
+          <dt>Location</dt>
+          <dd>Balance Martial Arts &amp; Gaming<br>6701 49th St N<br>Pinellas Park, FL 33781</dd>
+          <dt>Format</dt>
+          <dd>Tabletop role-playing (D&amp;D 5e)</dd>
+          <dt>Ages</dt>
+          <dd>All ages welcome</dd>
+          <dt>Experience</dt>
+          <dd>No prior RPG experience needed</dd>
+        </dl>
+        <a href="/about#contact" class="btn block" style="margin-top:20px;">Ask About Sessions</a>
+      </div>
+
+      <div class="info-card" style="margin-top:16px;background:var(--paper);">
+        <h3>Other Programs</h3>
+        <p style="font-size:13px;color:var(--text-soft);margin-bottom:14px;">Kinney Karate offers four traditional martial arts disciplines at recreation centers across St. Petersburg.</p>
+        <a href="/programs" class="btn ghost block">View All Programs</a>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+</Base>
+
+<style>
+.page-hero { background:var(--ink);color:var(--text-invert);padding:48px 0 40px; }
+.page-hero h1 { font-size:52px;font-weight:700;margin-bottom:10px; }
+.page-hero p { color:var(--text-invert-soft);font-size:15px; }
+.pad { padding:48px 0; }
+
+.two-col {
+  display:grid;
+  grid-template-columns:1fr 320px;
+  gap:40px;
+  align-items:start;
+}
+@media (max-width:800px) { .two-col { grid-template-columns:1fr; } }
+
+.main-content p { font-size:15px;color:var(--text-soft);line-height:1.8;margin-bottom:16px;max-width:660px; }
+.main-content ul { padding-left:20px;margin-bottom:16px;max-width:660px; }
+.main-content li { font-size:14px;color:var(--text-soft);line-height:1.8;margin-bottom:4px; }
+
+.cta-block {
+  border:1px solid var(--line);border-radius:var(--r);background:var(--paper);
+  padding:24px;margin-top:32px;max-width:560px;
+}
+.cta-block p { margin-bottom:0;font-size:14px; }
+
+.info-card {
+  border:1px solid var(--line);border-radius:var(--r);background:#fff;padding:24px;
+}
+.info-card h3 { font-weight:700;font-size:16px;margin-bottom:16px; }
+.info-card dl { display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:13px; }
+.info-card dt { font-weight:600;color:var(--text);white-space:nowrap; }
+.info-card dd { color:var(--text-soft);margin:0; }
+</style>

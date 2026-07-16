@@ -20,10 +20,11 @@ import Base from '../layouts/Base.astro';
     <div class="story" id="story">
       <p class="kick">Our Story</p>
       <div class="story-body">
-        <p>Kinney Karate has been part of the St. Petersburg community since 1986. Founded by Soke David Kinney, the school has grown from a single rec-center class into a multi-location program serving students of all ages across St. Petersburg.</p>
-        <p>Our curriculum draws from four traditional martial arts disciplines — Tang Soo Do, Aikido, Ju Jitsu, and Modern Arnis — integrated into a cohesive system that develops the whole student. We believe martial arts is not just about fighting; it's about building character, discipline, and community.</p>
-        <p>Over nearly four decades, Kinney Karate has produced hundreds of black belts, tournament champions, and — more importantly — better people. Many of our students have been with us for decades, and we're proud to now teach the children and grandchildren of our original members.</p>
-        <p>The school operates at several St. Petersburg Recreation Centers, making quality martial arts training accessible and affordable to the entire community. We also partner with Balance Martial Arts &amp; Gaming for advanced training opportunities.</p>
+        <p>Kinney Karate was founded in 1969 by Soke David Kinney. Over the decades the school grew from a single class into a multi-location program serving students of all ages across St. Petersburg and Pinellas County.</p>
+        <p>Soke Kinney began his martial arts journey in the Korean art of Tang Soo Do, and expanded his studies to include Aikido, Ju Jitsu, and Modern Arnis — eventually earning the rank of 9th degree black belt. He dedicated his life to sharing these arts with his community, believing that martial arts training builds not just physical skill but character, discipline, and resilience.</p>
+        <p>Today, Kinney Karate continues under the leadership of Soke Dai Susan Serota and a team of experienced instructors who carry on Soke Kinney's legacy. Classes are held at St. Petersburg Recreation Centers, making high-quality martial arts training accessible and affordable to everyone.</p>
+        <p>We also partner with <a href="https://balancemartialarts.com" target="_blank" rel="noopener" style="color:var(--red)">Balance Martial Arts &amp; Gaming</a> in Pinellas Park for advanced training and specialty programs — including our unique Kinney Karate Dungeons &amp; Dragons program that combines the values of martial arts with the imagination and teamwork of tabletop gaming.</p>
+        <p>Over 55 years and counting, Kinney Karate has trained hundreds of black belts, tournament champions, and — most importantly — better people. Many of our students have been with us for decades. We are proud to now teach the children and grandchildren of our original members.</p>
         <p>We are a family — and we'd love to have you join us.</p>
       </div>
     </div>
@@ -32,14 +33,61 @@ import Base from '../layouts/Base.astro';
     <div class="instructors" id="instructors">
       <p class="kick">Our Instructors</p>
       <p style="color:var(--text-soft);margin-bottom:24px;font-size:14px">Our instructor team brings decades of combined martial arts experience across multiple disciplines.</p>
-      <div class="grid3">
+      <div class="instructor-grid">
         {[
-          { name: 'TODO — Instructor Name', rank: 'TODO — Rank', bio: 'Instructor bio to be provided by Joe. Preserve verbatim from current website.' },
-          { name: 'TODO — Instructor Name', rank: 'TODO — Rank', bio: 'Instructor bio to be provided by Joe. Preserve verbatim from current website.' },
-          { name: 'TODO — Instructor Name', rank: 'TODO — Rank', bio: 'Instructor bio to be provided by Joe. Preserve verbatim from current website.' },
+          {
+            name: 'Susan Serota',
+            rank: '8th Degree Black Belt — Soke Dai',
+            photo: '/instructors/Susan.png',
+            bio: 'Susan Serota holds an 8th degree black belt and serves as Soke Dai (successor to the founder) of Kinney Karate. She has been training and teaching under Soke Kinney for decades and leads the school with the same dedication to tradition, community, and personal growth that has defined Kinney Karate for over 55 years.',
+          },
+          {
+            name: 'Seth Koehler',
+            rank: '7th Degree Black Belt — Master Instructor',
+            photo: '/instructors/Seth.png',
+            bio: 'Seth Koehler holds a 7th degree black belt and has been an integral part of the Kinney Karate instructor team for many years. His depth of knowledge across Tang Soo Do, Aikido, Ju Jitsu, and Modern Arnis makes him a versatile and highly skilled teacher.',
+          },
+          {
+            name: 'Richard Serota',
+            rank: '7th Degree Black Belt',
+            photo: '/instructors/Richy.png',
+            bio: 'Richard Serota holds a 7th degree black belt and brings decades of martial arts experience to his teaching. He is a cornerstone of the Kinney Karate community and embodies the school\'s values of discipline, respect, and continuous improvement.',
+          },
+          {
+            name: 'Stavro Liginos',
+            rank: '4th Degree Black Belt',
+            photo: '/instructors/Stavro.png',
+            bio: 'Stavro Liginos holds a 4th degree black belt and has been teaching at Kinney Karate for many years. His enthusiasm for the martial arts and his students makes his classes both challenging and rewarding.',
+          },
+          {
+            name: 'Sonja Leone',
+            rank: '3rd Degree Black Belt',
+            photo: '/instructors/Sonja.png',
+            bio: 'Sonja Leone holds a 3rd degree black belt. She brings energy and precision to her classes, helping students of all ages develop technique, confidence, and a love for the martial arts.',
+          },
+          {
+            name: 'Kelly Bonyata',
+            rank: '3rd Degree Black Belt',
+            photo: '/instructors/Kelly2.png',
+            bio: 'Kelly Bonyata holds a 3rd degree black belt. Her patient and encouraging teaching style is especially effective with younger students and beginners, helping them build a strong foundation in the martial arts.',
+          },
+          {
+            name: 'Jackie Prats',
+            rank: 'Instructor',
+            photo: '/instructors/Jackie.png',
+            bio: 'Jackie Prats is an instructor at Kinney Karate, bringing energy and dedication to every class. Jackie helps students of all levels grow in technique, confidence, and character.',
+          },
+          {
+            name: 'Tatsiana Haverkamp',
+            rank: 'Instructor',
+            photo: '/instructors/Tats.png',
+            bio: 'Tatsiana Haverkamp is an instructor at Kinney Karate. Her commitment to the martial arts and her students makes her a valued member of the Kinney Karate teaching team.',
+          },
         ].map(i => (
           <div class="instructor-card">
-            <div class="instructor-avatar"></div>
+            <div class="instructor-avatar">
+              <img src={i.photo} alt={i.name} width="72" height="72" loading="lazy" onerror="this.style.display='none'" />
+            </div>
             <h3>{i.name}</h3>
             <p class="rank-label">{i.rank}</p>
             <p class="bio">{i.bio}</p>
@@ -65,6 +113,7 @@ import Base from '../layouts/Base.astro';
       <div class="contact-card">
         <h2>Get in Touch</h2>
         <p>Questions about classes, enrollment, or the school? We'd love to hear from you.</p>
+        <p class="contact-direct">Call us: <a href="tel:+17276860864">727-686-0864</a></p>
         <form class="contact-form" method="POST" action="/api/contact">
           <div class="field">
             <label for="cf-name">Your name</label>
@@ -96,13 +145,23 @@ import Base from '../layouts/Base.astro';
 .pad { padding:48px 0; }
 
 .story, .instructors, .memorial, .contact { margin-bottom:56px; }
+.instructor-grid {
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:16px;
+}
+@media (max-width:900px) { .instructor-grid { grid-template-columns:repeat(3,1fr); } }
+@media (max-width:640px) { .instructor-grid { grid-template-columns:repeat(2,1fr); } }
 .story-body p { font-size:15px;color:var(--text-soft);margin-bottom:16px;line-height:1.8;max-width:720px; }
 
 .instructor-card {
   border:1px solid var(--line);border-radius:var(--r-lg);background:#fff;padding:24px;text-align:center;
 }
 .instructor-avatar {
-  width:72px;height:72px;border-radius:50%;background:var(--line);margin:0 auto 14px;
+  width:80px;height:80px;border-radius:50%;background:var(--line);margin:0 auto 14px;overflow:hidden;
+}
+.instructor-avatar img {
+  width:100%;height:100%;object-fit:cover;object-position:top center;display:block;
 }
 .instructor-card h3 { font-weight:700;font-size:16px;margin-bottom:4px; }
 .rank-label { font-size:12px;color:var(--red);font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px; }
@@ -114,6 +173,8 @@ import Base from '../layouts/Base.astro';
 .memorial-card h2, .contact-card h2 { font-weight:700;font-size:22px;margin-bottom:14px; }
 .memorial-card p { font-size:14px;color:var(--text-soft);margin-bottom:10px;line-height:1.7; }
 
+.contact-direct { font-size:14px;margin-bottom:10px; }
+.contact-direct a { color:var(--red);font-weight:600; }
 .contact-form { margin-top:20px;display:flex;flex-direction:column;gap:16px;max-width:520px; }
 .field { display:flex;flex-direction:column;gap:5px; }
 .field label { font-size:13px;font-weight:600;color:var(--text); }
