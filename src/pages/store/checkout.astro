@@ -113,49 +113,23 @@ const locations = [
 .checkout-error { color: var(--danger); font-size: 13px; margin-bottom: 12px; padding: 10px 14px; background: #fef2f2; border-radius: var(--r); }
 .checkout-error.hidden { display: none; }
 .secure-note { font-size: 11.5px; color: var(--text-soft); margin-top: 10px; text-align: center; }
+.remove-btn { background: none; border: none; cursor: pointer; font-size: 20px; color: var(--text-soft); line-height: 1; padding: 0 2px; }
+.remove-btn:hover { color: var(--red); }
 </style>
 
 <script>
 const SURCHARGE_RATE = 0.037;
 function loadCart(): any[] { try { return JSON.parse(sessionStorage.getItem('kk_cart') || '[]'); } catch { return []; } }
-const cart: any[] = loadCart();
+function saveCart(c: any[]) { try { sessionStorage.setItem('kk_cart', JSON.stringify(c)); } catch {} window.__kk_cart = c; }
 
 function fmt(cents: number) { return '$' + (cents / 100).toFixed(2); }
 
-function renderSummary() {
-  const el = document.getElementById('cart-summary');
-  if (!el) return;
-  if (!cart.length) return;
-  el.innerHTML = cart.map(item => {
-    const meta = [
-      item.size ? `Size: ${item.size}` : '',
-      item.color ? `Color: ${item.color}` : '',
-      item.addon_duffle ? 'Duffle bag add-on' : '',
-    ].filter(Boolean).join(' · ');
-    const compLines = item.components
-      ? Object.entries(item.components).map(([k, v]) => `${k}: ${v}`).join(', ')
-      : '';
-    return `<div class="cart-line">
-      <div>
-        <div class="name">${item.product_name}</div>
-        ${meta ? `<div class="meta">${meta}</div>` : ''}
-        ${compLines ? `<div class="meta">${compLines}</div>` : ''}
-      </div>
-      <div class="price">—</div>
-    </div>`;
-  }).join('');
-}
+const priceMap: Record<string, number> = {};
 
-async function loadPricesAndRender() {
-  // Fetch prices server-side for each product
-  const summaryEl = document.getElementById('cart-summary');
-  const totalsEl = document.getElementById('totals');
-  if (!cart.length || !summaryEl) return;
-
-  let subtotal = 0;
-
-  const priceMap: Record<string, number> = {};
+async function fetchPrices() {
+  const cart = loadCart();
   for (const item of cart) {
+    if (priceMap[item.id]) continue;
     try {
       const res = await fetch(`/api/products/${item.product_slug}`);
       if (!res.ok) continue;
@@ -170,30 +144,56 @@ async function loadPricesAndRender() {
         price = v?.price_cents || 0;
       }
       priceMap[item.id] = price;
-      subtotal += price * item.qty;
-      if (item.addon_duffle) subtotal += 4000;
     } catch {}
   }
+}
 
-  const surcharge = Math.round(subtotal * SURCHARGE_RATE);
-  const total = subtotal + surcharge;
+function renderSummary() {
+  const cart = loadCart();
+  const summaryEl = document.getElementById('cart-summary');
+  const totalsEl = document.getElementById('totals');
+  if (!summaryEl) return;
 
-  summaryEl.innerHTML = cart.map(item => {
+  if (!cart.length) {
+    summaryEl.innerHTML = '<p class="empty-cart">Your cart is empty. <a href="/store" style="color:var(--red)">Browse the store →</a></p>';
+    if (totalsEl) totalsEl.innerHTML = '';
+    return;
+  }
+
+  let subtotal = 0;
+  summaryEl.innerHTML = cart.map((item, idx) => {
     const price = priceMap[item.id] || 0;
+    subtotal += price * item.qty;
+    if (item.addon_duffle) subtotal += 4000;
     const meta = [item.size ? `Size: ${item.size}` : '', item.color ? `Color: ${item.color}` : ''].filter(Boolean).join(' · ');
     const compLines = item.components ? Object.entries(item.components).map(([k,v]) => `${k}: ${v}`).join(', ') : '';
     return `<div class="cart-line">
-      <div>
+      <div style="flex:1">
         <div class="name">${item.product_name}</div>
         ${meta ? `<div class="meta">${meta}</div>` : ''}
         ${compLines ? `<div class="meta">${compLines}</div>` : ''}
         ${item.addon_duffle ? '<div class="meta">+ Duffle bag</div>' : ''}
       </div>
-      <div class="price">${price ? fmt(price * item.qty) : '—'}</div>
+      <div style="display:flex;align-items:center;gap:12px;flex-shrink:0">
+        <div class="price">${price ? fmt(price * item.qty) : '—'}</div>
+        <button data-idx="${idx}" class="remove-btn" aria-label="Remove item">×</button>
+      </div>
     </div>`;
   }).join('');
 
+  // Wire remove buttons
+  summaryEl.querySelectorAll('.remove-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const i = Number((btn as HTMLElement).dataset.idx);
+      const c = loadCart(); c.splice(i, 1); saveCart(c);
+      window.dispatchEvent(new CustomEvent('kk-cart-updated'));
+      renderSummary();
+    });
+  });
+
   if (totalsEl) {
+    const surcharge = Math.round(subtotal * SURCHARGE_RATE);
+    const total = subtotal + surcharge;
     totalsEl.innerHTML = `
       <div class="total-row"><span>Subtotal</span><span>${fmt(subtotal)}</span></div>
       <div class="total-row"><span>Card processing fee (3.7%)</span><span>${fmt(surcharge)}</span></div>
@@ -202,9 +202,10 @@ async function loadPricesAndRender() {
   }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   renderSummary();
-  loadPricesAndRender();
+  await fetchPrices();
+  renderSummary();
 });
 
 document.getElementById('checkout-form')?.addEventListener('submit', async (e) => {

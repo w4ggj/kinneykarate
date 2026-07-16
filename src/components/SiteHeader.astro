@@ -21,6 +21,7 @@ const { pathname } = Astro.url;
       {nav.map(n => (
         <a href={n.href} class:list={[{ on: pathname.startsWith(n.href) }]}>{n.label}</a>
       ))}
+      <a href="/store" class="btn">Shop Now</a>
       <a href="/store/checkout" id="nav-cart" class="nav-cart" aria-label="Cart">
         🛒 <span id="nav-cart-count" class="cart-badge">0</span>
       </a>
