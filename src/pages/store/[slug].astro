@@ -407,6 +407,25 @@ form?.addEventListener('submit', e => {
   e.preventDefault();
   const data = new FormData(form);
 
+  // Validate: size required if size buttons exist
+  const hasSizeBtns = document.querySelectorAll('.size-btn:not([data-component])').length > 0;
+  const sizeVal = (data.get('size') as string) || (data.get('variant_id') as string) || '';
+  if (hasSizeBtns && !sizeVal) {
+    const msg = document.getElementById('stock-msg');
+    if (msg) { msg.textContent = 'Please select a size before adding to cart.'; msg.style.color = 'var(--danger)'; }
+    return;
+  }
+
+  // Validate: bundle components all selected
+  const compInputs = form.querySelectorAll<HTMLInputElement>('input[name^="component_"]');
+  for (const inp of Array.from(compInputs)) {
+    if (!inp.value) {
+      const msg = document.getElementById('stock-msg');
+      if (msg) { msg.textContent = `Please select a size for ${inp.name.replace('component_', '')}.`; msg.style.color = 'var(--danger)'; }
+      return;
+    }
+  }
+
   const item: Record<string, any> = {
     id: Date.now(),
     product_id: data.get('product_id'),
