@@ -33,43 +33,55 @@ import Base from '../layouts/Base.astro';
     <div class="instructors" id="instructors">
       <p class="kick">Our Instructors</p>
       <p style="color:var(--text-soft);margin-bottom:24px;font-size:14px">Our instructor team brings decades of combined martial arts experience across multiple disciplines.</p>
-      <div class="grid3">
+      <div class="instructor-grid">
         {[
           {
             name: 'Susan Serota',
             rank: '8th Degree Black Belt — Soke Dai',
-            photo: '/instructors/susan-serota.jpg',
+            photo: '/instructors/Susan.png',
             bio: 'Susan Serota holds an 8th degree black belt and serves as Soke Dai (successor to the founder) of Kinney Karate. She has been training and teaching under Soke Kinney for decades and leads the school with the same dedication to tradition, community, and personal growth that has defined Kinney Karate for over 55 years.',
           },
           {
             name: 'Seth Koehler',
             rank: '7th Degree Black Belt — Master Instructor',
-            photo: '/instructors/seth-koehler.jpg',
+            photo: '/instructors/Seth.png',
             bio: 'Seth Koehler holds a 7th degree black belt and has been an integral part of the Kinney Karate instructor team for many years. His depth of knowledge across Tang Soo Do, Aikido, Ju Jitsu, and Modern Arnis makes him a versatile and highly skilled teacher.',
           },
           {
             name: 'Richard Serota',
             rank: '7th Degree Black Belt',
-            photo: '/instructors/richard-serota.jpg',
+            photo: '/instructors/Richy.png',
             bio: 'Richard Serota holds a 7th degree black belt and brings decades of martial arts experience to his teaching. He is a cornerstone of the Kinney Karate community and embodies the school\'s values of discipline, respect, and continuous improvement.',
           },
           {
             name: 'Stavro Liginos',
             rank: '4th Degree Black Belt',
-            photo: '/instructors/stavro-liginos.jpg',
+            photo: '/instructors/Stavro.png',
             bio: 'Stavro Liginos holds a 4th degree black belt and has been teaching at Kinney Karate for many years. His enthusiasm for the martial arts and his students makes his classes both challenging and rewarding.',
           },
           {
             name: 'Sonja Leone',
             rank: '3rd Degree Black Belt',
-            photo: '/instructors/sonja-leone.jpg',
+            photo: '/instructors/Sonja.png',
             bio: 'Sonja Leone holds a 3rd degree black belt. She brings energy and precision to her classes, helping students of all ages develop technique, confidence, and a love for the martial arts.',
           },
           {
             name: 'Kelly Bonyata',
             rank: '3rd Degree Black Belt',
-            photo: '/instructors/kelly-bonyata.jpg',
+            photo: '/instructors/Kelly2.png',
             bio: 'Kelly Bonyata holds a 3rd degree black belt. Her patient and encouraging teaching style is especially effective with younger students and beginners, helping them build a strong foundation in the martial arts.',
+          },
+          {
+            name: 'Jackie Prats',
+            rank: 'Instructor',
+            photo: '/instructors/Jackie.png',
+            bio: 'Jackie Prats is an instructor at Kinney Karate, bringing energy and dedication to every class. Jackie helps students of all levels grow in technique, confidence, and character.',
+          },
+          {
+            name: 'Tatsiana Haverkamp',
+            rank: 'Instructor',
+            photo: '/instructors/Tats.png',
+            bio: 'Tatsiana Haverkamp is an instructor at Kinney Karate. Her commitment to the martial arts and her students makes her a valued member of the Kinney Karate teaching team.',
           },
         ].map(i => (
           <div class="instructor-card">
@@ -133,6 +145,13 @@ import Base from '../layouts/Base.astro';
 .pad { padding:48px 0; }
 
 .story, .instructors, .memorial, .contact { margin-bottom:56px; }
+.instructor-grid {
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:16px;
+}
+@media (max-width:900px) { .instructor-grid { grid-template-columns:repeat(3,1fr); } }
+@media (max-width:640px) { .instructor-grid { grid-template-columns:repeat(2,1fr); } }
 .story-body p { font-size:15px;color:var(--text-soft);margin-bottom:16px;line-height:1.8;max-width:720px; }
 
 .instructor-card {
