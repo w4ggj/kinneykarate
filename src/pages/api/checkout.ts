@@ -35,8 +35,8 @@ export async function POST({ request, locals }: APIContext) {
       priceCents = bv.price_cents;
     } else {
       const variant = await env.DB.prepare(
-        'SELECT * FROM variants WHERE product_id = ? AND active = 1 AND (size IS NULL OR size = ?) AND (color IS NULL OR color = ?) LIMIT 1'
-      ).bind(product.id, item.size || null, item.color || null).first() as any;
+        "SELECT * FROM variants WHERE product_id = ? AND active = 1 AND (size IS NULL OR size = '' OR size = ?) AND (color IS NULL OR color = '' OR color = ?) LIMIT 1"
+      ).bind(product.id, item.size || '', item.color || '').first() as any;
       if (!variant) return err(`Variant not found for ${product.name}`, 400);
       priceCents = variant.price_cents;
       variantId = variant.id;
