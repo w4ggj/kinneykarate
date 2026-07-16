@@ -217,7 +217,7 @@ const colors = [...new Set((variants as any[]).map((v: any) => v.color).filter(B
   </div>
 )}
 
-<!-- Cart FAB + overlay -->
+<!-- Cart slide-out panel -->
 <div id="cart-overlay" class="cart-overlay hidden" aria-hidden="true">
   <div class="cart-panel">
     <div class="cart-hd">
@@ -230,9 +230,6 @@ const colors = [...new Set((variants as any[]).map((v: any) => v.color).filter(B
     </div>
   </div>
 </div>
-<button id="cart-fab" class="cart-fab hidden" aria-label="Open cart">
-  🛒 <span id="cart-count">0</span>
-</button>
 
 </Base>
 
@@ -328,15 +325,6 @@ h1 { font-size: 36px; font-weight: 700; margin-bottom: 14px; }
 .cart-items { flex: 1; overflow-y: auto; padding: 16px 20px; font-size: 14px; color: var(--text-soft); }
 .cart-footer { padding: 16px 20px; border-top: 1px solid var(--line); }
 .btn.block { display: block; width: 100%; text-align: center; }
-.cart-fab {
-  position: fixed; bottom: 24px; right: 24px; z-index: 390;
-  background: var(--red); color: #fff;
-  border: none; border-radius: 999px;
-  padding: 12px 20px; font-size: 15px; font-weight: 700;
-  cursor: pointer; box-shadow: 0 4px 16px rgba(20,23,27,.22);
-  display: flex; align-items: center; gap: 8px;
-}
-.cart-fab.hidden { display: none; }
 </style>
 
 <script>
@@ -448,6 +436,8 @@ form?.addEventListener('submit', e => {
   const cart = loadCart();
   cart.push(item);
   saveCart(cart);
+  window.dispatchEvent(new CustomEvent('kk-cart-updated'));
+  openCart();
 
   // Visual feedback
   const btn = form.querySelector<HTMLButtonElement>('.add-btn');
@@ -464,18 +454,16 @@ document.querySelectorAll('.size-guide-btn').forEach(btn => {
 modal?.querySelector('.modal-close')?.addEventListener('click', () => modal.classList.add('hidden'));
 modal?.addEventListener('click', e => { if (e.target === modal) modal.classList.add('hidden'); });
 
-// Cart FAB wiring
+// Cart panel wiring
 const overlay = document.getElementById('cart-overlay');
-const fab = document.getElementById('cart-fab');
-const cartCount = document.getElementById('cart-count');
 const closeBtn = document.querySelector('.cart-close');
 const cartItems = document.getElementById('cart-items');
 
+function openCart() { renderCart(); overlay?.classList.remove('hidden'); overlay?.setAttribute('aria-hidden','false'); }
+
 function renderCart() {
   const cart = loadCart();
-  const n = cart.reduce((s: number, i: any) => s + i.qty, 0);
-  if (cartCount) cartCount.textContent = String(n);
-  fab?.classList.toggle('hidden', n === 0);
+  window.dispatchEvent(new CustomEvent('kk-cart-updated'));
   if (!cartItems) return;
   if (!cart.length) { cartItems.innerHTML = '<p style="color:var(--text-soft);font-size:14px">Your cart is empty.</p>'; return; }
   cartItems.innerHTML = cart.map((item: any, idx: number) => `
@@ -496,10 +484,14 @@ function renderCart() {
   });
 }
 
-fab?.addEventListener('click', () => { renderCart(); overlay?.classList.remove('hidden'); overlay?.setAttribute('aria-hidden','false'); });
+// Nav cart icon opens panel
+document.getElementById('nav-cart')?.addEventListener('click', e => { e.preventDefault(); openCart(); });
 closeBtn?.addEventListener('click', () => { overlay?.classList.add('hidden'); overlay?.setAttribute('aria-hidden','true'); });
 overlay?.addEventListener('click', e => { if (e.target === overlay) { overlay.classList.add('hidden'); overlay.setAttribute('aria-hidden','true'); } });
 document.getElementById('checkout-btn')?.addEventListener('click', () => { window.location.href = '/store/checkout'; });
 
-renderCart();
+// Show panel automatically after adding to cart
+window.addEventListener('kk-cart-updated', () => {
+  // already triggered by saveCart — just keep badge fresh
+});
 </script>
