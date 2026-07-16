@@ -1,10 +1,57 @@
 ---
-// Admin console — gated by Cloudflare Access.
-// CF Access verifies the JWT before this page is served; no auth code needed here.
 export const prerender = false;
 import Base from '../../layouts/Base.astro';
+
+const env = (Astro.locals as any).runtime?.env;
+const ADMIN_USER = env?.ADMIN_USER || 'admin';
+const ADMIN_PASS = env?.ADMIN_PASS || '';
+
+// Check session cookie
+const cookie = Astro.cookies.get('kk_admin_session');
+const validSession = cookie?.value === `${ADMIN_USER}:${ADMIN_PASS}`;
+
+// Handle login form submission
+let loginError = false;
+if (Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+  const u = form.get('username');
+  const p = form.get('password');
+  if (u === ADMIN_USER && p === ADMIN_PASS && ADMIN_PASS !== '') {
+    Astro.cookies.set('kk_admin_session', `${ADMIN_USER}:${ADMIN_PASS}`, {
+      httpOnly: true, secure: true, sameSite: 'lax', maxAge: 60 * 60 * 24 * 7,
+    });
+    return Astro.redirect('/admin');
+  }
+  loginError = true;
+}
+
+const authed = validSession && ADMIN_PASS !== '';
 ---
 <Base title="Admin Console">
+
+{!authed && (
+  <div class="login-wrap">
+    <form method="POST" class="login-box">
+      <div class="login-logo">
+        <img src="/logo.png" alt="Kinney Karate" width="48" height="48" />
+        <h1>Kinney Karate</h1>
+        <p>Admin Console</p>
+      </div>
+      {loginError && <div class="login-error">Invalid username or password.</div>}
+      <div class="login-field">
+        <label for="username">Username</label>
+        <input type="text" id="username" name="username" required autocomplete="username" />
+      </div>
+      <div class="login-field">
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" required autocomplete="current-password" />
+      </div>
+      <button type="submit" class="btn block" style="margin-top:8px">Sign In</button>
+    </form>
+  </div>
+)}
+
+{authed && (
 <style>
   body { background: var(--paper-2); }
   .admin-layout { display: flex; min-height: calc(100vh - 120px); }
@@ -91,6 +138,9 @@ import Base from '../../layouts/Base.astro';
     <div class="nav-section">
       <p class="nav-label">Site</p>
       <a href="#" data-panel="settings">Settings</a>
+    </div>
+    <div class="nav-section" style="margin-top:auto;padding-top:24px">
+      <a href="/admin/logout" style="color:var(--text-invert-soft);font-size:13px">Sign Out</a>
     </div>
   </nav>
 
@@ -358,3 +408,24 @@ async function renderSettings(el: HTMLElement) {
 // Initial load
 loadPanel('inventory');
 </script>
+)}
+
+<style>
+.login-wrap {
+  min-height: 100vh; display: flex; align-items: center; justify-content: center;
+  background: var(--ink);
+}
+.login-box {
+  background: #fff; border-radius: var(--r-lg); padding: 36px 32px; width: 100%; max-width: 360px;
+  box-shadow: 0 8px 40px rgba(0,0,0,.3);
+}
+.login-logo { text-align: center; margin-bottom: 28px; }
+.login-logo img { margin-bottom: 10px; }
+.login-logo h1 { font-family: var(--font-condensed); text-transform: uppercase; font-size: 22px; font-weight: 700; margin-bottom: 2px; }
+.login-logo p { font-size: 13px; color: var(--text-soft); }
+.login-field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 14px; }
+.login-field label { font-size: 13px; font-weight: 600; }
+.login-field input { border: 1px solid var(--line); border-radius: var(--r); padding: 10px 12px; font-size: 14px; width: 100%; }
+.login-field input:focus { outline: 2px solid var(--red); border-color: transparent; outline-offset: 0; }
+.login-error { background: #fef2f2; color: var(--danger); font-size: 13px; padding: 10px 14px; border-radius: var(--r); margin-bottom: 14px; }
+</style>

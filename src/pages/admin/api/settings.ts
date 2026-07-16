@@ -1,7 +1,9 @@
 export const prerender = false;
 import type { APIContext } from 'astro';
+import { checkAdminAuth, unauthorizedResponse } from '../../../lib/adminAuth';
 
-export async function GET({ locals }: APIContext) {
+export async function GET({ locals, cookies }: APIContext) {
+  if (!checkAdminAuth(locals, cookies)) return unauthorizedResponse();
   const env = (locals as any).runtime?.env;
   if (!env?.DB) return err('No DB', 503);
 
@@ -9,7 +11,8 @@ export async function GET({ locals }: APIContext) {
   return new Response(JSON.stringify(row), { headers: { 'Content-Type': 'application/json' } });
 }
 
-export async function PUT({ request, locals }: APIContext) {
+export async function PUT({ request, locals, cookies }: APIContext) {
+  if (!checkAdminAuth(locals, cookies)) return unauthorizedResponse();
   const env = (locals as any).runtime?.env;
   if (!env?.DB) return err('No DB', 503);
 
