@@ -1,9 +1,11 @@
 export const prerender = false;
 import type { APIContext } from 'astro';
+import { checkAdminAuth, unauthorizedResponse } from '../../../../../lib/adminAuth';
 
 const VALID_STATUSES = ['paid', 'in_production', 'ready', 'picked_up', 'canceled'];
 
-export async function POST({ params, request, locals }: APIContext) {
+export async function POST({ params, request, locals, cookies }: APIContext) {
+  if (!checkAdminAuth(locals, cookies)) return unauthorizedResponse();
   const env = (locals as any).runtime?.env;
   if (!env?.DB) return err('No DB', 503);
 
