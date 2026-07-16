@@ -5,7 +5,7 @@ pages_build_output_dir = "dist"
 [[d1_databases]]
 binding = "DB"
 database_name = "kinneykarate-db"
-database_id = "TODO_set_after_wrangler_d1_create"
+database_id = "87b6c632-c6d0-4c20-8f88-ce1b4fab9795"
 
 [[r2_buckets]]
 binding = "IMAGES"
