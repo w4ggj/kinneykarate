@@ -120,6 +120,9 @@ const colors = [...new Set((variants as any[]).map((v: any) => v.color).filter(B
           </div>
         )}
 
+        {!isBundle && colors.length === 1 && (
+          <input type="hidden" name="color" id="color-val" value={colors[0] as string} />
+        )}
         {!isBundle && colors.length > 1 && (
           <div class="field">
             <label>Color</label>
@@ -217,7 +220,7 @@ const colors = [...new Set((variants as any[]).map((v: any) => v.color).filter(B
   </div>
 )}
 
-<!-- Cart FAB + overlay -->
+<!-- Cart slide-out panel -->
 <div id="cart-overlay" class="cart-overlay hidden" aria-hidden="true">
   <div class="cart-panel">
     <div class="cart-hd">
@@ -230,9 +233,6 @@ const colors = [...new Set((variants as any[]).map((v: any) => v.color).filter(B
     </div>
   </div>
 </div>
-<button id="cart-fab" class="cart-fab hidden" aria-label="Open cart">
-  🛒 <span id="cart-count">0</span>
-</button>
 
 </Base>
 
@@ -328,18 +328,19 @@ h1 { font-size: 36px; font-weight: 700; margin-bottom: 14px; }
 .cart-items { flex: 1; overflow-y: auto; padding: 16px 20px; font-size: 14px; color: var(--text-soft); }
 .cart-footer { padding: 16px 20px; border-top: 1px solid var(--line); }
 .btn.block { display: block; width: 100%; text-align: center; }
-.cart-fab {
-  position: fixed; bottom: 24px; right: 24px; z-index: 390;
-  background: var(--red); color: #fff;
-  border: none; border-radius: 999px;
-  padding: 12px 20px; font-size: 15px; font-weight: 700;
-  cursor: pointer; box-shadow: 0 4px 16px rgba(20,23,27,.22);
-  display: flex; align-items: center; gap: 8px;
-}
-.cart-fab.hidden { display: none; }
 </style>
 
 <script>
+// Cart backed by sessionStorage (cleared when tab closes; never persists to disk like localStorage)
+function loadCart(): any[] {
+  try { return JSON.parse(sessionStorage.getItem('kk_cart') || '[]'); } catch { return []; }
+}
+function saveCart(c: any[]) {
+  try { sessionStorage.setItem('kk_cart', JSON.stringify(c)); } catch {}
+  window.__kk_cart = c;
+}
+window.__kk_cart = loadCart();
+
 // Product page interactions: size/color selection, add-to-cart
 const form = document.getElementById('add-form') as HTMLFormElement | null;
 const priceDisplay = document.getElementById('price-display');
@@ -397,6 +398,25 @@ form?.addEventListener('submit', e => {
   e.preventDefault();
   const data = new FormData(form);
 
+  // Validate: size required if size buttons exist
+  const hasSizeBtns = document.querySelectorAll('.size-btn:not([data-component])').length > 0;
+  const sizeVal = (data.get('size') as string) || (data.get('variant_id') as string) || '';
+  if (hasSizeBtns && !sizeVal) {
+    const msg = document.getElementById('stock-msg');
+    if (msg) { msg.textContent = 'Please select a size before adding to cart.'; msg.style.color = 'var(--danger)'; }
+    return;
+  }
+
+  // Validate: bundle components all selected
+  const compInputs = form.querySelectorAll<HTMLInputElement>('input[name^="component_"]');
+  for (const inp of Array.from(compInputs)) {
+    if (!inp.value) {
+      const msg = document.getElementById('stock-msg');
+      if (msg) { msg.textContent = `Please select a size for ${inp.name.replace('component_', '')}.`; msg.style.color = 'var(--danger)'; }
+      return;
+    }
+  }
+
   const item: Record<string, any> = {
     id: Date.now(),
     product_id: data.get('product_id'),
@@ -416,14 +436,11 @@ form?.addEventListener('submit', e => {
   if (Object.keys(components).length) item.components = components;
   if (data.get('addon_duffle') === '1') item.addon_duffle = true;
 
-  window.__kk_cart = window.__kk_cart || [];
-  window.__kk_cart.push(item);
-
-  // Update cart count
-  const count = window.__kk_cart.reduce((s: number, i: any) => s + i.qty, 0);
-  const countEl = document.getElementById('cart-count');
-  if (countEl) countEl.textContent = count;
-  document.getElementById('cart-fab')?.classList.remove('hidden');
+  const cart = loadCart();
+  cart.push(item);
+  saveCart(cart);
+  window.dispatchEvent(new CustomEvent('kk-cart-updated'));
+  openCart();
 
   // Visual feedback
   const btn = form.querySelector<HTMLButtonElement>('.add-btn');
@@ -440,14 +457,44 @@ document.querySelectorAll('.size-guide-btn').forEach(btn => {
 modal?.querySelector('.modal-close')?.addEventListener('click', () => modal.classList.add('hidden'));
 modal?.addEventListener('click', e => { if (e.target === modal) modal.classList.add('hidden'); });
 
-// Cart FAB wiring
+// Cart panel wiring
 const overlay = document.getElementById('cart-overlay');
-const fab = document.getElementById('cart-fab');
-const cartCount = document.getElementById('cart-count');
 const closeBtn = document.querySelector('.cart-close');
+const cartItems = document.getElementById('cart-items');
 
-fab?.addEventListener('click', () => { overlay?.classList.remove('hidden'); overlay?.setAttribute('aria-hidden','false'); });
+function openCart() { renderCart(); overlay?.classList.remove('hidden'); overlay?.setAttribute('aria-hidden','false'); }
+
+function renderCart() {
+  const cart = loadCart();
+  window.dispatchEvent(new CustomEvent('kk-cart-updated'));
+  if (!cartItems) return;
+  if (!cart.length) { cartItems.innerHTML = '<p style="color:var(--text-soft);font-size:14px">Your cart is empty.</p>'; return; }
+  cartItems.innerHTML = cart.map((item: any, idx: number) => `
+    <div style="display:flex;justify-content:space-between;align-items:start;padding:10px 0;border-bottom:1px solid var(--line);gap:8px">
+      <div>
+        <div style="font-weight:600;font-size:14px">${item.product_name}</div>
+        ${item.size ? `<div style="font-size:12px;color:var(--text-soft)">Size: ${item.size}</div>` : ''}
+        ${item.color ? `<div style="font-size:12px;color:var(--text-soft)">Color: ${item.color}</div>` : ''}
+      </div>
+      <button data-idx="${idx}" style="background:none;border:none;cursor:pointer;font-size:18px;color:var(--text-soft);line-height:1" aria-label="Remove">×</button>
+    </div>
+  `).join('');
+  cartItems.querySelectorAll('button[data-idx]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const i = Number((btn as HTMLElement).dataset.idx);
+      const c = loadCart(); c.splice(i, 1); saveCart(c); renderCart();
+    });
+  });
+}
+
+// Nav cart icon opens panel
+document.getElementById('nav-cart')?.addEventListener('click', e => { e.preventDefault(); openCart(); });
 closeBtn?.addEventListener('click', () => { overlay?.classList.add('hidden'); overlay?.setAttribute('aria-hidden','true'); });
 overlay?.addEventListener('click', e => { if (e.target === overlay) { overlay.classList.add('hidden'); overlay.setAttribute('aria-hidden','true'); } });
 document.getElementById('checkout-btn')?.addEventListener('click', () => { window.location.href = '/store/checkout'; });
+
+// Show panel automatically after adding to cart
+window.addEventListener('kk-cart-updated', () => {
+  // already triggered by saveCart — just keep badge fresh
+});
 </script>

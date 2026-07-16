@@ -35,6 +35,7 @@ p { font-size: 14px; color: var(--text-soft); margin-bottom: 10px; line-height: 
 </style>
 
 <script>
-// Clear the in-memory cart after successful order
+// Clear cart after successful order
 window.__kk_cart = [];
+try { sessionStorage.removeItem('kk_cart'); } catch {}
 </script>

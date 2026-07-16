@@ -5,7 +5,6 @@ const nav = [
   { label: 'Students',   href: '/students' },
   { label: 'Events',     href: '/events' },
   { label: 'About',      href: '/about' },
-  { label: 'Store',      href: '/store' },
 ];
 const { pathname } = Astro.url;
 ---
@@ -23,6 +22,9 @@ const { pathname } = Astro.url;
         <a href={n.href} class:list={[{ on: pathname.startsWith(n.href) }]}>{n.label}</a>
       ))}
       <a href="/store" class="btn">Shop Now</a>
+      <a href="/store/checkout" id="nav-cart" class="nav-cart" aria-label="Cart">
+        🛒 <span id="nav-cart-count" class="cart-badge">0</span>
+      </a>
     </nav>
   </div>
 </header>
@@ -71,6 +73,22 @@ const { pathname } = Astro.url;
 }
 .sitenav a { transition: color .12s; }
 .sitenav a:hover, .sitenav a.on { color: #fff; }
+
+.nav-cart {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 15px; font-weight: 600; color: var(--text-invert-soft);
+  padding: 5px 10px; border-radius: 999px;
+  border: 1px solid var(--line-ink);
+  transition: background .12s, color .12s;
+}
+.nav-cart:hover { background: rgba(255,255,255,.1); color: #fff; }
+.cart-badge {
+  background: var(--red); color: #fff;
+  font-size: 11px; font-weight: 700;
+  border-radius: 999px; padding: 1px 6px;
+  min-width: 18px; text-align: center;
+}
+
 .nav-toggle { display: none; }
 
 @media (max-width: 820px) {
@@ -105,4 +123,17 @@ btn?.addEventListener('click', () => {
   const open = nav.classList.toggle('open');
   btn.setAttribute('aria-expanded', String(open));
 });
+
+// Keep cart badge in sync
+function syncCartBadge() {
+  try {
+    const cart = JSON.parse(sessionStorage.getItem('kk_cart') || '[]');
+    const n = cart.reduce((s: number, i: any) => s + i.qty, 0);
+    const badge = document.getElementById('nav-cart-count');
+    if (badge) badge.textContent = String(n);
+  } catch {}
+}
+syncCartBadge();
+// Re-sync when cart is updated on this page (product pages dispatch storage event)
+window.addEventListener('kk-cart-updated', syncCartBadge);
 </script>

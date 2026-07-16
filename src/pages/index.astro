@@ -23,26 +23,70 @@ import Base from '../layouts/Base.astro';
   </div>
 </section>
 
-<!-- Value props -->
-<section class="props pad">
+<!-- Why Kinney Karate -->
+<section class="why pad">
   <div class="container">
-    <p class="kick">Why Kinney Karate</p>
-    <div class="grid3">
-      <div class="prop-card">
-        <div class="prop-icon" style="background:var(--belt-black)"></div>
-        <h3 class="cond">Discipline</h3>
-        <p>Traditional arts taught with respect and structure, building habits that carry into every part of life.</p>
+    <h2 class="cond why-heading">Why Kinney Karate?</h2>
+
+    <!-- Feature boxes -->
+    <div class="feat-row">
+      <div class="feat-box">
+        <div class="feat-icon">⭐</div>
+        <div>
+          <strong>Student Benefits</strong>
+          <p>Real-world skills, fitness, focus, and a supportive community that keeps students coming back.</p>
+        </div>
       </div>
-      <div class="prop-card">
-        <div class="prop-icon" style="background:var(--red)"></div>
-        <h3 class="cond">Self-Defense</h3>
-        <p>Practical skills drawn from Tang Soo Do, Aikido, Ju Jitsu, and Arnis — tested, not theoretical.</p>
+      <div class="feat-box">
+        <div class="feat-icon">🏆</div>
+        <div>
+          <strong>Award-Winning Martial Arts Training</strong>
+          <p>Over 55 years of excellence in Tang Soo Do, Aikido, Ju Jitsu, and Modern Arnis.</p>
+        </div>
       </div>
-      <div class="prop-card">
-        <div class="prop-icon" style="background:var(--belt-green)"></div>
-        <h3 class="cond">Confidence</h3>
-        <p>Students leave every class standing taller. Progress through ranks builds real, earned self-assurance.</p>
+      <div class="feat-box">
+        <div class="feat-icon">🥋</div>
+        <div>
+          <strong>Classes for All Ages &amp; Levels</strong>
+          <p>From young children to adults — beginners to advanced. Everyone belongs on this mat.</p>
+        </div>
       </div>
+    </div>
+
+    <!-- Three-column layout -->
+    <div class="why-cols">
+      <div class="why-col">
+        <h3 class="cond why-col-head">Discipline.</h3>
+        <ul class="check-list">
+          <li>Structured, respectful learning environment</li>
+          <li>Focus and attention skills that transfer to school &amp; work</li>
+          <li>Consistent belt-rank progression with clear goals</li>
+          <li>Habits of punctuality, effort, and follow-through</li>
+          <li>Respect for instructors, peers, and self</li>
+        </ul>
+      </div>
+
+      <div class="why-col why-col-center">
+        <div class="instructor-photo-wrap">
+          <img src="/instructor.jpg" alt="Kinney Karate instructor with student" class="instructor-photo" />
+        </div>
+      </div>
+
+      <div class="why-col">
+        <h3 class="cond why-col-head why-col-head--right">Self-Defense. Confidence.</h3>
+        <ul class="check-list">
+          <li>Practical techniques from multiple martial arts systems</li>
+          <li>Situational awareness and de-escalation skills</li>
+          <li>Physical fitness, balance, and coordination</li>
+          <li>Public speaking and demonstration confidence</li>
+          <li>Earned self-assurance from real achievement</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Philosophy -->
+    <div class="philosophy">
+      <p>One of the great things about Kinney Karate is its flexibility in tailoring itself to the individual student. Whether your child needs an outlet for energy, a challenge to push past, or a community to belong to — our instructors meet every student where they are and help them grow into the best version of themselves.</p>
     </div>
   </div>
 </section>
@@ -152,15 +196,41 @@ import Base from '../layouts/Base.astro';
 
 .pad { padding: 48px 0; }
 
-.prop-card {
-  border: 1px solid var(--line);
-  border-radius: var(--r);
-  padding: 22px;
-  background: #fff;
+/* Why Kinney Karate section */
+.why { background: var(--paper); }
+.why-heading { font-size: 38px; font-weight: 700; text-align: center; margin-bottom: 28px; }
+
+.feat-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 40px; }
+@media (max-width: 720px) { .feat-row { grid-template-columns: 1fr; } }
+
+.feat-box {
+  display: flex; align-items: flex-start; gap: 14px;
+  background: #fff; border: 1px solid var(--line); border-radius: var(--r-lg); padding: 20px;
 }
-.prop-icon { width: 32px; height: 6px; border-radius: 3px; margin-bottom: 14px; }
-.prop-card h3 { font-size: 20px; font-weight: 700; margin-bottom: 8px; }
-.prop-card p { color: var(--text-soft); font-size: 14px; }
+.feat-icon { font-size: 24px; flex-shrink: 0; }
+.feat-box strong { display: block; font-weight: 700; font-size: 14px; margin-bottom: 4px; }
+.feat-box p { font-size: 13px; color: var(--text-soft); margin: 0; }
+
+.why-cols { display: grid; grid-template-columns: 1fr auto 1fr; gap: 32px; align-items: start; margin-bottom: 32px; }
+@media (max-width: 820px) { .why-cols { grid-template-columns: 1fr; } .why-col-center { order: -1; } }
+
+.why-col-head { font-size: 26px; font-weight: 700; color: var(--red); margin-bottom: 14px; text-transform: uppercase; letter-spacing: .02em; }
+.why-col-head--right { text-align: right; }
+@media (max-width: 820px) { .why-col-head--right { text-align: left; } }
+
+.check-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 10px; }
+.check-list li { font-size: 14px; padding-left: 22px; position: relative; color: var(--text); line-height: 1.4; }
+.check-list li::before { content: '✓'; position: absolute; left: 0; color: var(--red); font-weight: 700; }
+
+.why-col-center { display: flex; align-items: center; justify-content: center; }
+.instructor-photo-wrap { width: 180px; }
+.instructor-photo { width: 180px; height: 180px; object-fit: contain; border-radius: 50%; border: 4px solid var(--red); display: block; }
+
+.philosophy {
+  max-width: 680px; margin: 0 auto; padding: 24px 28px;
+  background: var(--ink); color: var(--text-invert); border-radius: var(--r-lg);
+  font-size: 15px; line-height: 1.65; font-style: italic; text-align: center;
+}
 
 .free-class {
   background: var(--red);
