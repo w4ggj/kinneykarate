@@ -120,6 +120,9 @@ const colors = [...new Set((variants as any[]).map((v: any) => v.color).filter(B
           </div>
         )}
 
+        {!isBundle && colors.length === 1 && (
+          <input type="hidden" name="color" id="color-val" value={colors[0] as string} />
+        )}
         {!isBundle && colors.length > 1 && (
           <div class="field">
             <label>Color</label>
