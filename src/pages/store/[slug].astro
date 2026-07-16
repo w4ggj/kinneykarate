@@ -340,6 +340,16 @@ h1 { font-size: 36px; font-weight: 700; margin-bottom: 14px; }
 </style>
 
 <script>
+// Cart backed by sessionStorage (cleared when tab closes; never persists to disk like localStorage)
+function loadCart(): any[] {
+  try { return JSON.parse(sessionStorage.getItem('kk_cart') || '[]'); } catch { return []; }
+}
+function saveCart(c: any[]) {
+  try { sessionStorage.setItem('kk_cart', JSON.stringify(c)); } catch {}
+  window.__kk_cart = c;
+}
+window.__kk_cart = loadCart();
+
 // Product page interactions: size/color selection, add-to-cart
 const form = document.getElementById('add-form') as HTMLFormElement | null;
 const priceDisplay = document.getElementById('price-display');
@@ -416,14 +426,9 @@ form?.addEventListener('submit', e => {
   if (Object.keys(components).length) item.components = components;
   if (data.get('addon_duffle') === '1') item.addon_duffle = true;
 
-  window.__kk_cart = window.__kk_cart || [];
-  window.__kk_cart.push(item);
-
-  // Update cart count
-  const count = window.__kk_cart.reduce((s: number, i: any) => s + i.qty, 0);
-  const countEl = document.getElementById('cart-count');
-  if (countEl) countEl.textContent = count;
-  document.getElementById('cart-fab')?.classList.remove('hidden');
+  const cart = loadCart();
+  cart.push(item);
+  saveCart(cart);
 
   // Visual feedback
   const btn = form.querySelector<HTMLButtonElement>('.add-btn');
@@ -445,9 +450,37 @@ const overlay = document.getElementById('cart-overlay');
 const fab = document.getElementById('cart-fab');
 const cartCount = document.getElementById('cart-count');
 const closeBtn = document.querySelector('.cart-close');
+const cartItems = document.getElementById('cart-items');
 
-fab?.addEventListener('click', () => { overlay?.classList.remove('hidden'); overlay?.setAttribute('aria-hidden','false'); });
+function renderCart() {
+  const cart = loadCart();
+  const n = cart.reduce((s: number, i: any) => s + i.qty, 0);
+  if (cartCount) cartCount.textContent = String(n);
+  fab?.classList.toggle('hidden', n === 0);
+  if (!cartItems) return;
+  if (!cart.length) { cartItems.innerHTML = '<p style="color:var(--text-soft);font-size:14px">Your cart is empty.</p>'; return; }
+  cartItems.innerHTML = cart.map((item: any, idx: number) => `
+    <div style="display:flex;justify-content:space-between;align-items:start;padding:10px 0;border-bottom:1px solid var(--line);gap:8px">
+      <div>
+        <div style="font-weight:600;font-size:14px">${item.product_name}</div>
+        ${item.size ? `<div style="font-size:12px;color:var(--text-soft)">Size: ${item.size}</div>` : ''}
+        ${item.color ? `<div style="font-size:12px;color:var(--text-soft)">Color: ${item.color}</div>` : ''}
+      </div>
+      <button data-idx="${idx}" style="background:none;border:none;cursor:pointer;font-size:18px;color:var(--text-soft);line-height:1" aria-label="Remove">×</button>
+    </div>
+  `).join('');
+  cartItems.querySelectorAll('button[data-idx]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const i = Number((btn as HTMLElement).dataset.idx);
+      const c = loadCart(); c.splice(i, 1); saveCart(c); renderCart();
+    });
+  });
+}
+
+fab?.addEventListener('click', () => { renderCart(); overlay?.classList.remove('hidden'); overlay?.setAttribute('aria-hidden','false'); });
 closeBtn?.addEventListener('click', () => { overlay?.classList.add('hidden'); overlay?.setAttribute('aria-hidden','true'); });
 overlay?.addEventListener('click', e => { if (e.target === overlay) { overlay.classList.add('hidden'); overlay.setAttribute('aria-hidden','true'); } });
 document.getElementById('checkout-btn')?.addEventListener('click', () => { window.location.href = '/store/checkout'; });
+
+renderCart();
 </script>
