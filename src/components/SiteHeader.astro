@@ -12,7 +12,7 @@ const { pathname } = Astro.url;
 <header class="sitehdr">
   <div class="container sitehdr-inner">
     <a href="/" class="logo">
-      <span class="mark">KK</span>
+      <img src="/logo.png" alt="Kinney Karate" class="logo-img" width="40" height="40" />
       <b>Kinney Karate</b>
     </a>
     <button class="nav-toggle" aria-label="Open menu" aria-expanded="false" aria-controls="sitenav">
@@ -49,13 +49,10 @@ const { pathname } = Astro.url;
   gap: 11px;
   flex-shrink: 0;
 }
-.mark {
-  width: 34px; height: 34px;
-  border-radius: 7px;
-  background: var(--red);
-  display: grid; place-items: center;
-  font-family: var(--font-condensed);
-  font-weight: 700; color: #fff; font-size: 16px;
+.logo-img {
+  width: 40px; height: 40px;
+  object-fit: contain;
+  flex-shrink: 0;
 }
 .logo b {
   font-family: var(--font-condensed);
