@@ -9,10 +9,12 @@ import Base from '../layouts/Base.astro';
 
 <!-- Hero -->
 <section class="hero">
-  <div class="container">
+  <div class="hero-banner">
+    <img src="/logo-header.png" alt="Kinney Karate Martial Arts System" class="hero-banner-img" />
+  </div>
+  <div class="container hero-content">
     <p class="eyebrow">St. Petersburg, FL &mdash; Founded 1969</p>
-    <h1 class="cond">Train Hard.<br><span class="r">Live Well.</span></h1>
-    <p class="sub">Kinney Karate offers traditional martial arts for all ages &mdash; Tang Soo Do, Aikido, Ju Jitsu, and Modern Arnis. Build discipline, self-defense skills, and lasting confidence.</p>
+    <p class="sub">Traditional martial arts for all ages &mdash; Tang Soo Do, Aikido, Ju Jitsu, and Modern Arnis. Build discipline, self-defense skills, and lasting confidence.</p>
     <div class="herocta">
       <a href="/programs" class="btn">Explore Programs</a>
       <a href="/locations" class="btn ghost">Locations &amp; Schedule</a>
@@ -123,14 +125,21 @@ import Base from '../layouts/Base.astro';
 .hero {
   background: var(--ink);
   color: var(--text-invert);
-  padding: 60px 0 56px;
 }
-.hero h1 {
-  font-size: clamp(46px, 8vw, 72px);
-  line-height: .96;
-  margin-bottom: 18px;
+.hero-banner {
+  background: #000;
+  text-align: center;
+  line-height: 0;
 }
-.hero .r { color: var(--red); }
+.hero-banner-img {
+  width: 100%;
+  max-width: 900px;
+  height: auto;
+  display: inline-block;
+}
+.hero-content {
+  padding: 36px 0 48px;
+}
 .hero .sub {
   max-width: 480px;
   color: var(--text-invert-soft);
