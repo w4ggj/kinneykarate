@@ -116,7 +116,8 @@ const locations = [
 
 <script>
 const SURCHARGE_RATE = 0.037;
-const cart: any[] = window.__kk_cart || [];
+function loadCart(): any[] { try { return JSON.parse(sessionStorage.getItem('kk_cart') || '[]'); } catch { return []; } }
+const cart: any[] = loadCart();
 
 function fmt(cents: number) { return '$' + (cents / 100).toFixed(2); }
 
@@ -220,7 +221,7 @@ document.getElementById('checkout-form')?.addEventListener('submit', async (e) =
     contact_email: fd.get('contact_email'),
     location: fd.get('location'),
     instructor_name: fd.get('instructor_name'),
-    items: (window.__kk_cart || []),
+    items: loadCart(),
   };
 
   try {
