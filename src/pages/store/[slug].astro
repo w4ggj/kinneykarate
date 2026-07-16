@@ -423,8 +423,7 @@ form?.addEventListener('submit', e => {
   const count = window.__kk_cart.reduce((s: number, i: any) => s + i.qty, 0);
   const countEl = document.getElementById('cart-count');
   if (countEl) countEl.textContent = count;
-  const fab = document.getElementById('cart-fab');
-  if (fab) fab.classList.remove('hidden');
+  document.getElementById('cart-fab')?.classList.remove('hidden');
 
   // Visual feedback
   const btn = form.querySelector<HTMLButtonElement>('.add-btn');
