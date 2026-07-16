@@ -1,0 +1,395 @@
+---
+export const prerender = false;
+
+import Base from '../../layouts/Base.astro';
+
+const { slug } = Astro.params;
+const env = (Astro.locals as any).runtime?.env;
+
+if (!env?.DB) {
+  return Astro.redirect('/store');
+}
+
+const product = await env.DB.prepare(
+  'SELECT * FROM products WHERE slug = ? AND active = 1'
+).bind(slug).first();
+
+if (!product) {
+  return new Response(null, { status: 404 });
+}
+
+const variants = product.kind === 'simple'
+  ? (await env.DB.prepare('SELECT * FROM variants WHERE product_id = ? AND active = 1').bind(product.id).all()).results
+  : [];
+
+const components = product.kind === 'bundle'
+  ? (await env.DB.prepare('SELECT * FROM bundle_components WHERE bundle_product_id = ? ORDER BY sort_order').bind(product.id).all()).results
+  : [];
+
+const bundleVariant = product.kind === 'bundle'
+  ? await env.DB.prepare("SELECT price_cents FROM variants WHERE product_id = ? AND sku = 'set' LIMIT 1").bind(product.id).first()
+  : null;
+
+// Inventory for stocked variants
+const inventory: Record<number, number> = {};
+if (product.fulfillment_type === 'stocked' && variants.length) {
+  const ids = variants.map((v: any) => v.id).join(',');
+  const inv = await env.DB.prepare(`SELECT variant_id, on_hand FROM inventory WHERE variant_id IN (${ids})`).all();
+  for (const row of inv.results as any[]) inventory[row.variant_id] = row.on_hand;
+}
+
+const settings = await env.DB.prepare('SELECT allow_backorders FROM settings WHERE id = 1').first();
+const backordersOn = settings?.allow_backorders !== 0;
+
+const isMTO = product.fulfillment_type === 'made_to_order';
+const isSpecial = product.special_order === 1;
+const isBundle = product.kind === 'bundle';
+
+// Size guides — load from catalog seed (static)
+import catalog from '../../../db/catalog.seed.json';
+const seedProduct = (catalog as any).products?.find((p: any) => p.slug === slug);
+const sizeGuideKey = seedProduct?.size_guide ?? null;
+const sizeGuide = sizeGuideKey ? (catalog as any).size_guides?.[sizeGuideKey] : null;
+
+const BUNDLE_COLORS = ['Red', 'Black', 'Blue', 'White'];
+
+function fmtPrice(cents: number | null) {
+  if (cents == null) return null;
+  return `$${(cents / 100).toFixed(0)}`;
+}
+
+const sizes = [...new Set((variants as any[]).map((v: any) => v.size).filter(Boolean))];
+const colors = [...new Set((variants as any[]).map((v: any) => v.color).filter(Boolean))];
+---
+<Base title={product.name as string}>
+
+<div class="belt"><span class="w"></span><span class="y"></span><span class="g"></span><span class="b"></span><span class="k"></span></div>
+
+<div class="breadcrumb container">
+  <a href="/store">Store</a> <span>›</span> <span>{product.name}</span>
+</div>
+
+<section class="product-page container">
+  <!-- Image -->
+  <div class="product-image-area">
+    <div class="product-img-placeholder">No image yet</div>
+  </div>
+
+  <!-- Info -->
+  <div class="product-details">
+    <p class="category-label">{product.category}</p>
+    <h1 class="cond">{product.name}</h1>
+
+    {isSpecial ? (
+      <div class="special-box">
+        <p class="special-msg">Speak with your instructor for pricing and ordering.</p>
+        <p class="special-sub">Individual sparring pieces and non-standard items are special order — your instructor will confirm eligibility, quote the price, and place the order.</p>
+      </div>
+    ) : (
+      <div class="price-area">
+        {isBundle && bundleVariant ? (
+          <span class="price">{fmtPrice((bundleVariant as any).price_cents)}</span>
+        ) : (
+          <span class="price" id="price-display">
+            {sizes.length > 0 ? 'Select a size' : fmtPrice((variants as any[])[0]?.price_cents)}
+          </span>
+        )}
+        {isMTO && <span class="mto-badge">~2 week turnaround</span>}
+      </div>
+    )}
+
+    <p class="product-desc">{product.description}</p>
+
+    {!isSpecial && (
+      <form id="add-form" class="add-form">
+        <input type="hidden" name="product_id" value={product.id} />
+        <input type="hidden" name="product_slug" value={product.slug} />
+        <input type="hidden" name="product_name" value={product.name} />
+        <input type="hidden" name="fulfillment_type" value={product.fulfillment_type} />
+
+        {/* Simple product: size + color selectors */}
+        {!isBundle && sizes.length > 0 && (
+          <div class="field">
+            <label>Size {sizeGuideKey && <button type="button" class="size-guide-btn">Size Guide</button>}</label>
+            <div class="size-grid">
+              {sizes.map(s => (
+                <button type="button" class="size-btn" data-size={s}>{s}</button>
+              ))}
+            </div>
+            <input type="hidden" name="size" id="size-val" />
+          </div>
+        )}
+
+        {!isBundle && colors.length > 1 && (
+          <div class="field">
+            <label>Color</label>
+            <div class="color-grid">
+              {colors.map(c => (
+                <button type="button" class="color-btn" data-color={c}>{c}</button>
+              ))}
+            </div>
+            <input type="hidden" name="color" id="color-val" />
+          </div>
+        )}
+
+        {/* Bundle: color + per-component size selectors */}
+        {isBundle && (
+          <>
+            <div class="field">
+              <label>Color — matched across the whole set</label>
+              <div class="color-grid">
+                {BUNDLE_COLORS.map(c => (
+                  <button type="button" class="color-btn" data-color={c}>{c}</button>
+                ))}
+              </div>
+              <input type="hidden" name="color" id="color-val" />
+            </div>
+            {(components as any[]).map(comp => {
+              const compSizes: string[] = JSON.parse(comp.size_options || '[]');
+              return (
+                <div class="field">
+                  <label>
+                    {comp.component_name} size
+                    {sizeGuide && <button type="button" class="size-guide-btn" data-guide={comp.component_name}>Guide</button>}
+                  </label>
+                  <div class="size-grid">
+                    {compSizes.map(s => (
+                      <button type="button" class="size-btn" data-component={comp.component_name} data-size={s}>{s}</button>
+                    ))}
+                  </div>
+                  <input type="hidden" name={`component_${comp.component_name}`} />
+                </div>
+              );
+            })}
+            {/* Add-on: mesh duffle bag */}
+            {slug === 'sparring-gear-set' && (
+              <div class="field">
+                <label class="addon-label">
+                  <input type="checkbox" name="addon_duffle" value="1" />
+                  Add mesh duffle bag <strong>+$40</strong>
+                </label>
+              </div>
+            )}
+          </>
+        )}
+
+        {/* Arnis sticks: with/without case option */}
+        {slug === 'arnis-sticks' && (
+          <div class="field">
+            <label>Option</label>
+            <div class="size-grid">
+              <button type="button" class="size-btn active" data-variant-id={(variants as any[]).find((v:any)=>!v.size || v.size==='plain')?.id} data-price={(variants as any[]).find((v:any)=>!v.size||v.size==='plain')?.price_cents}>Plain sticks — $25</button>
+              <button type="button" class="size-btn" data-variant-id={(variants as any[]).find((v:any)=>v.size==='with-case')?.id} data-price={(variants as any[]).find((v:any)=>v.size==='with-case')?.price_cents}>With case — $40</button>
+            </div>
+            <input type="hidden" name="variant_id" id="variant-id-val" />
+          </div>
+        )}
+
+        <div id="stock-msg" class="stock-msg"></div>
+
+        <button type="submit" class="btn block add-btn">Add to Cart</button>
+      </form>
+    )}
+  </div>
+</section>
+
+{/* Size guide modal */}
+{sizeGuide && (
+  <div id="size-guide-modal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-panel">
+      <div class="modal-hd">
+        <h2 class="cond">Size Guide</h2>
+        <button class="modal-close" aria-label="Close">✕</button>
+      </div>
+      <div class="modal-body">
+        <table class="size-table">
+          <thead>
+            <tr>{Object.keys((sizeGuide as any).columns || {}).map((col: string) => <th>{col}</th>)}</tr>
+          </thead>
+          <tbody>
+            {((sizeGuide as any).rows || []).map((row: any) => (
+              <tr>{Object.values(row).map((cell: any) => <td>{cell}</td>)}</tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+)}
+
+</Base>
+
+<style>
+.breadcrumb { padding: 14px 20px; font-size: 13px; color: var(--text-soft); display: flex; gap: 6px; }
+.breadcrumb a { color: var(--red); }
+
+.product-page {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
+  padding: 32px 20px 60px;
+  align-items: start;
+}
+@media (max-width: 700px) { .product-page { grid-template-columns: 1fr; } }
+
+.product-img-placeholder {
+  background: var(--paper-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  height: 360px;
+  display: grid; place-items: center;
+  color: var(--text-soft); font-size: 13px;
+}
+
+.category-label { font-size: 12px; color: var(--text-soft); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 8px; }
+h1 { font-size: 36px; font-weight: 700; margin-bottom: 14px; }
+.price-area { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+.price { font-size: 28px; font-weight: 700; }
+.mto-badge { font-size: 12px; font-weight: 600; color: var(--warn); background: #fdf0dc; border-radius: 6px; padding: 3px 8px; }
+.product-desc { font-size: 14px; color: var(--text-soft); line-height: 1.7; margin-bottom: 24px; }
+
+.special-box { background: var(--paper); border: 1px solid var(--line); border-radius: var(--r); padding: 18px; margin-bottom: 20px; }
+.special-msg { font-weight: 700; font-size: 15px; margin-bottom: 8px; }
+.special-sub { font-size: 13px; color: var(--text-soft); line-height: 1.6; }
+
+.add-form { display: flex; flex-direction: column; gap: 18px; }
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field label { font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 10px; }
+.size-guide-btn { font-size: 11px; color: var(--red); background: none; border: none; cursor: pointer; text-decoration: underline; }
+.size-grid { display: flex; flex-wrap: wrap; gap: 6px; }
+.size-btn {
+  padding: 7px 12px; border: 1px solid var(--line); border-radius: 6px;
+  font-size: 13px; font-weight: 500; background: #fff; cursor: pointer;
+  transition: .12s;
+}
+.size-btn:hover, .size-btn.active { background: var(--ink); color: #fff; border-color: var(--ink); }
+.size-btn.out { opacity: .5; }
+
+.color-grid { display: flex; flex-wrap: wrap; gap: 6px; }
+.color-btn {
+  padding: 7px 14px; border: 1px solid var(--line); border-radius: 6px;
+  font-size: 13px; font-weight: 500; background: #fff; cursor: pointer;
+  transition: .12s;
+}
+.color-btn:hover, .color-btn.active { background: var(--ink); color: #fff; border-color: var(--ink); }
+
+.addon-label { display: flex; align-items: center; gap: 10px; font-size: 14px; cursor: pointer; }
+.add-btn { margin-top: 8px; font-size: 15px; padding: 14px; }
+
+.stock-msg { font-size: 13px; color: var(--warn); }
+
+.modal { position: fixed; inset: 0; z-index: 300; background: rgba(20,23,27,.5); display: grid; place-items: center; }
+.modal.hidden { display: none; }
+.modal-panel { background: #fff; border-radius: var(--r-lg); max-width: 680px; width: 100%; max-height: 85vh; overflow: auto; margin: 20px; }
+.modal-hd { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid var(--line); }
+.modal-hd h2 { font-size: 20px; font-weight: 700; }
+.modal-close { background: none; border: none; cursor: pointer; font-size: 20px; color: var(--text-soft); }
+.modal-body { padding: 20px; overflow-x: auto; }
+.size-table { border-collapse: collapse; width: 100%; font-size: 13px; }
+.size-table th { background: var(--ink); color: #fff; padding: 8px 12px; text-align: left; font-weight: 600; }
+.size-table td { padding: 8px 12px; border-bottom: 1px solid var(--line); }
+.size-table tr:last-child td { border-bottom: none; }
+</style>
+
+<script>
+// Product page interactions: size/color selection, add-to-cart
+const form = document.getElementById('add-form') as HTMLFormElement | null;
+const priceDisplay = document.getElementById('price-display');
+const stockMsg = document.getElementById('stock-msg');
+
+// Variant price map built from server-side data
+// Simple products: size → price
+const sizeButtons = document.querySelectorAll<HTMLButtonElement>('.size-btn');
+const colorButtons = document.querySelectorAll<HTMLButtonElement>('.color-btn');
+
+function activateOne(btns: NodeListOf<HTMLButtonElement>, btn: HTMLButtonElement) {
+  btns.forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+sizeButtons.forEach(btn => {
+  btn.addEventListener('click', () => {
+    const comp = btn.dataset.component;
+    if (comp) {
+      // Bundle component sizing
+      const compBtns = document.querySelectorAll<HTMLButtonElement>(`.size-btn[data-component="${comp}"]`);
+      activateOne(compBtns, btn);
+      const input = form?.querySelector<HTMLInputElement>(`input[name="component_${comp}"]`);
+      if (input) input.value = btn.dataset.size ?? '';
+    } else {
+      // Simple product / arnis option
+      activateOne(sizeButtons, btn);
+      const sizeInput = form?.querySelector<HTMLInputElement>('#size-val, [name="variant_id"]');
+      if (btn.dataset.variantId) {
+        const vi = form?.querySelector<HTMLInputElement>('#variant-id-val');
+        if (vi) vi.value = btn.dataset.variantId;
+        if (priceDisplay && btn.dataset.price) {
+          priceDisplay.textContent = '$' + Math.round(Number(btn.dataset.price) / 100);
+        }
+      } else if (sizeInput && sizeInput.id === 'size-val') {
+        sizeInput.value = btn.dataset.size ?? '';
+        if (priceDisplay && btn.dataset.price) {
+          priceDisplay.textContent = '$' + Math.round(Number(btn.dataset.price) / 100);
+        }
+      }
+    }
+  });
+});
+
+colorButtons.forEach(btn => {
+  btn.addEventListener('click', () => {
+    activateOne(colorButtons, btn);
+    const colorInput = form?.querySelector<HTMLInputElement>('#color-val');
+    if (colorInput) colorInput.value = btn.dataset.color ?? '';
+  });
+});
+
+// Add to cart
+form?.addEventListener('submit', e => {
+  e.preventDefault();
+  const data = new FormData(form);
+
+  const item: Record<string, any> = {
+    id: Date.now(),
+    product_id: data.get('product_id'),
+    product_slug: data.get('product_slug'),
+    product_name: data.get('product_name'),
+    fulfillment_type: data.get('fulfillment_type'),
+    size: data.get('size') || null,
+    color: data.get('color') || null,
+    qty: 1,
+  };
+
+  // Bundle components
+  const components: Record<string, string> = {};
+  for (const [k, v] of (data as any).entries()) {
+    if (k.startsWith('component_') && v) components[k.replace('component_', '')] = v as string;
+  }
+  if (Object.keys(components).length) item.components = components;
+  if (data.get('addon_duffle') === '1') item.addon_duffle = true;
+
+  window.__kk_cart = window.__kk_cart || [];
+  window.__kk_cart.push(item);
+
+  // Update cart count
+  const count = window.__kk_cart.reduce((s: number, i: any) => s + i.qty, 0);
+  const countEl = document.getElementById('cart-count');
+  if (countEl) countEl.textContent = count;
+  const fab = document.getElementById('cart-fab');
+  if (fab) fab.classList.remove('hidden');
+
+  // Visual feedback
+  const btn = form.querySelector<HTMLButtonElement>('.add-btn');
+  if (btn) { btn.textContent = '✓ Added'; setTimeout(() => { btn.textContent = 'Add to Cart'; }, 1800); }
+});
+
+// Size guide modal
+const modal = document.getElementById('size-guide-modal');
+document.querySelectorAll('.size-guide-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    modal?.classList.remove('hidden');
+  });
+});
+modal?.querySelector('.modal-close')?.addEventListener('click', () => modal.classList.add('hidden'));
+modal?.addEventListener('click', e => { if (e.target === modal) modal.classList.add('hidden'); });
+</script>

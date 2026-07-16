@@ -1,0 +1,28 @@
+---
+export const prerender = true;
+import Base from '../layouts/Base.astro';
+---
+<Base title="News & Articles" description="Latest news, articles, and updates from Kinney Karate.">
+
+<div class="belt"><span class="w"></span><span class="y"></span><span class="g"></span><span class="b"></span><span class="k"></span></div>
+
+<section class="page-hero">
+  <div class="container">
+    <p class="eyebrow">From the School</p>
+    <h1 class="cond">News &amp; Articles</h1>
+  </div>
+</section>
+
+<section class="pad">
+  <div class="container">
+    <p style="color:var(--text-soft)">Articles and news posts are being migrated from the current site. Check back soon — or <a href="https://mailchimp.com" target="_blank" rel="noopener" style="color:var(--red);font-weight:600">read the newsletter archive</a>.</p>
+  </div>
+</section>
+
+</Base>
+
+<style>
+.page-hero { background:var(--ink);color:var(--text-invert);padding:48px 0 40px; }
+.page-hero h1 { font-size:52px;font-weight:700; }
+.pad { padding:48px 0; }
+</style>

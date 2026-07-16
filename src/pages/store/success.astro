@@ -1,0 +1,40 @@
+---
+export const prerender = false;
+import Base from '../../layouts/Base.astro';
+const orderId = Astro.url.searchParams.get('order') ?? '';
+---
+<Base title="Order Confirmed">
+<section class="success-page">
+  <div class="container">
+    <div class="success-card">
+      <div class="check">✓</div>
+      <h1 class="cond">Order Confirmed!</h1>
+      <p>Thank you for your order. You'll receive a confirmation email shortly.</p>
+      {orderId && <p class="order-id">Order #{orderId.slice(0,8).toUpperCase()}</p>}
+      <p class="pickup-msg">Your order will be ready for <strong>pickup in class</strong>. Made-to-order items take approximately 2 weeks.</p>
+      <a href="/store" class="btn" style="margin-top:20px">Continue Shopping</a>
+    </div>
+  </div>
+</section>
+</Base>
+
+<style>
+.success-page { padding: 80px 0; }
+.success-card {
+  max-width: 480px; margin: 0 auto; text-align: center;
+  background: #fff; border: 1px solid var(--line); border-radius: var(--r-lg); padding: 40px;
+}
+.check {
+  width: 60px; height: 60px; border-radius: 50%; background: var(--ok); color: #fff;
+  font-size: 28px; display: grid; place-items: center; margin: 0 auto 20px;
+}
+h1 { font-size: 36px; font-weight: 700; margin-bottom: 14px; }
+p { font-size: 14px; color: var(--text-soft); margin-bottom: 10px; line-height: 1.6; }
+.order-id { font-family: var(--font-mono); font-size: 13px; color: var(--text); background: var(--paper); padding: 6px 12px; border-radius: 6px; display: inline-block; margin-bottom: 14px; }
+.pickup-msg { font-size: 13px; }
+</style>
+
+<script>
+// Clear the in-memory cart after successful order
+window.__kk_cart = [];
+</script>

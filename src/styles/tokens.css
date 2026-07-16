@@ -1,0 +1,45 @@
+/* Design tokens — single source of truth for brand colors, type, and spacing.
+   Restyle: update here only. */
+:root {
+  /* Brand colors */
+  --ink: #14171B;
+  --ink-2: #1E232A;
+  --paper: #F4F2EC;
+  --paper-2: #EBE8DF;
+  --line: #DAD6CB;
+  --line-ink: #2C333B;
+
+  /* Text */
+  --text: #1A1E23;
+  --text-soft: #5C6169;
+  --text-invert: #F4F2EC;
+  --text-invert-soft: #A7ADB4;
+
+  /* Brand red */
+  --red: #C1332B;
+  --red-dark: #A02821;
+
+  /* Belt colors */
+  --belt-white: #EDEBE4;
+  --belt-yellow: #E7C331;
+  --belt-green: #2F7D4F;
+  --belt-brown: #6B4A2B;
+  --belt-black: #14171B;
+
+  /* Status */
+  --ok: #2F7D4F;
+  --warn: #B8791C;
+  --danger: #C1332B;
+
+  /* Typography */
+  --font-body: "Barlow", system-ui, sans-serif;
+  --font-condensed: "Barlow Condensed", sans-serif;
+  --font-mono: "Space Mono", monospace;
+
+  /* Spacing */
+  --r: 10px;
+  --r-lg: 14px;
+}
+
+/* Google Fonts import */
+@import url("https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@500;600;700&family=Space+Mono:wght@400;700&display=swap");

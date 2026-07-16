@@ -1,0 +1,109 @@
+---
+export const prerender = true;
+import Base from '../layouts/Base.astro';
+---
+<Base title="Programs" description="Tang Soo Do, Aikido, Ju Jitsu, and Modern Arnis at Kinney Karate in St. Petersburg, FL.">
+
+<div class="belt"><span class="w"></span><span class="y"></span><span class="g"></span><span class="b"></span><span class="k"></span></div>
+
+<section class="page-hero">
+  <div class="container">
+    <p class="eyebrow">What We Teach</p>
+    <h1 class="cond">Programs</h1>
+    <p>Four traditional martial arts disciplines, taught with respect and purpose.</p>
+  </div>
+</section>
+
+<section class="pad">
+  <div class="container">
+
+    <div class="program" id="tang-soo-do">
+      <div class="program-head">
+        <span class="belt-dot" style="background:var(--belt-black)"></span>
+        <h2 class="cond">Tang Soo Do</h2>
+      </div>
+      <p>Tang Soo Do is the heart of Kinney Karate's curriculum. A traditional Korean martial art emphasizing kicks, strikes, and blocks, Tang Soo Do builds physical fitness, mental discipline, and deep respect for the art. Students progress through a structured rank system, earning belts that reflect their dedication and skill.</p>
+      <p>Appropriate for all ages and fitness levels. No experience required.</p>
+    </div>
+
+    <div class="program" id="aikido">
+      <div class="program-head">
+        <span class="belt-dot" style="background:var(--belt-brown)"></span>
+        <h2 class="cond">Aikido</h2>
+      </div>
+      <p>Aikido is the art of harmony — using an attacker's energy against them rather than meeting force with force. Students learn throws, joint locks, and redirections that work regardless of size or strength. A deeply practical self-defense system rooted in Japanese budo philosophy.</p>
+    </div>
+
+    <div class="program" id="ju-jitsu">
+      <div class="program-head">
+        <span class="belt-dot" style="background:var(--belt-green)"></span>
+        <h2 class="cond">Ju Jitsu</h2>
+      </div>
+      <p>Ju Jitsu covers ground fighting, takedowns, and joint control — skills that matter when a confrontation goes to the floor. Combined with Tang Soo Do's striking and Aikido's throws, our Ju Jitsu training produces well-rounded martial artists prepared for real-world scenarios.</p>
+    </div>
+
+    <div class="program" id="arnis">
+      <div class="program-head">
+        <span class="belt-dot" style="background:var(--belt-yellow)"></span>
+        <h2 class="cond">Modern Arnis</h2>
+      </div>
+      <p>Modern Arnis is the national martial art of the Philippines, developed by Grandmaster Remy Presas. Students train with rattan sticks, learning single and double weapon techniques that translate directly into empty-hand combat. Fast, dynamic, and highly effective — Arnis is a fan favorite across all skill levels.</p>
+      <p>Arnis sticks are available in the <a href="/store" style="color:var(--red);font-weight:600">school store</a>.</p>
+    </div>
+
+  </div>
+</section>
+
+<section class="cta-band">
+  <div class="container">
+    <h2 class="cond">Your first class is free.</h2>
+    <p>Come try any class — no commitment, no cost.</p>
+    <a href="/students#new" class="btn">New Student Info</a>
+  </div>
+</section>
+
+</Base>
+
+<style>
+.page-hero {
+  background: var(--ink);
+  color: var(--text-invert);
+  padding: 48px 0 40px;
+}
+.page-hero h1 { font-size: 52px; font-weight: 700; margin-bottom: 10px; }
+.page-hero p { color: var(--text-invert-soft); font-size: 15px; }
+
+.pad { padding: 48px 0; }
+.program {
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  background: #fff;
+  padding: 28px 30px;
+  margin-bottom: 20px;
+}
+.program-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+.belt-dot {
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.program h2 { font-size: 28px; font-weight: 700; }
+.program p { color: var(--text-soft); font-size: 15px; margin-bottom: 10px; line-height: 1.7; }
+.program p:last-child { margin-bottom: 0; }
+
+.cta-band {
+  background: var(--red);
+  color: #fff;
+  padding: 40px 0;
+  text-align: center;
+}
+.cta-band h2 { font-size: 36px; font-weight: 700; margin-bottom: 8px; }
+.cta-band p { margin-bottom: 20px; opacity: .85; }
+.cta-band .btn { background: #fff; color: var(--red); }
+.cta-band .btn:hover { background: var(--paper); }
+</style>

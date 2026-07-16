@@ -1,0 +1,158 @@
+---
+// Events are fetched client-side from the calendar Worker so they're always live.
+export const prerender = true;
+import Base from '../layouts/Base.astro';
+---
+<Base title="Events" description="Upcoming Kinney Karate events, tournaments, camps, and lock-ins.">
+
+<div class="belt"><span class="w"></span><span class="y"></span><span class="g"></span><span class="b"></span><span class="k"></span></div>
+
+<section class="page-hero">
+  <div class="container">
+    <p class="eyebrow">What's Coming Up</p>
+    <h1 class="cond">Events</h1>
+    <p>Tournaments, camps, lock-ins, and school events — all from our Google Calendar.</p>
+  </div>
+</section>
+
+<section class="pad">
+  <div class="container">
+    <div id="cal-root">
+      <div class="cal-loading">Loading events&hellip;</div>
+    </div>
+  </div>
+</section>
+
+</Base>
+
+<style>
+.page-hero { background:var(--ink);color:var(--text-invert);padding:48px 0 40px; }
+.page-hero h1 { font-size:52px;font-weight:700;margin-bottom:10px; }
+.page-hero p { color:var(--text-invert-soft);font-size:15px; }
+.pad { padding:48px 0; }
+
+.cal-loading { color:var(--text-soft);font-size:14px;padding:40px 0; }
+.cal-error { color:var(--danger);font-size:14px;padding:40px 0; }
+
+/* Month/agenda toggle */
+.cal-toolbar {
+  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;
+  margin-bottom:24px;
+}
+.cal-toolbar h2 { font-family:var(--font-condensed);text-transform:uppercase;letter-spacing:.03em;font-size:22px;font-weight:700; }
+.cal-tabs { display:flex;gap:4px; }
+.cal-tab {
+  font-size:12.5px;font-weight:600;padding:6px 14px;border-radius:6px;border:1px solid var(--line);
+  background:#fff;cursor:pointer;color:var(--text-soft);transition:.12s;
+}
+.cal-tab.active { background:var(--ink);color:#fff;border-color:var(--ink); }
+
+/* Agenda list */
+.ev-row {
+  display:flex;gap:14px;align-items:flex-start;
+  padding:14px 16px;border-bottom:1px solid var(--line);
+}
+.ev-row:first-child { border-top:1px solid var(--line); }
+.datechip { text-align:center;min-width:44px;flex-shrink:0; }
+.datechip .d { font-family:var(--font-condensed);font-size:26px;font-weight:700;line-height:1; }
+.datechip .m { font-size:11px;color:var(--text-soft);letter-spacing:.08em;text-transform:uppercase; }
+.ev-title { font-weight:600;font-size:14px;margin-bottom:4px; }
+.ev-meta { color:var(--text-soft);font-size:12.5px; }
+.ev-cta { margin-top:8px; }
+.ev-cta a { font-size:12.5px;font-weight:600;color:var(--red); }
+
+/* Month grid */
+.month-grid { display:grid;grid-template-columns:repeat(7,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:var(--r);overflow:hidden; }
+.month-cell { background:#fff;min-height:80px;padding:6px;position:relative; }
+.month-cell.other-month { background:var(--paper-2); }
+.month-cell .day-num { font-size:12px;font-weight:600;color:var(--text-soft);margin-bottom:4px; }
+.month-cell.today .day-num { color:var(--red);font-weight:700; }
+.month-ev { font-size:11px;background:var(--ink);color:#fff;border-radius:3px;padding:2px 5px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+.dow-row { display:grid;grid-template-columns:repeat(7,1fr);margin-bottom:6px; }
+.dow-row span { text-align:center;font-size:11px;font-weight:700;color:var(--text-soft);letter-spacing:.06em;text-transform:uppercase;padding:6px 0; }
+</style>
+
+<script>
+async function initCalendar() {
+  const root = document.getElementById('cal-root');
+  if (!root) return;
+
+  let events = [];
+  try {
+    const res = await fetch('/api/calendar');
+    if (!res.ok) throw new Error('fetch failed');
+    events = await res.json();
+  } catch {
+    root.innerHTML = '<p class="cal-error">Unable to load events right now. Please check back soon.</p>';
+    return;
+  }
+
+  // Sort events by start date
+  events.sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime());
+
+  const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  let view = 'agenda'; // 'agenda' | 'month'
+
+  function renderAgenda() {
+    const now = new Date();
+    const upcoming = events.filter(e => new Date(e.end || e.start) >= now);
+    if (!upcoming.length) return '<p class="cal-loading">No upcoming events.</p>';
+    return upcoming.map(e => {
+      const d = new Date(e.start);
+      const url = e.url ? `<div class="ev-cta"><a href="${e.url}" target="_blank" rel="noopener">Details →</a></div>` : '';
+      return `<div class="ev-row">
+        <div class="datechip">
+          <div class="d">${d.getDate()}</div>
+          <div class="m">${MONTHS[d.getMonth()]}</div>
+        </div>
+        <div class="ev-body">
+          <div class="ev-title">${e.title}</div>
+          <div class="ev-meta">${e.location || ''}</div>
+          ${url}
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  function renderMonth() {
+    const now = new Date();
+    const year = now.getFullYear(), month = now.getMonth();
+    const first = new Date(year, month, 1).getDay();
+    const days = new Date(year, month + 1, 0).getDate();
+    let cells = '';
+    for (let i = 0; i < first; i++) cells += '<div class="month-cell other-month"></div>';
+    for (let d = 1; d <= days; d++) {
+      const isToday = d === now.getDate();
+      const dayEvents = events.filter(e => {
+        const ed = new Date(e.start);
+        return ed.getFullYear() === year && ed.getMonth() === month && ed.getDate() === d;
+      });
+      const evHtml = dayEvents.map(e => `<div class="month-ev" title="${e.title}">${e.title}</div>`).join('');
+      cells += `<div class="month-cell${isToday ? ' today' : ''}"><div class="day-num">${d}</div>${evHtml}</div>`;
+    }
+    const dowRow = DAYS.map(d => `<span>${d}</span>`).join('');
+    return `<div class="dow-row">${dowRow}</div><div class="month-grid">${cells}</div>`;
+  }
+
+  function render() {
+    const monthLabel = new Date().toLocaleString('en-US', { month: 'long', year: 'numeric' });
+    root.innerHTML = `
+      <div class="cal-toolbar">
+        <h2>${view === 'month' ? monthLabel : 'Upcoming Events'}</h2>
+        <div class="cal-tabs">
+          <button class="cal-tab${view==='agenda'?' active':''}" data-v="agenda">Agenda</button>
+          <button class="cal-tab${view==='month'?' active':''}" data-v="month">Month</button>
+        </div>
+      </div>
+      <div id="cal-body">${view === 'month' ? renderMonth() : renderAgenda()}</div>`;
+    root.querySelectorAll('.cal-tab').forEach(btn => {
+      btn.addEventListener('click', () => { view = (btn as HTMLButtonElement).dataset.v as any; render(); });
+    });
+  }
+
+  render();
+}
+
+document.addEventListener('DOMContentLoaded', initCalendar);
+</script>

@@ -1,0 +1,360 @@
+---
+// Admin console — gated by Cloudflare Access.
+// CF Access verifies the JWT before this page is served; no auth code needed here.
+export const prerender = false;
+import Base from '../../layouts/Base.astro';
+---
+<Base title="Admin Console">
+<style>
+  body { background: var(--paper-2); }
+  .admin-layout { display: flex; min-height: calc(100vh - 120px); }
+  .admin-nav {
+    width: 220px; flex-shrink: 0;
+    background: var(--ink); color: var(--text-invert);
+    padding: 24px 0;
+  }
+  .admin-nav .nav-section { padding: 0 16px; margin-bottom: 24px; }
+  .admin-nav .nav-label {
+    font-size: 10px; font-weight: 700; letter-spacing: .12em;
+    text-transform: uppercase; color: var(--text-invert-soft);
+    margin-bottom: 8px; padding: 0 4px;
+  }
+  .admin-nav a {
+    display: block; padding: 8px 12px; border-radius: 6px;
+    font-size: 13.5px; color: var(--text-invert-soft); font-weight: 500;
+    transition: .12s; margin-bottom: 2px;
+  }
+  .admin-nav a:hover, .admin-nav a.active { background: var(--ink-2); color: #fff; }
+  .admin-main { flex: 1; padding: 32px; overflow-x: hidden; }
+  .admin-main h1 { font-family: var(--font-condensed); text-transform: uppercase; font-size: 28px; font-weight: 700; margin-bottom: 24px; }
+
+  /* Tables */
+  .data-table { width: 100%; border-collapse: collapse; font-size: 13.5px; background: #fff; border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; }
+  .data-table th { background: var(--ink); color: #fff; padding: 10px 14px; text-align: left; font-weight: 600; font-size: 12px; letter-spacing: .04em; }
+  .data-table td { padding: 10px 14px; border-bottom: 1px solid var(--line); }
+  .data-table tr:last-child td { border-bottom: none; }
+  .data-table tr:hover td { background: var(--paper-2); }
+
+  /* Status badges */
+  .badge { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 999px; }
+  .badge.paid { background: #d1fae5; color: #065f46; }
+  .badge.in_production { background: #fef3c7; color: #92400e; }
+  .badge.ready { background: #dbeafe; color: #1e40af; }
+  .badge.picked_up { background: var(--paper-2); color: var(--text-soft); }
+  .badge.mto { background: #fef3c7; color: #92400e; }
+  .badge.low { background: #fee2e2; color: #991b1b; }
+  .badge.ok { background: #d1fae5; color: #065f46; }
+
+  .btn-sm { font-size: 12px; padding: 5px 10px; }
+
+  /* Scan panel */
+  .scan-panel { background: #fff; border: 1px solid var(--line); border-radius: var(--r-lg); padding: 24px; max-width: 480px; margin-bottom: 24px; }
+  .scan-panel h2 { font-weight: 700; font-size: 18px; margin-bottom: 14px; }
+  .scan-input { display: flex; gap: 8px; }
+  .scan-input input { flex: 1; border: 2px solid var(--ink); border-radius: var(--r); padding: 10px 14px; font-size: 15px; font-family: var(--font-mono); }
+  .scan-input input:focus { outline: none; border-color: var(--red); }
+  .scan-result { margin-top: 14px; font-size: 14px; }
+  .scan-mode-btns { display: flex; gap: 8px; margin-bottom: 12px; }
+  .mode-btn { padding: 8px 16px; border-radius: var(--r); font-weight: 600; font-size: 13px; border: 2px solid var(--line); background: #fff; cursor: pointer; }
+  .mode-btn.active { border-color: var(--ink); background: var(--ink); color: #fff; }
+
+  .tabs { display: flex; gap: 4px; margin-bottom: 24px; }
+  .tab { padding: 8px 18px; border-radius: 6px; font-weight: 600; font-size: 13px; border: 1px solid var(--line); background: #fff; cursor: pointer; color: var(--text-soft); }
+  .tab.active { background: var(--ink); color: #fff; border-color: var(--ink); }
+
+  #loading { color: var(--text-soft); font-size: 14px; padding: 20px 0; }
+  .toggle-row { display: flex; align-items: center; gap: 14px; margin-bottom: 16px; }
+  .toggle { position: relative; width: 44px; height: 24px; }
+  .toggle input { opacity: 0; width: 0; height: 0; }
+  .toggle-slider { position: absolute; inset: 0; background: var(--line); border-radius: 24px; cursor: pointer; transition: .2s; }
+  .toggle input:checked + .toggle-slider { background: var(--ok); }
+  .toggle-slider::before { content: ''; position: absolute; width: 18px; height: 18px; left: 3px; bottom: 3px; background: #fff; border-radius: 50%; transition: .2s; }
+  .toggle input:checked + .toggle-slider::before { transform: translateX(20px); }
+</style>
+
+<div class="admin-layout">
+  <nav class="admin-nav">
+    <div class="nav-section">
+      <p class="nav-label">Inventory</p>
+      <a href="#" data-panel="inventory" class="active">Stock &amp; Scanning</a>
+      <a href="#" data-panel="movements">Movements Log</a>
+    </div>
+    <div class="nav-section">
+      <p class="nav-label">Orders</p>
+      <a href="#" data-panel="orders">All Orders</a>
+      <a href="#" data-panel="queue">Made-to-Order Queue</a>
+    </div>
+    <div class="nav-section">
+      <p class="nav-label">Catalog</p>
+      <a href="#" data-panel="products">Products</a>
+    </div>
+    <div class="nav-section">
+      <p class="nav-label">Site</p>
+      <a href="#" data-panel="settings">Settings</a>
+    </div>
+  </nav>
+
+  <main class="admin-main">
+    <div id="panel-content">
+      <p id="loading">Loading…</p>
+    </div>
+  </main>
+</div>
+
+<script>
+type Panel = 'inventory'|'movements'|'orders'|'queue'|'products'|'settings';
+let currentPanel: Panel = 'inventory';
+
+const navLinks = document.querySelectorAll<HTMLAnchorElement>('[data-panel]');
+navLinks.forEach(a => {
+  a.addEventListener('click', e => {
+    e.preventDefault();
+    navLinks.forEach(n => n.classList.remove('active'));
+    a.classList.add('active');
+    loadPanel(a.dataset.panel as Panel);
+  });
+});
+
+async function api(path: string, opts?: RequestInit) {
+  const res = await fetch(path, opts);
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
+function fmt(cents: number | null) { return cents ? '$' + (cents/100).toFixed(0) : '—'; }
+function esc(s: any) { return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// ── PANELS ────────────────────────────────────────────────────────────────────
+
+async function loadPanel(panel: Panel) {
+  currentPanel = panel;
+  const el = document.getElementById('panel-content')!;
+  el.innerHTML = '<p id="loading">Loading…</p>';
+
+  if (panel === 'inventory') await renderInventory(el);
+  else if (panel === 'movements') await renderMovements(el);
+  else if (panel === 'orders') await renderOrders(el);
+  else if (panel === 'queue') await renderQueue(el);
+  else if (panel === 'products') await renderProducts(el);
+  else if (panel === 'settings') await renderSettings(el);
+}
+
+async function renderInventory(el: HTMLElement) {
+  const rows = await api('/admin/api/inventory');
+  let scanMode = 'check_in';
+
+  el.innerHTML = `
+    <h1>Stock &amp; Barcode Scanning</h1>
+    <div class="scan-panel">
+      <h2>Scan Item</h2>
+      <div class="scan-mode-btns">
+        <button class="mode-btn active" data-mode="check_in">Check In (received)</button>
+        <button class="mode-btn" data-mode="take_out">Take Out (in-person sale)</button>
+      </div>
+      <div class="scan-input">
+        <input type="text" id="scan-field" placeholder="Scan or type barcode…" autofocus />
+        <button class="btn" id="scan-submit">Scan</button>
+      </div>
+      <div class="scan-result" id="scan-result"></div>
+    </div>
+    <table class="data-table">
+      <thead><tr><th>Product</th><th>Size</th><th>Color</th><th>Barcode</th><th>On Hand</th><th>Status</th></tr></thead>
+      <tbody>${rows.map((r: any) => {
+        const low = r.on_hand <= r.low_stock_threshold;
+        const badge = r.on_hand < 0 ? `<span class="badge low">Backordered (${Math.abs(r.on_hand)})</span>`
+          : low ? `<span class="badge low">Low (${r.on_hand})</span>`
+          : `<span class="badge ok">${r.on_hand} in stock</span>`;
+        return `<tr>
+          <td>${esc(r.product_name)}</td>
+          <td>${esc(r.size||'—')}</td>
+          <td>${esc(r.color||'—')}</td>
+          <td class="mono">${esc(r.barcode||'—')}</td>
+          <td>${r.on_hand}</td>
+          <td>${badge}</td>
+        </tr>`;
+      }).join('')}</tbody>
+    </table>`;
+
+  el.querySelectorAll('.mode-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      el.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      scanMode = (btn as HTMLButtonElement).dataset.mode!;
+    });
+  });
+
+  async function doScan() {
+    const field = document.getElementById('scan-field') as HTMLInputElement;
+    const resultEl = document.getElementById('scan-result')!;
+    const barcode = field.value.trim();
+    if (!barcode) return;
+    try {
+      const r = await api('/admin/api/inventory/scan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ barcode, mode: scanMode, staff: 'admin' }),
+      });
+      if (r.unknown) {
+        resultEl.innerHTML = `<span style="color:var(--warn)">Unknown barcode: <b>${esc(barcode)}</b>. <button class="btn btn-sm" id="map-btn">Map to variant</button></span>`;
+        document.getElementById('map-btn')?.addEventListener('click', () => {
+          const vid = prompt('Variant ID to map this barcode to:');
+          if (vid) api('/admin/api/inventory/map', {
+            method: 'POST', headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({ barcode, variant_id: vid }),
+          }).then(() => { resultEl.innerHTML = '<span style="color:var(--ok)">Barcode mapped!</span>'; });
+        });
+      } else {
+        resultEl.innerHTML = `<span style="color:var(--ok)">✓ ${esc(r.variant.product_name)} ${esc(r.variant.size||'')} — on hand: <b>${r.on_hand}</b></span>`;
+        // Refresh table row
+        loadPanel('inventory');
+      }
+    } catch {
+      resultEl.innerHTML = '<span style="color:var(--danger)">Scan failed. Check connection.</span>';
+    }
+    field.value = '';
+    field.focus();
+  }
+
+  document.getElementById('scan-submit')?.addEventListener('click', doScan);
+  document.getElementById('scan-field')?.addEventListener('keydown', e => { if (e.key === 'Enter') doScan(); });
+}
+
+async function renderMovements(el: HTMLElement) {
+  const rows = await api('/admin/api/inventory/movements?limit=100');
+  el.innerHTML = `
+    <h1>Inventory Movements</h1>
+    <table class="data-table">
+      <thead><tr><th>Time</th><th>Product</th><th>Size</th><th>Δ Qty</th><th>Reason</th><th>Source</th><th>Staff</th><th>Order</th></tr></thead>
+      <tbody>${rows.map((r: any) => `<tr>
+        <td>${new Date(r.created_at).toLocaleString()}</td>
+        <td>${esc(r.product_name)}</td>
+        <td>${esc(r.size||'—')}</td>
+        <td style="font-weight:700;color:${r.delta>0?'var(--ok)':'var(--danger)'}">${r.delta > 0 ? '+' : ''}${r.delta}</td>
+        <td>${esc(r.reason)}</td>
+        <td>${esc(r.source)}</td>
+        <td>${esc(r.staff||'—')}</td>
+        <td class="mono" style="font-size:12px">${esc(r.order_id||'—')}</td>
+      </tr>`).join('')}</tbody>
+    </table>`;
+}
+
+async function renderOrders(el: HTMLElement) {
+  const rows = await api('/admin/api/orders?limit=100');
+  el.innerHTML = `
+    <h1>Orders</h1>
+    <table class="data-table">
+      <thead><tr><th>Date</th><th>Student</th><th>Location</th><th>Instructor</th><th>Total</th><th>Status</th><th>Actions</th></tr></thead>
+      <tbody>${rows.map((o: any) => `<tr>
+        <td>${new Date(o.created_at).toLocaleDateString()}</td>
+        <td>${esc(o.student_name)}</td>
+        <td>${esc(o.location)}</td>
+        <td>${esc(o.instructor_name)}</td>
+        <td>${fmt(o.total_cents)}</td>
+        <td><span class="badge ${o.status}">${o.status}</span></td>
+        <td>
+          <select data-order-id="${esc(o.id)}" class="status-select" style="font-size:12px;padding:4px 8px;border:1px solid var(--line);border-radius:4px">
+            ${['paid','in_production','ready','picked_up','canceled'].map(s => `<option${s===o.status?' selected':''}>${s}</option>`).join('')}
+          </select>
+        </td>
+      </tr>`).join('')}</tbody>
+    </table>`;
+
+  el.querySelectorAll('.status-select').forEach(sel => {
+    sel.addEventListener('change', async (e) => {
+      const s = e.target as HTMLSelectElement;
+      await api(`/admin/api/orders/${s.dataset.orderId}/status`, {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ status: s.value }),
+      });
+    });
+  });
+}
+
+async function renderQueue(el: HTMLElement) {
+  const rows = await api('/admin/api/queue');
+  el.innerHTML = `
+    <h1>Made-to-Order Queue</h1>
+    <table class="data-table">
+      <thead><tr><th>Due By</th><th>Item</th><th>Sizes</th><th>Color</th><th>Student</th><th>Location</th><th>Instructor</th><th>Status</th></tr></thead>
+      <tbody>${rows.map((i: any) => {
+        const compStr = i.components?.map((c: any) => `${c.component_name}: ${c.chosen_size}`).join(', ') || (i.size || '—');
+        const badge = i.backordered ? '<span class="badge low">Backordered</span>' : '<span class="badge mto">MTO</span>';
+        return `<tr>
+          <td>${i.produce_by || '—'}</td>
+          <td>${esc(i.name_snapshot)}</td>
+          <td style="font-size:12px">${esc(compStr)}</td>
+          <td>${esc(i.color||'—')}</td>
+          <td>${esc(i.student_name)}</td>
+          <td>${esc(i.location)}</td>
+          <td>${esc(i.instructor_name)}</td>
+          <td>${badge}</td>
+        </tr>`;
+      }).join('')}</tbody>
+    </table>`;
+}
+
+async function renderProducts(el: HTMLElement) {
+  const rows = await api('/admin/api/products');
+  el.innerHTML = `
+    <h1>Products</h1>
+    <table class="data-table">
+      <thead><tr><th>Name</th><th>Category</th><th>Kind</th><th>Fulfillment</th><th>Special Order</th><th>Active</th></tr></thead>
+      <tbody>${rows.map((p: any) => `<tr>
+        <td><a href="/store/${esc(p.slug)}" target="_blank" style="color:var(--red)">${esc(p.name)}</a></td>
+        <td>${esc(p.category)}</td>
+        <td>${esc(p.kind)}</td>
+        <td>${esc(p.fulfillment_type)}</td>
+        <td>${p.special_order ? 'Yes' : 'No'}</td>
+        <td>${p.active ? '✓' : '—'}</td>
+      </tr>`).join('')}</tbody>
+    </table>`;
+}
+
+async function renderSettings(el: HTMLElement) {
+  const s = await api('/admin/api/settings');
+  el.innerHTML = `
+    <h1>Site Settings</h1>
+    <div style="background:#fff;border:1px solid var(--line);border-radius:var(--r-lg);padding:28px;max-width:540px">
+      <div class="toggle-row">
+        <label class="toggle">
+          <input type="checkbox" id="backorders-toggle" ${s.allow_backorders ? 'checked' : ''}>
+          <span class="toggle-slider"></span>
+        </label>
+        <div>
+          <strong>Accept out-of-stock orders (backorders)</strong>
+          <p style="font-size:13px;color:var(--text-soft)">When ON: sold-out stocked items remain purchasable and enter the queue. When OFF: show "Out of stock" and block add-to-cart.</p>
+        </div>
+      </div>
+      <div class="toggle-row" style="margin-top:20px">
+        <label class="toggle">
+          <input type="checkbox" id="announce-toggle" ${s.announcement_on ? 'checked' : ''}>
+          <span class="toggle-slider"></span>
+        </label>
+        <strong>Show announcement bar</strong>
+      </div>
+      <div style="margin-top:12px">
+        <label style="font-size:13px;font-weight:600;display:block;margin-bottom:6px">Announcement text (HTML allowed)</label>
+        <textarea id="announce-text" rows="3" style="width:100%;border:1px solid var(--line);border-radius:var(--r);padding:10px;font-size:14px;font-family:var(--font-body)">${esc(s.announcement_text||'')}</textarea>
+      </div>
+      <button class="btn" style="margin-top:16px" id="save-settings">Save Settings</button>
+      <span id="save-msg" style="margin-left:12px;font-size:13px;color:var(--ok)"></span>
+    </div>`;
+
+  document.getElementById('save-settings')?.addEventListener('click', async () => {
+    const msg = document.getElementById('save-msg')!;
+    await api('/admin/api/settings', {
+      method: 'PUT', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        allow_backorders: (document.getElementById('backorders-toggle') as HTMLInputElement).checked ? 1 : 0,
+        announcement_on: (document.getElementById('announce-toggle') as HTMLInputElement).checked ? 1 : 0,
+        announcement_text: (document.getElementById('announce-text') as HTMLTextAreaElement).value,
+      }),
+    });
+    msg.textContent = 'Saved!';
+    setTimeout(() => { msg.textContent = ''; }, 2000);
+  });
+}
+
+// Initial load
+loadPanel('inventory');
+</script>

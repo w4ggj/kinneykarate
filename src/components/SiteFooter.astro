@@ -1,0 +1,109 @@
+---
+---
+<footer class="sitefooter">
+  <div class="belt"><span class="w"></span><span class="y"></span><span class="g"></span><span class="b"></span><span class="k"></span></div>
+  <div class="container footer-inner">
+    <div class="footer-brand">
+      <span class="mark">KK</span>
+      <b>Kinney Karate</b>
+      <p>Discipline. Self-Defense. Confidence.</p>
+      <p class="since">Est. 1986</p>
+    </div>
+    <nav class="footer-links">
+      <div>
+        <h4>Learn</h4>
+        <a href="/programs">Programs</a>
+        <a href="/locations">Locations &amp; Schedule</a>
+        <a href="/students">Students</a>
+        <a href="/events">Events</a>
+      </div>
+      <div>
+        <h4>About</h4>
+        <a href="/about">Our Story</a>
+        <a href="/about#instructors">Instructors</a>
+        <a href="/about#contact">Contact</a>
+        <a href="/about#memorial">Memorial Fund</a>
+      </div>
+      <div>
+        <h4>More</h4>
+        <a href="/store">Store</a>
+        <a href="/news">News &amp; Articles</a>
+        <a href="https://mailchimp.com" rel="noopener" target="_blank">Newsletters</a>
+        <a href="https://balancemartialarts.com" rel="noopener" target="_blank">Balance Martial Arts</a>
+      </div>
+    </nav>
+  </div>
+  <div class="footer-legal">
+    <span>© {new Date().getFullYear()} Kinney Karate. All rights reserved.</span>
+    <span>St. Petersburg, FL</span>
+  </div>
+</footer>
+
+<style>
+.sitefooter {
+  background: var(--ink);
+  color: var(--text-invert-soft);
+  margin-top: 80px;
+}
+.footer-inner {
+  display: flex;
+  gap: 60px;
+  padding: 48px 20px 40px;
+  flex-wrap: wrap;
+}
+.footer-brand {
+  min-width: 180px;
+}
+.footer-brand .mark {
+  width: 34px; height: 34px; border-radius: 7px;
+  background: var(--red);
+  display: grid; place-items: center;
+  font-family: var(--font-condensed); font-weight: 700; color: #fff; font-size: 16px;
+  margin-bottom: 10px;
+}
+.footer-brand b {
+  display: block;
+  font-family: var(--font-condensed);
+  text-transform: uppercase; letter-spacing: .05em;
+  font-weight: 700; font-size: 17px;
+  color: var(--text-invert);
+  margin-bottom: 6px;
+}
+.footer-brand p { font-size: 13px; margin-bottom: 4px; }
+.footer-brand .since { margin-top: 14px; font-size: 12px; }
+
+.footer-links {
+  display: flex;
+  gap: 40px;
+  flex-wrap: wrap;
+  flex: 1;
+}
+.footer-links div { min-width: 120px; }
+.footer-links h4 {
+  font-family: var(--font-condensed);
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  font-size: 12px;
+  color: var(--text-invert);
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+.footer-links a {
+  display: block;
+  font-size: 13px;
+  margin-bottom: 8px;
+  transition: color .12s;
+}
+.footer-links a:hover { color: var(--text-invert); }
+
+.footer-legal {
+  border-top: 1px solid var(--line-ink);
+  padding: 14px 20px;
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  font-size: 12px;
+  max-width: 1120px;
+  margin: 0 auto;
+}
+</style>

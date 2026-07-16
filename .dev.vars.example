@@ -1,0 +1,11 @@
+# Copy to .dev.vars and fill in values for local development.
+# Never commit .dev.vars — it is gitignored.
+# Joe provisions live values via: wrangler secret put <BINDING_NAME>
+
+STRIPE_SECRET_KEY=sk_test_TODO
+STRIPE_WEBHOOK_SECRET=whsec_TODO
+RESEND_API_KEY=re_TODO
+GOOGLE_CALENDAR_ID=TODO@group.calendar.google.com
+GOOGLE_CALENDAR_API_KEY=TODO
+TURNSTILE_SECRET=TODO
+# TURNSTILE_SITE_KEY goes in astro env (public); set in wrangler.toml [vars] for Pages

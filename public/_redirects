@@ -1,0 +1,28 @@
+# Cloudflare Pages redirects — old WordPress URLs → new routes
+# Format: old-path  new-path  status-code
+
+/our-story/                  /about#story       301
+/our-story                   /about#story       301
+/our-instructors/            /about#instructors 301
+/our-instructors             /about#instructors 301
+/contact/                    /about#contact     301
+/contact                     /about#contact     301
+/new-student-information/    /students#new      301
+/new-student-information     /students#new      301
+/student-login/              /students          301
+/student-login               /students          301
+/programs/tang-soo-do/       /programs          301
+/programs/aikido/            /programs          301
+/programs/ju-jitsu/          /programs          301
+/programs/modern-arnis/      /programs          301
+/locations/                  /locations         301
+/schedule/                   /locations         301
+/schedule                    /locations         301
+/shop/                       /store             301
+/shop                        /store             301
+/events/                     /events            301
+/news/                       /news              301
+/blog/                       /news              301
+/blog                        /news              301
+/business-directory/         /about             301
+/submit-listing/             /about             301

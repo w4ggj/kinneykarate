@@ -1,0 +1,193 @@
+---
+export const prerender = true;
+import Base from '../layouts/Base.astro';
+---
+<Base title="Home" description="Kinney Karate — Tang Soo Do, Aikido, Ju Jitsu & Modern Arnis. St. Petersburg, FL. First class free.">
+
+<!-- Belt ribbon -->
+<div class="belt"><span class="w"></span><span class="y"></span><span class="g"></span><span class="b"></span><span class="k"></span></div>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="container">
+    <p class="eyebrow">St. Petersburg, FL &mdash; Est. 1986</p>
+    <h1 class="cond">Train Hard.<br><span class="r">Live Well.</span></h1>
+    <p class="sub">Kinney Karate offers traditional martial arts for all ages &mdash; Tang Soo Do, Aikido, Ju Jitsu, and Modern Arnis. Build discipline, self-defense skills, and lasting confidence.</p>
+    <div class="herocta">
+      <a href="/programs" class="btn">Explore Programs</a>
+      <a href="/locations" class="btn ghost">Locations &amp; Schedule</a>
+      <span class="since"><b>38+</b> years of martial arts excellence</span>
+    </div>
+  </div>
+</section>
+
+<!-- Value props -->
+<section class="props pad">
+  <div class="container">
+    <p class="kick">Why Kinney Karate</p>
+    <div class="grid3">
+      <div class="prop-card">
+        <div class="prop-icon" style="background:var(--belt-black)"></div>
+        <h3 class="cond">Discipline</h3>
+        <p>Traditional arts taught with respect and structure, building habits that carry into every part of life.</p>
+      </div>
+      <div class="prop-card">
+        <div class="prop-icon" style="background:var(--red)"></div>
+        <h3 class="cond">Self-Defense</h3>
+        <p>Practical skills drawn from Tang Soo Do, Aikido, Ju Jitsu, and Arnis — tested, not theoretical.</p>
+      </div>
+      <div class="prop-card">
+        <div class="prop-icon" style="background:var(--belt-green)"></div>
+        <h3 class="cond">Confidence</h3>
+        <p>Students leave every class standing taller. Progress through ranks builds real, earned self-assurance.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- First class free -->
+<section class="free-class">
+  <div class="container free-class-inner">
+    <div>
+      <p class="eyebrow">New Students</p>
+      <h2 class="cond">Your First Class is Free</h2>
+      <p>Come see what Kinney Karate is all about — no commitment, no cost. Just show up ready to learn.</p>
+    </div>
+    <div>
+      <a href="/students#new" class="btn">Get Started</a>
+    </div>
+  </div>
+</section>
+
+<!-- Programs preview -->
+<section class="programs pad">
+  <div class="container">
+    <p class="kick">Programs</p>
+    <div class="grid4">
+      {[
+        { slug:'tang-soo-do', label:'Tang Soo Do', color:'var(--belt-black)', desc:'Traditional Korean karate — the heart of our curriculum.' },
+        { slug:'aikido',      label:'Aikido',      color:'var(--belt-brown)', desc:'Harmony and redirection — elegant, effective self-defense.' },
+        { slug:'ju-jitsu',   label:'Ju Jitsu',    color:'var(--belt-green)', desc:'Ground techniques and joint locks for all body types.' },
+        { slug:'arnis',      label:'Modern Arnis', color:'var(--belt-yellow)', desc:'Filipino stick &amp; blade art — fast, fun, and formidable.' },
+      ].map(p => (
+        <a href={`/programs#${p.slug}`} class="prog">
+          <div class="rank" style={`background:${p.color}`}></div>
+          <p class="pt">{p.label}</p>
+          <p class="pd" set:html={p.desc} />
+        </a>
+      ))}
+    </div>
+    <div style="margin-top:20px;text-align:center">
+      <a href="/programs" class="btn dark">View All Programs</a>
+    </div>
+  </div>
+</section>
+
+<!-- Locations preview -->
+<section class="locs pad" style="background:var(--paper)">
+  <div class="container">
+    <p class="kick">Locations</p>
+    <div class="grid3">
+      {[
+        { name: 'Roberts Recreation Center', note: 'Mon / Wed / Fri', city: 'St. Petersburg' },
+        { name: 'Enoch Davis Recreation Center', note: 'Tue / Thu', city: 'St. Petersburg' },
+        { name: 'Balance Dojo', note: 'Advanced classes — see schedule', city: 'St. Petersburg' },
+      ].map(l => (
+        <div class="loc-card">
+          <h3>{l.name}</h3>
+          <p>{l.note}</p>
+          <p class="city">{l.city}, FL</p>
+        </div>
+      ))}
+    </div>
+    <div style="margin-top:20px;text-align:center">
+      <a href="/locations" class="btn dark">Full Schedule</a>
+    </div>
+  </div>
+</section>
+
+<!-- Store preview -->
+<section class="store-preview pad">
+  <div class="container">
+    <p class="kick">Student Store</p>
+    <p style="margin-bottom:20px;max-width:560px;">Official Kinney Karate uniforms, sparring gear, t-shirts, and more. Only KK-branded gear is permitted in class.</p>
+    <a href="/store" class="btn">Shop the Store</a>
+  </div>
+</section>
+
+</Base>
+
+<style>
+.hero {
+  background: var(--ink);
+  color: var(--text-invert);
+  padding: 60px 0 56px;
+}
+.hero h1 {
+  font-size: clamp(46px, 8vw, 72px);
+  line-height: .96;
+  margin-bottom: 18px;
+}
+.hero .r { color: var(--red); }
+.hero .sub {
+  max-width: 480px;
+  color: var(--text-invert-soft);
+  font-size: 15px;
+  margin-bottom: 28px;
+}
+.herocta { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.since { margin-left: auto; text-align: right; color: var(--text-invert-soft); font-size: 12px; }
+.since b { display: block; font-family: var(--font-condensed); font-size: 32px; color: #fff; }
+
+.pad { padding: 48px 0; }
+
+.prop-card {
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  padding: 22px;
+  background: #fff;
+}
+.prop-icon { width: 32px; height: 6px; border-radius: 3px; margin-bottom: 14px; }
+.prop-card h3 { font-size: 20px; font-weight: 700; margin-bottom: 8px; }
+.prop-card p { color: var(--text-soft); font-size: 14px; }
+
+.free-class {
+  background: var(--red);
+  color: #fff;
+  padding: 40px 0;
+}
+.free-class-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+.free-class h2 { font-size: 36px; font-weight: 700; margin-bottom: 6px; }
+.free-class p { font-size: 14px; opacity: .85; }
+.free-class .btn { background: #fff; color: var(--red); font-size: 14px; }
+.free-class .btn:hover { background: var(--paper); }
+
+.prog {
+  display: block;
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  padding: 18px;
+  background: #fff;
+  transition: box-shadow .15s;
+}
+.prog:hover { box-shadow: 0 4px 16px -8px rgba(20,23,27,.18); }
+.prog .rank { width: 28px; height: 6px; border-radius: 3px; margin-bottom: 14px; }
+.prog .pt { font-family: var(--font-condensed); text-transform: uppercase; font-weight: 700; font-size: 19px; letter-spacing: .02em; margin-bottom: 6px; }
+.prog .pd { color: var(--text-soft); font-size: 13px; }
+
+.loc-card {
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  padding: 20px;
+  background: #fff;
+}
+.loc-card h3 { font-weight: 600; font-size: 15px; margin-bottom: 6px; }
+.loc-card p { font-size: 13px; color: var(--text-soft); }
+.loc-card .city { margin-top: 4px; }
+</style>

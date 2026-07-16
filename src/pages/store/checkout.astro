@@ -1,0 +1,244 @@
+---
+export const prerender = true;
+import Base from '../../layouts/Base.astro';
+
+const locations = [
+  'Roberts Recreation Center',
+  'Enoch Davis Recreation Center',
+  'Balance Dojo',
+  'Kinney Karate D&D',
+];
+---
+<Base title="Checkout">
+
+<div class="belt"><span class="w"></span><span class="y"></span><span class="g"></span><span class="b"></span><span class="k"></span></div>
+
+<section class="page-hero">
+  <div class="container">
+    <p class="eyebrow">Almost there</p>
+    <h1 class="cond">Checkout</h1>
+  </div>
+</section>
+
+<section class="pad">
+  <div class="container checkout-layout">
+    <!-- Order summary -->
+    <div class="order-summary">
+      <h2>Your Order</h2>
+      <div id="cart-summary">
+        <p class="empty-cart">Your cart is empty. <a href="/store" style="color:var(--red)">Browse the store →</a></p>
+      </div>
+    </div>
+
+    <!-- Pickup details -->
+    <div class="checkout-form-wrap">
+      <h2>Pickup Details</h2>
+      <p class="pickup-note">All orders are picked up in class. We'll route your order to the right instructor.</p>
+      <form id="checkout-form">
+        <div class="field">
+          <label for="student-name">Student name *</label>
+          <input type="text" id="student-name" name="student_name" required autocomplete="name" />
+        </div>
+        <div class="field">
+          <label for="contact-email">Email address *</label>
+          <input type="email" id="contact-email" name="contact_email" required autocomplete="email" />
+        </div>
+        <div class="field">
+          <label for="location">Location *</label>
+          <select id="location" name="location" required>
+            <option value="">Select your location…</option>
+            {locations.map(l => <option value={l}>{l}</option>)}
+          </select>
+        </div>
+        <div class="field">
+          <label for="instructor">Instructor name *</label>
+          <input type="text" id="instructor" name="instructor_name" required placeholder="Your instructor's name" />
+        </div>
+
+        <div class="totals" id="totals"></div>
+
+        <div id="checkout-error" class="checkout-error hidden"></div>
+        <button type="submit" class="btn block" id="submit-btn" style="font-size:16px;padding:16px">
+          Continue to Payment →
+        </button>
+        <p class="secure-note">Payments processed securely by Stripe. Card info never touches our server.</p>
+      </form>
+    </div>
+  </div>
+</section>
+
+</Base>
+
+<style>
+.page-hero { background:var(--ink);color:var(--text-invert);padding:40px 0 32px; }
+.page-hero h1 { font-size:46px;font-weight:700;margin-bottom:8px; }
+.pad { padding:40px 0 80px; }
+
+.checkout-layout {
+  display: grid;
+  grid-template-columns: 1fr 1.4fr;
+  gap: 40px;
+  align-items: start;
+}
+@media (max-width: 720px) { .checkout-layout { grid-template-columns: 1fr; } }
+
+.order-summary, .checkout-form-wrap { }
+.order-summary h2, .checkout-form-wrap h2 { font-weight:700;font-size:20px;margin-bottom:16px; }
+.empty-cart { color:var(--text-soft);font-size:14px; }
+
+.cart-line {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  padding: 12px 0; border-bottom: 1px solid var(--line); font-size: 14px;
+}
+.cart-line .name { font-weight: 600; }
+.cart-line .meta { font-size: 12px; color: var(--text-soft); margin-top: 2px; }
+.cart-line .price { font-weight: 700; flex-shrink: 0; margin-left: 12px; }
+
+.pickup-note { font-size: 13px; color: var(--text-soft); margin-bottom: 20px; }
+.checkout-form-wrap { background: #fff; border: 1px solid var(--line); border-radius: var(--r-lg); padding: 28px; }
+
+.field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 16px; }
+.field label { font-size: 13px; font-weight: 600; }
+.field input, .field select {
+  border: 1px solid var(--line); border-radius: var(--r); padding: 10px 12px;
+  font-family: var(--font-body); font-size: 14px; color: var(--text); background: #fff; width: 100%;
+}
+.field input:focus, .field select:focus { outline: 2px solid var(--red); border-color: transparent; outline-offset: 0; }
+
+.totals { border-top: 1px solid var(--line); margin: 20px 0; padding-top: 14px; font-size: 14px; }
+.total-row { display: flex; justify-content: space-between; margin-bottom: 6px; }
+.total-row.grand { font-weight: 700; font-size: 16px; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--line); }
+
+.checkout-error { color: var(--danger); font-size: 13px; margin-bottom: 12px; padding: 10px 14px; background: #fef2f2; border-radius: var(--r); }
+.checkout-error.hidden { display: none; }
+.secure-note { font-size: 11.5px; color: var(--text-soft); margin-top: 10px; text-align: center; }
+</style>
+
+<script>
+const SURCHARGE_RATE = 0.037;
+const cart: any[] = window.__kk_cart || [];
+
+function fmt(cents: number) { return '$' + (cents / 100).toFixed(2); }
+
+function renderSummary() {
+  const el = document.getElementById('cart-summary');
+  if (!el) return;
+  if (!cart.length) return;
+  el.innerHTML = cart.map(item => {
+    const meta = [
+      item.size ? `Size: ${item.size}` : '',
+      item.color ? `Color: ${item.color}` : '',
+      item.addon_duffle ? 'Duffle bag add-on' : '',
+    ].filter(Boolean).join(' · ');
+    const compLines = item.components
+      ? Object.entries(item.components).map(([k, v]) => `${k}: ${v}`).join(', ')
+      : '';
+    return `<div class="cart-line">
+      <div>
+        <div class="name">${item.product_name}</div>
+        ${meta ? `<div class="meta">${meta}</div>` : ''}
+        ${compLines ? `<div class="meta">${compLines}</div>` : ''}
+      </div>
+      <div class="price">—</div>
+    </div>`;
+  }).join('');
+}
+
+async function loadPricesAndRender() {
+  // Fetch prices server-side for each product
+  const summaryEl = document.getElementById('cart-summary');
+  const totalsEl = document.getElementById('totals');
+  if (!cart.length || !summaryEl) return;
+
+  let subtotal = 0;
+
+  const priceMap: Record<string, number> = {};
+  for (const item of cart) {
+    try {
+      const res = await fetch(`/api/products/${item.product_slug}`);
+      if (!res.ok) continue;
+      const data = await res.json();
+      let price = 0;
+      if (data.product.kind === 'bundle') {
+        price = data.variants.find((v: any) => v.sku === 'set')?.price_cents || 0;
+      } else {
+        const v = item.variant_id
+          ? data.variants.find((v: any) => v.id === item.variant_id)
+          : data.variants.find((v: any) => (!item.size || v.size === item.size) && (!item.color || v.color === item.color));
+        price = v?.price_cents || 0;
+      }
+      priceMap[item.id] = price;
+      subtotal += price * item.qty;
+      if (item.addon_duffle) subtotal += 4000;
+    } catch {}
+  }
+
+  const surcharge = Math.round(subtotal * SURCHARGE_RATE);
+  const total = subtotal + surcharge;
+
+  summaryEl.innerHTML = cart.map(item => {
+    const price = priceMap[item.id] || 0;
+    const meta = [item.size ? `Size: ${item.size}` : '', item.color ? `Color: ${item.color}` : ''].filter(Boolean).join(' · ');
+    const compLines = item.components ? Object.entries(item.components).map(([k,v]) => `${k}: ${v}`).join(', ') : '';
+    return `<div class="cart-line">
+      <div>
+        <div class="name">${item.product_name}</div>
+        ${meta ? `<div class="meta">${meta}</div>` : ''}
+        ${compLines ? `<div class="meta">${compLines}</div>` : ''}
+        ${item.addon_duffle ? '<div class="meta">+ Duffle bag</div>' : ''}
+      </div>
+      <div class="price">${price ? fmt(price * item.qty) : '—'}</div>
+    </div>`;
+  }).join('');
+
+  if (totalsEl) {
+    totalsEl.innerHTML = `
+      <div class="total-row"><span>Subtotal</span><span>${fmt(subtotal)}</span></div>
+      <div class="total-row"><span>Card processing fee (3.7%)</span><span>${fmt(surcharge)}</span></div>
+      <div class="total-row"><span style="color:var(--text-soft);font-size:12px">FL sales tax</span><span style="color:var(--text-soft);font-size:12px">Calculated at payment</span></div>
+      <div class="total-row grand"><span>Total</span><span>${fmt(total)} + tax</span></div>`;
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  renderSummary();
+  loadPricesAndRender();
+});
+
+document.getElementById('checkout-form')?.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const form = e.target as HTMLFormElement;
+  const btn = document.getElementById('submit-btn') as HTMLButtonElement;
+  const errEl = document.getElementById('checkout-error')!;
+  errEl.classList.add('hidden');
+  btn.disabled = true;
+  btn.textContent = 'Redirecting to payment…';
+
+  const fd = new FormData(form);
+  const payload = {
+    student_name: fd.get('student_name'),
+    contact_email: fd.get('contact_email'),
+    location: fd.get('location'),
+    instructor_name: fd.get('instructor_name'),
+    items: (window.__kk_cart || []),
+  };
+
+  try {
+    const res = await fetch('/api/checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+    const data = await res.json();
+    if (data.url) {
+      window.location.href = data.url;
+    } else {
+      errEl.textContent = data.error || 'Something went wrong. Please try again.';
+      errEl.classList.remove('hidden');
+      btn.disabled = false;
+      btn.textContent = 'Continue to Payment →';
+    }
+  } catch {
+    errEl.textContent = 'Network error. Please check your connection and try again.';
+    errEl.classList.remove('hidden');
+    btn.disabled = false;
+    btn.textContent = 'Continue to Payment →';
+  }
+});
+</script>

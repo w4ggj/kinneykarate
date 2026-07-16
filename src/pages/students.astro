@@ -1,0 +1,68 @@
+---
+export const prerender = true;
+import Base from '../layouts/Base.astro';
+---
+<Base title="Students" description="New student information, student login, and resources for Kinney Karate students.">
+
+<div class="belt"><span class="w"></span><span class="y"></span><span class="g"></span><span class="b"></span><span class="k"></span></div>
+
+<section class="page-hero">
+  <div class="container">
+    <p class="eyebrow">Student Resources</p>
+    <h1 class="cond">Students</h1>
+  </div>
+</section>
+
+<section class="pad">
+  <div class="container">
+    <div class="grid2" style="align-items:start">
+
+      <div id="new" class="card">
+        <h2>New Student Information</h2>
+        <p>Welcome to Kinney Karate! Here's what you need to know before your first class:</p>
+        <ul>
+          <li><strong>First class is free</strong> — no cost, no commitment.</li>
+          <li>Wear comfortable athletic clothing for your first visit. You'll be issued a uniform once you enroll.</li>
+          <li>All students are required to wear an <strong>official Kinney Karate uniform</strong> after the first class. Uniforms are available in the <a href="/store" style="color:var(--red);font-weight:600">school store</a>.</li>
+          <li>Arrive 5–10 minutes early to meet your instructor and get oriented.</li>
+          <li>Recreation Center classes: tuition is paid to the City of St. Petersburg in person. Dojo classes: billing through Balance Martial Arts.</li>
+        </ul>
+        <a href="/locations" class="btn" style="margin-top:18px">Find a Class Near You</a>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div class="card">
+          <h2>Student Login</h2>
+          <p>Student accounts and billing are managed through Balance Martial Arts &amp; Gaming.</p>
+          <a href="https://balancemartialarts.com/login" target="_blank" rel="noopener" class="btn dark" style="margin-top:14px">Log In at Balance Martial Arts →</a>
+        </div>
+
+        <div class="card">
+          <h2>Join Our Discord</h2>
+          <p>Connect with other Kinney Karate students, get announcements, and stay in the loop.</p>
+          <a href="https://discord.gg/TODO" target="_blank" rel="noopener" class="btn dark" style="margin-top:14px">Join Discord →</a>
+        </div>
+
+        <div class="card">
+          <h2>Gear &amp; Equipment</h2>
+          <p>Only Kinney Karate-branded uniforms and gear are permitted in class. Shop online or ask your instructor.</p>
+          <a href="/store" class="btn" style="margin-top:14px">Visit the Store</a>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+</Base>
+
+<style>
+.page-hero { background:var(--ink);color:var(--text-invert);padding:48px 0 40px; }
+.page-hero h1 { font-size:52px;font-weight:700;margin-bottom:10px; }
+.pad { padding:48px 0; }
+.card { border:1px solid var(--line);border-radius:var(--r-lg);background:#fff;padding:28px; }
+.card h2 { font-weight:700;font-size:20px;margin-bottom:12px; }
+.card p { font-size:14px;color:var(--text-soft);margin-bottom:8px;line-height:1.7; }
+.card ul { padding-left:20px;font-size:14px;color:var(--text-soft);line-height:1.8; }
+.card li { margin-bottom:6px; }
+</style>

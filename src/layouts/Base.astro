@@ -1,0 +1,45 @@
+---
+import '../styles/global.css';
+import AnnouncementBar from '../components/AnnouncementBar.astro';
+import SiteHeader from '../components/SiteHeader.astro';
+import SiteFooter from '../components/SiteFooter.astro';
+
+interface Props {
+  title: string;
+  description?: string;
+  image?: string;
+}
+
+const {
+  title,
+  description = 'Kinney Karate — Tang Soo Do, Aikido, Ju Jitsu & Modern Arnis in St. Petersburg, FL. Discipline, Self-Defense, Confidence since 1986.',
+  image = '/assets/og-default.jpg',
+} = Astro.props;
+const canonicalURL = new URL(Astro.url.pathname, Astro.site ?? 'https://kinneykarate.com');
+---
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{title} | Kinney Karate</title>
+  <meta name="description" content={description} />
+  <link rel="canonical" href={canonicalURL} />
+  <!-- OG -->
+  <meta property="og:title" content={`${title} | Kinney Karate`} />
+  <meta property="og:description" content={description} />
+  <meta property="og:image" content={image} />
+  <meta property="og:type" content="website" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <!-- Favicon placeholder -->
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+</head>
+<body>
+  <AnnouncementBar />
+  <SiteHeader />
+  <main>
+    <slot />
+  </main>
+  <SiteFooter />
+</body>
+</html>

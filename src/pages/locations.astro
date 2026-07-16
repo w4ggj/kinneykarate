@@ -1,0 +1,107 @@
+---
+export const prerender = true;
+import Base from '../layouts/Base.astro';
+
+const locations = [
+  {
+    name: 'Roberts Recreation Center',
+    address: '1246 58th St S, St. Petersburg, FL 33707',
+    days: 'Monday, Wednesday, Friday',
+    note: 'All levels. Check schedule for class times.',
+    mapUrl: 'https://maps.google.com/?q=Roberts+Recreation+Center+St+Petersburg+FL',
+  },
+  {
+    name: 'Enoch Davis Recreation Center',
+    address: '1111 18th Ave S, St. Petersburg, FL 33705',
+    days: 'Tuesday, Thursday',
+    note: 'All levels. Check schedule for class times.',
+    mapUrl: 'https://maps.google.com/?q=Enoch+Davis+Recreation+Center+St+Petersburg+FL',
+  },
+  {
+    name: 'Balance Dojo',
+    address: 'St. Petersburg, FL',
+    days: 'See schedule',
+    note: 'Advanced and specialty classes. Contact us for details.',
+    mapUrl: 'https://balancemartialarts.com',
+  },
+  {
+    name: 'Kinney Karate D&D',
+    address: 'St. Petersburg, FL',
+    days: 'See schedule',
+    note: 'Kinney Karate Dungeons & Dragons sessions. Fun for all ages — link to Balance Gaming for details.',
+    mapUrl: 'https://balancemartialarts.com',
+  },
+];
+---
+<Base title="Locations & Schedule" description="Find Kinney Karate classes at recreation centers and our dojo in St. Petersburg, FL.">
+
+<div class="belt"><span class="w"></span><span class="y"></span><span class="g"></span><span class="b"></span><span class="k"></span></div>
+
+<section class="page-hero">
+  <div class="container">
+    <p class="eyebrow">Where to Train</p>
+    <h1 class="cond">Locations &amp; Schedule</h1>
+    <p>Kinney Karate operates at St. Petersburg Recreation Centers and the Balance Dojo.</p>
+  </div>
+</section>
+
+<section class="pad">
+  <div class="container">
+    <p class="kick">Our Locations</p>
+    <div class="loc-grid">
+      {locations.map(l => (
+        <div class="loc-card">
+          <h2>{l.name}</h2>
+          <p class="addr">{l.address}</p>
+          <p class="days"><strong>Days:</strong> {l.days}</p>
+          <p class="note">{l.note}</p>
+          <a href={l.mapUrl} target="_blank" rel="noopener" class="map-link">View on map →</a>
+        </div>
+      ))}
+    </div>
+
+    <div class="schedule-note">
+      <h3>Schedule</h3>
+      <p>Class times vary by location and season. Contact us or check with your instructor for the current schedule. Recreation Center classes are administered through the City of St. Petersburg Parks &amp; Recreation — tuition is paid to the City in person.</p>
+      <p style="margin-top:10px"><strong>Tuition is never paid on this website.</strong> Dojo billing is handled through <a href="https://balancemartialarts.com" target="_blank" rel="noopener" style="color:var(--red)">Balance Martial Arts</a>.</p>
+    </div>
+  </div>
+</section>
+
+</Base>
+
+<style>
+.page-hero {
+  background: var(--ink); color: var(--text-invert);
+  padding: 48px 0 40px;
+}
+.page-hero h1 { font-size: 52px; font-weight: 700; margin-bottom: 10px; }
+.page-hero p { color: var(--text-invert-soft); font-size: 15px; }
+.pad { padding: 48px 0; }
+.loc-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  margin-bottom: 32px;
+}
+@media (max-width: 620px) { .loc-grid { grid-template-columns: 1fr; } }
+.loc-card {
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  background: #fff;
+  padding: 24px;
+}
+.loc-card h2 { font-weight: 700; font-size: 17px; margin-bottom: 8px; }
+.loc-card .addr { font-size: 13px; color: var(--text-soft); margin-bottom: 10px; }
+.loc-card .days { font-size: 14px; margin-bottom: 6px; }
+.loc-card .note { font-size: 13px; color: var(--text-soft); margin-bottom: 14px; }
+.map-link { font-size: 13px; color: var(--red); font-weight: 600; }
+.schedule-note {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  padding: 24px;
+}
+.schedule-note h3 { font-weight: 700; margin-bottom: 10px; }
+.schedule-note p { font-size: 14px; color: var(--text-soft); line-height: 1.7; }
+</style>

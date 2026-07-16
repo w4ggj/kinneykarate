@@ -1,0 +1,218 @@
+---
+// Store product grid — fetches from D1 via the store-api Worker.
+// Uses server rendering so prices are always authoritative.
+export const prerender = false;
+
+import Base from '../../layouts/Base.astro';
+
+interface Variant {
+  id: number; size: string | null; color: string | null; price_cents: number | null;
+}
+interface Product {
+  id: number; slug: string; name: string; category: string; kind: string;
+  fulfillment_type: string; special_order: number; description: string;
+  min_price_cents: number | null; max_price_cents: number | null;
+}
+
+let products: Product[] = [];
+let error = '';
+
+try {
+  const env = (Astro.locals as any).runtime?.env;
+  if (env?.DB) {
+    const rows = await env.DB.prepare(`
+      SELECT p.id, p.slug, p.name, p.category, p.kind, p.fulfillment_type, p.special_order, p.description,
+             MIN(v.price_cents) AS min_price_cents, MAX(v.price_cents) AS max_price_cents
+      FROM products p
+      LEFT JOIN variants v ON v.product_id = p.id AND v.active = 1
+      WHERE p.active = 1
+      GROUP BY p.id
+      ORDER BY p.sort_order, p.id
+    `).all();
+    products = rows.results as Product[];
+  } else {
+    // Dev fallback — import seed data for local preview
+    error = 'Store not available in this environment. Please configure D1 binding.';
+  }
+} catch (e: any) {
+  error = 'Unable to load products right now.';
+}
+
+function fmtPrice(min: number | null, max: number | null): string {
+  if (min == null) return '';
+  const fmt = (c: number) => `$${(c / 100).toFixed(0)}`;
+  return min === max || max == null ? fmt(min) : `${fmt(min)}–${fmt(max)}`;
+}
+
+const categories = [...new Set(products.map(p => p.category))];
+---
+<Base title="Store" description="Shop official Kinney Karate uniforms, sparring gear, apparel, and more.">
+
+<div class="belt"><span class="w"></span><span class="y"></span><span class="g"></span><span class="b"></span><span class="k"></span></div>
+
+<section class="page-hero">
+  <div class="container">
+    <p class="eyebrow">Official Gear</p>
+    <h1 class="cond">Student Store</h1>
+    <p>Only Kinney Karate-branded gear is permitted in class or at school activities.</p>
+  </div>
+</section>
+
+{error && (
+  <div class="container" style="padding:40px 0">
+    <p style="color:var(--text-soft)">{error}</p>
+  </div>
+)}
+
+{!error && (
+  <section class="pad">
+    <div class="container">
+      <!-- Pickup-only notice -->
+      <div class="pickup-note">
+        <strong>Pickup in class only</strong> — we don't ship. You'll choose your instructor and location at checkout, and receive your order at your next class.
+      </div>
+
+      {categories.map(cat => {
+        const catProducts = products.filter(p => p.category === cat);
+        return (
+          <div class="cat-section">
+            <p class="kick">{cat}</p>
+            <div class="product-grid">
+              {catProducts.map(p => {
+                const isSpecial = p.special_order === 1;
+                const isMTO = p.fulfillment_type === 'made_to_order';
+                const price = fmtPrice(p.min_price_cents, p.max_price_cents);
+                return (
+                  <a href={`/store/${p.slug}`} class:list={['product-card', { special: isSpecial }]}>
+                    <div class="product-img"></div>
+                    <div class="product-info">
+                      <h3>{p.name}</h3>
+                      {isSpecial ? (
+                        <p class="special-label">Speak with your instructor</p>
+                      ) : (
+                        <p class="price">{price}</p>
+                      )}
+                      {isMTO && !isSpecial && <p class="mto-note">~2 week turnaround</p>}
+                    </div>
+                  </a>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  </section>
+)}
+
+<!-- Cart sidebar (in-memory, no storage) -->
+<div id="cart-overlay" class="cart-overlay hidden" aria-hidden="true">
+  <div class="cart-panel">
+    <div class="cart-hd">
+      <h2 class="cond">Your Cart</h2>
+      <button class="cart-close" aria-label="Close cart">✕</button>
+    </div>
+    <div id="cart-items" class="cart-items"></div>
+    <div class="cart-footer">
+      <button id="checkout-btn" class="btn block">Proceed to Checkout</button>
+    </div>
+  </div>
+</div>
+<button id="cart-fab" class="cart-fab hidden" aria-label="Open cart">
+  🛒 <span id="cart-count">0</span>
+</button>
+
+</Base>
+
+<style>
+.page-hero { background:var(--ink);color:var(--text-invert);padding:48px 0 40px; }
+.page-hero h1 { font-size:52px;font-weight:700;margin-bottom:10px; }
+.page-hero p { color:var(--text-invert-soft);font-size:15px; }
+.pad { padding:48px 0; }
+
+.pickup-note {
+  background:var(--paper);border:1px solid var(--line);border-radius:var(--r);
+  padding:14px 18px;font-size:13.5px;color:var(--text-soft);margin-bottom:32px;
+}
+
+.cat-section { margin-bottom:40px; }
+.product-grid { display:grid;grid-template-columns:repeat(3,1fr);gap:16px; }
+@media (max-width:700px) { .product-grid { grid-template-columns:1fr 1fr; } }
+@media (max-width:440px) { .product-grid { grid-template-columns:1fr; } }
+
+.product-card {
+  border:1px solid var(--line);border-radius:var(--r-lg);background:#fff;overflow:hidden;
+  transition:box-shadow .15s;display:block;
+}
+.product-card:hover { box-shadow:0 4px 20px -8px rgba(20,23,27,.18); }
+.product-card.special { border-style:dashed; }
+.product-img { background:var(--paper-2);height:180px; }
+.product-info { padding:14px 16px; }
+.product-info h3 { font-weight:700;font-size:15px;margin-bottom:6px; }
+.price { font-weight:700;font-size:16px;color:var(--ink); }
+.special-label { font-size:13px;color:var(--text-soft);font-style:italic; }
+.mto-note { font-size:11.5px;color:var(--warn);margin-top:4px;font-weight:500; }
+
+/* Cart overlay */
+.cart-overlay {
+  position:fixed;inset:0;z-index:200;background:rgba(20,23,27,.5);
+}
+.cart-overlay.hidden { display:none; }
+.cart-panel {
+  position:absolute;right:0;top:0;bottom:0;width:360px;max-width:100%;
+  background:#fff;display:flex;flex-direction:column;
+}
+.cart-hd {
+  display:flex;align-items:center;justify-content:space-between;
+  padding:18px 20px;border-bottom:1px solid var(--line);
+}
+.cart-hd h2 { font-size:22px;font-weight:700; }
+.cart-close { background:none;border:none;cursor:pointer;font-size:20px;color:var(--text-soft); }
+.cart-items { flex:1;overflow-y:auto;padding:16px 20px; }
+.cart-footer { padding:16px 20px;border-top:1px solid var(--line); }
+
+.cart-fab {
+  position:fixed;bottom:24px;right:24px;z-index:150;
+  background:var(--ink);color:#fff;border:none;border-radius:999px;
+  padding:12px 18px;font-size:15px;font-weight:600;cursor:pointer;
+  box-shadow:0 4px 16px -4px rgba(20,23,27,.4);
+}
+.cart-fab.hidden { display:none; }
+</style>
+
+<script>
+// In-memory cart — never touches localStorage/sessionStorage per spec
+window.__kk_cart = window.__kk_cart || [];
+
+const overlay = document.getElementById('cart-overlay');
+const fab = document.getElementById('cart-fab');
+const cartCount = document.getElementById('cart-count');
+const closeBtn = document.querySelector('.cart-close');
+
+function updateFab() {
+  const n = window.__kk_cart.reduce((s, i) => s + i.qty, 0);
+  cartCount.textContent = n;
+  fab.classList.toggle('hidden', n === 0);
+}
+
+fab?.addEventListener('click', () => {
+  overlay.classList.remove('hidden');
+  overlay.setAttribute('aria-hidden', 'false');
+});
+closeBtn?.addEventListener('click', () => {
+  overlay.classList.add('hidden');
+  overlay.setAttribute('aria-hidden', 'true');
+});
+overlay?.addEventListener('click', e => {
+  if (e.target === overlay) {
+    overlay.classList.add('hidden');
+    overlay.setAttribute('aria-hidden', 'true');
+  }
+});
+
+document.getElementById('checkout-btn')?.addEventListener('click', () => {
+  window.location.href = '/store/checkout';
+});
+
+updateFab();
+</script>
