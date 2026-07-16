@@ -13,4 +13,4 @@ bucket_name = "kinneykarate-images"
 
 [[kv_namespaces]]
 binding = "CACHE"
-id = "TODO_set_after_wrangler_kv_namespace_create"
+id = "456ed0b58fa248ea8fb848e68bfccc8e"
