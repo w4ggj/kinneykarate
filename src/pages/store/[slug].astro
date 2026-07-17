@@ -19,7 +19,10 @@ if (!product) {
 }
 
 const variants = product.kind === 'simple'
-  ? (await env.DB.prepare('SELECT * FROM variants WHERE product_id = ? AND active = 1').bind(product.id).all()).results
+  ? (await env.DB.prepare(`SELECT * FROM variants WHERE product_id = ? AND active = 1
+      ORDER BY
+        CASE color WHEN 'White' THEN 0 WHEN 'Red' THEN 1 WHEN 'Blue' THEN 2 WHEN 'Black' THEN 3 ELSE 99 END,
+        CASE size WHEN '0000' THEN 0 WHEN '000' THEN 1 WHEN '00' THEN 2 WHEN '0' THEN 3 WHEN '1' THEN 4 WHEN '2' THEN 5 WHEN '3' THEN 6 WHEN '4' THEN 7 WHEN '5' THEN 8 WHEN '6' THEN 9 WHEN '7' THEN 10 WHEN '8' THEN 11 ELSE 99 END`).bind(product.id).all()).results
   : [];
 
 const components = product.kind === 'bundle'
