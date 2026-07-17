@@ -7,6 +7,7 @@ const CATEGORIES = [
   'Health & Medicine','Home & Garden','Legal & Financial',
   'Manufacturing, Wholesale, Distribution','Merchants (Retail)',
   'Miscellaneous','Personal Care & Services','Real Estate','Sports',
+  'Technology & Software',
   'Travel & Transportation',
 ];
 
