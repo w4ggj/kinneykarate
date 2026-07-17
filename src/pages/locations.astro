@@ -73,7 +73,11 @@ const locations: Location[] = [
 <div class="belt"><span class="w"></span><span class="y"></span><span class="g"></span><span class="b"></span><span class="k"></span></div>
 
 <section class="page-hero">
-  <div class="container">
+  <div class="hero-img-wrap">
+    <img src="/exam-stretch2.png" alt="Kinney Karate students stretching in class" class="hero-img" />
+    <div class="hero-overlay"></div>
+  </div>
+  <div class="container hero-content">
     <p class="eyebrow">Where to Train</p>
     <h1 class="cond">Recreation Center Classes</h1>
     <p>Kinney Karate offers low-cost classes at four St. Petersburg Recreation Centers. <strong>Your first class is free</strong> — just show up at any location. No uniform needed to start; wear loose-fitting pants and a t-shirt.</p>
@@ -96,18 +100,7 @@ const locations: Location[] = [
     <div class="flyer-block">
       <a href="/class-flyer.pdf" target="_blank" rel="noopener" class="flyer-link" title="Download printable class flyer">
         <div class="flyer-thumb">
-          <svg viewBox="0 0 80 100" fill="none" xmlns="http://www.w3.org/2000/svg" width="60" height="75">
-            <rect width="80" height="100" rx="4" fill="#f3f4f6"/>
-            <rect x="8" y="8" width="64" height="8" rx="2" fill="#cc0000"/>
-            <rect x="8" y="22" width="48" height="4" rx="1" fill="#d1d5db"/>
-            <rect x="8" y="30" width="40" height="4" rx="1" fill="#d1d5db"/>
-            <rect x="8" y="38" width="44" height="4" rx="1" fill="#d1d5db"/>
-            <rect x="8" y="50" width="64" height="6" rx="1" fill="#1e3a8a"/>
-            <rect x="8" y="60" width="28" height="4" rx="1" fill="#d1d5db"/>
-            <rect x="8" y="68" width="22" height="4" rx="1" fill="#d1d5db"/>
-            <rect x="8" y="76" width="26" height="4" rx="1" fill="#d1d5db"/>
-            <rect x="8" y="84" width="20" height="4" rx="1" fill="#d1d5db"/>
-          </svg>
+          <img src="/Class-Flyer-2023-Sept.png" alt="Kinney Karate class flyer" class="flyer-img" />
           <div class="flyer-badge">PDF</div>
         </div>
         <span>Class Flyer<br/><small>(click for printable version)</small></span>
@@ -118,6 +111,13 @@ const locations: Location[] = [
 
 <section class="pad">
   <div class="container">
+    <div class="schedule-note" style="margin-bottom:32px">
+      <h3>Tuition &amp; Registration</h3>
+      <p>To enroll, just show up at the location you'd like to attend — no need to wait for the beginning of the month. Recreation Center classes are administered through the City of St. Petersburg Parks &amp; Recreation. Tuition is <strong>$30/month for one class per week</strong> or <strong>$60/month for two classes per week</strong> — paid in person at the Recreation Center.</p>
+      <p style="margin-top:10px"><strong>Tuition is never paid on this website.</strong> Advanced dojo billing is handled through <a href="https://balancemartialarts.com" target="_blank" rel="noopener" style="color:var(--red)">Balance Martial Arts</a>.</p>
+      <p style="margin-top:10px">Questions? Call <a href="tel:+17276860864" style="color:var(--red);font-weight:600">727-686-0864</a> or use the <a href="/about#contact" style="color:var(--red)">contact form</a>.</p>
+    </div>
+
     <p class="kick">Class Schedule by Location</p>
     <div class="loc-grid">
       {locations.map(l => (
@@ -139,13 +139,6 @@ const locations: Location[] = [
         </div>
       ))}
     </div>
-
-    <div class="schedule-note">
-      <h3>Tuition &amp; Registration</h3>
-      <p>To enroll, just show up at the location you'd like to attend — no need to wait for the beginning of the month. Recreation Center classes are administered through the City of St. Petersburg Parks &amp; Recreation. Tuition is <strong>$30/month for one class per week</strong> or <strong>$60/month for two classes per week</strong> — paid in person at the Recreation Center.</p>
-      <p style="margin-top:10px"><strong>Tuition is never paid on this website.</strong> Advanced dojo billing is handled through <a href="https://balancemartialarts.com" target="_blank" rel="noopener" style="color:var(--red)">Balance Martial Arts</a>.</p>
-      <p style="margin-top:10px">Questions? Call <a href="tel:+17276860864" style="color:var(--red);font-weight:600">727-686-0864</a> or use the <a href="/about#contact" style="color:var(--red)">contact form</a>.</p>
-    </div>
   </div>
 </section>
 
@@ -153,8 +146,30 @@ const locations: Location[] = [
 
 <style>
 .page-hero {
+  position: relative;
   background: var(--ink); color: var(--text-invert);
-  padding: 48px 0 40px;
+  overflow: hidden;
+}
+.hero-img-wrap {
+  position: relative;
+  width: 100%;
+  max-height: 420px;
+  overflow: hidden;
+}
+.hero-img {
+  width: 100%;
+  height: 420px;
+  object-fit: cover;
+  object-position: center 30%;
+  display: block;
+}
+.hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0.6) 100%);
+}
+.hero-content {
+  padding: 40px 0 40px;
 }
 .page-hero h1 { font-size: 52px; font-weight: 700; margin-bottom: 10px; }
 .page-hero p { color: var(--text-invert-soft); font-size: 15px; line-height: 1.7; }
@@ -204,6 +219,13 @@ const locations: Location[] = [
   transition: box-shadow 0.15s;
 }
 .flyer-link:hover .flyer-thumb { box-shadow: 0 4px 12px rgba(0,0,0,0.12); }
+.flyer-img {
+  width: 60px;
+  height: 75px;
+  object-fit: cover;
+  object-position: top;
+  display: block;
+}
 .flyer-badge {
   position: absolute;
   bottom: 4px; right: 4px;
