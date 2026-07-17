@@ -283,13 +283,29 @@ async function renderInventory(el: HTMLElement) {
         body: JSON.stringify({ barcode, mode: scanMode, qty, staff: 'admin' }),
       });
       if (r.unknown) {
-        resultEl.innerHTML = `<span style="color:var(--warn)">Unknown barcode: <b>${esc(barcode)}</b>. <button class="btn btn-sm" id="map-btn">Map to variant</button></span>`;
+        const variants = await api('/admin/api/variants');
+        const opts = variants.map((v: any) => {
+          const label = [v.product_name, v.size, v.color].filter(Boolean).join(' / ');
+          const already = v.barcode ? ` [${v.barcode}]` : '';
+          return `<option value="${v.id}">${esc(label)}${esc(already)}</option>`;
+        }).join('');
+        resultEl.innerHTML = `
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+            <span style="color:var(--warn)">Unknown: <b>${esc(barcode)}</b></span>
+            <select id="map-select" style="flex:1;min-width:200px;padding:6px 8px;border:1px solid var(--line);border-radius:var(--r)">
+              <option value="">— pick item —</option>${opts}
+            </select>
+            <button class="btn btn-sm" id="map-btn">Map</button>
+          </div>`;
         document.getElementById('map-btn')?.addEventListener('click', () => {
-          const vid = prompt('Variant ID to map this barcode to:');
-          if (vid) api('/admin/api/inventory/map', {
+          const vid = (document.getElementById('map-select') as HTMLSelectElement).value;
+          if (!vid) return;
+          api('/admin/api/inventory/map', {
             method: 'POST', headers: {'Content-Type':'application/json'},
             body: JSON.stringify({ barcode, variant_id: vid }),
-          }).then(() => { resultEl.innerHTML = '<span style="color:var(--ok)">Barcode mapped!</span>'; });
+          }).then(() => {
+            resultEl.innerHTML = '<span style="color:var(--ok)">✓ Barcode mapped! Scan again to record stock.</span>';
+          });
         });
       } else {
         const action = scanMode === 'check_in' ? `+${qty} received` : `-${qty} taken out`;
