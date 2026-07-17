@@ -98,7 +98,7 @@ const colors = [...new Set((variants as any[]).map((v: any) => v.color).filter(B
             {sizes.length > 0 ? 'Select a size' : fmtPrice((variants as any[])[0]?.price_cents)}
           </span>
         )}
-        {isMTO && <span class="mto-badge">~2 week turnaround</span>}
+        {isMTO && !['uniform','memorial-patch'].includes(product.slug) && <span class="mto-badge">~2 week turnaround</span>}
       </div>
     )}
 

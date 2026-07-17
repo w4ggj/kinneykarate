@@ -94,7 +94,7 @@ const categories = [...new Set(products.map(p => p.category))];
                       ) : (
                         <p class="price">{price}</p>
                       )}
-                      {isMTO && !isSpecial && <p class="mto-note">~2 week turnaround</p>}
+                      {isMTO && !isSpecial && !['uniform','memorial-patch'].includes(p.slug) && <p class="mto-note">~2 week turnaround</p>}
                     </div>
                   </a>
                 );
