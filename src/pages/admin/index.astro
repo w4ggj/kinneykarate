@@ -235,10 +235,10 @@ async function renderInventory(el: HTMLElement) {
         <button class="mode-btn" data-mode="take_out">Take Out (in-person sale)</button>
       </div>
       <div class="scan-input">
-        <input type="text" id="scan-field" placeholder="Scan or type barcode…" autofocus />
-        <select id="scan-qty">
+        <select id="scan-qty" style="font-size:18px;padding:10px 14px;min-width:80px;border:1px solid var(--line);border-radius:var(--r);touch-action:manipulation">
           ${Array.from({length:10},(_,i)=>`<option value="${i+1}">${i+1}</option>`).join('')}
         </select>
+        <input type="text" id="scan-field" placeholder="Scan barcode…" autofocus />
         <button class="btn" id="scan-submit">Scan</button>
       </div>
       <div class="scan-result" id="scan-result"></div>
