@@ -17,7 +17,7 @@ export async function GET({ locals }: APIContext) {
   };
 
   if (!env?.GOOGLE_CALENDAR_ID || !env?.GOOGLE_CALENDAR_API_KEY) {
-    return new Response(JSON.stringify([]), { headers });
+    return new Response(JSON.stringify({ error: 'missing_env', vars: Object.keys(env || {}) }), { status: 500, headers: { 'Content-Type': 'application/json' } });
   }
 
   // Try KV cache
@@ -38,7 +38,10 @@ export async function GET({ locals }: APIContext) {
 
   try {
     const res = await fetch(apiUrl.toString());
-    if (!res.ok) return new Response(JSON.stringify([]), { headers });
+    if (!res.ok) {
+      const errText = await res.text();
+      return new Response(JSON.stringify({ error: 'google_api_error', status: res.status, body: errText }), { status: 502, headers: { 'Content-Type': 'application/json' } });
+    }
 
     const data: any = await res.json();
     const events = (data.items || []).map((item: any) => {
@@ -59,7 +62,7 @@ export async function GET({ locals }: APIContext) {
     const json = JSON.stringify(events);
     if (env.CACHE) await env.CACHE.put('calendar:events', json, { expirationTtl: CACHE_TTL });
     return new Response(json, { headers });
-  } catch {
-    return new Response(JSON.stringify([]), { headers });
+  } catch (err: any) {
+    return new Response(JSON.stringify({ error: 'exception', message: err?.message }), { status: 500, headers: { 'Content-Type': 'application/json' } });
   }
 }
