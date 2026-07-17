@@ -33,18 +33,25 @@ const authed = cookie?.value === 'authenticated';
     </div>
   </div>
   <script define:vars={{ SUPABASE_URL, SUPABASE_ANON_KEY }}>
-
     async function signIn() {
-      const email = (document.getElementById('email') as HTMLInputElement).value.trim();
-      const password = (document.getElementById('password') as HTMLInputElement).value;
-      const errEl = document.getElementById('login-error')!;
-      const btn = document.getElementById('signin-btn') as HTMLButtonElement;
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+      const errEl = document.getElementById('login-error');
+      const btn = document.getElementById('signin-btn');
       errEl.style.display = 'none';
       btn.disabled = true;
       btn.textContent = 'Signing in…';
 
+      if (!SUPABASE_URL) {
+        errEl.textContent = 'Admin login is not configured. Add SUPABASE env vars in Cloudflare.';
+        errEl.style.display = 'block';
+        btn.disabled = false;
+        btn.textContent = 'Sign In';
+        return;
+      }
+
       try {
-        const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+        const res = await fetch(SUPABASE_URL + '/auth/v1/token?grant_type=password', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY },
           body: JSON.stringify({ email, password }),
@@ -57,19 +64,18 @@ const authed = cookie?.value === 'authenticated';
           btn.textContent = 'Sign In';
           return;
         }
-        // Set session cookie and reload
         document.cookie = 'kk_admin_session=authenticated; path=/admin; max-age=604800; SameSite=Lax';
         window.location.reload();
-      } catch {
-        errEl.textContent = 'Network error. Please try again.';
+      } catch (e) {
+        errEl.textContent = 'Network error: ' + e.message;
         errEl.style.display = 'block';
         btn.disabled = false;
         btn.textContent = 'Sign In';
       }
     }
 
-    document.getElementById('signin-btn')?.addEventListener('click', signIn);
-    document.getElementById('password')?.addEventListener('keydown', (e: any) => { if (e.key === 'Enter') signIn(); });
+    document.getElementById('signin-btn').addEventListener('click', signIn);
+    document.getElementById('password').addEventListener('keydown', function(e) { if (e.key === 'Enter') signIn(); });
   </script>
 )}
 
