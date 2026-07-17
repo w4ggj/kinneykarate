@@ -451,11 +451,13 @@ async function renderDirectory(el: HTMLElement) {
       ${rows.map(r => `<tr data-id="${r.id}">
         <td><strong style="font-size:13px">${esc(r.business_name)}</strong><br><span style="font-size:11px;color:var(--text-soft)">${esc(r.owner_name)}</span></td>
         <td>
-          <label class="toggle" title="${r.approved ? 'Published — click to unpublish' : 'Pending — click to publish'}">
+          ${!r.approved ? `<span style="display:inline-block;background:#fef3c7;color:#92400e;font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;margin-bottom:6px">Pending review</span><br>` : ''}
+          <label class="toggle" style="display:inline-flex;align-items:center;gap:8px;cursor:pointer">
             <input type="checkbox" class="dir-toggle" data-id="${r.id}" ${r.approved ? 'checked' : ''}>
             <span class="toggle-slider"></span>
+            <span style="font-size:13px;font-weight:600;color:${r.approved ? 'var(--ok,#16a34a)' : 'var(--text-soft)'}">${r.approved ? 'Published' : 'Unpublished'}</span>
           </label>
-          <div style="font-size:11px;color:var(--text-soft);margin-top:4px">${r.approved ? 'Published' : 'Pending'}</div>
+          <div style="font-size:11px;color:var(--text-soft);margin-top:4px">Tap to ${r.approved ? 'unpublish' : 'publish'}</div>
         </td>
         <td style="font-size:12px">${esc(r.category)}</td>
         <td style="font-size:12px">${esc([r.city, r.zip].filter(Boolean).join(', '))}</td>
@@ -541,8 +543,14 @@ async function renderDirectory(el: HTMLElement) {
     const row = allRows.find(r => r.id === id);
     if (!row) return;
     row.approved = approved;
-    const statusDiv = cb.closest('td')?.querySelector('div');
-    if (statusDiv) statusDiv.textContent = approved ? 'Published' : 'Pending';
+    // Re-render just the status cell
+    const td = cb.closest('td') as HTMLElement;
+    const labelSpan = td.querySelector('label span:last-child') as HTMLElement;
+    if (labelSpan) { labelSpan.textContent = approved ? 'Published' : 'Unpublished'; labelSpan.style.color = approved ? 'var(--ok,#16a34a)' : 'var(--text-soft)'; }
+    const hintDiv = td.querySelector('div:last-child') as HTMLElement;
+    if (hintDiv) hintDiv.textContent = `Tap to ${approved ? 'unpublish' : 'publish'}`;
+    const badge = td.querySelector('span[style*="fef3c7"]') as HTMLElement;
+    if (badge && approved) badge.remove();
     await api('/admin/api/directory/listings', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
