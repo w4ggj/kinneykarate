@@ -21,7 +21,7 @@ try {
   const env = (Astro.locals as any).runtime?.env;
   if (env?.DB) {
     const rows = await env.DB.prepare(`
-      SELECT p.id, p.slug, p.name, p.category, p.kind, p.fulfillment_type, p.special_order, p.description,
+      SELECT p.id, p.slug, p.name, p.category, p.kind, p.fulfillment_type, p.special_order, p.description, p.image,
              MIN(v.price_cents) AS min_price_cents, MAX(v.price_cents) AS max_price_cents
       FROM products p
       LEFT JOIN variants v ON v.product_id = p.id AND v.active = 1
@@ -84,7 +84,9 @@ const categories = [...new Set(products.map(p => p.category))];
                 const price = fmtPrice(p.min_price_cents, p.max_price_cents);
                 return (
                   <a href={`/store/${p.slug}`} class:list={['product-card', { special: isSpecial }]}>
-                    <div class="product-img"></div>
+                    <div class="product-img">
+                      {p.image ? <img src={p.image} alt={p.name} /> : null}
+                    </div>
                     <div class="product-info">
                       <h3>{p.name}</h3>
                       {isSpecial ? (
@@ -146,7 +148,8 @@ const categories = [...new Set(products.map(p => p.category))];
 }
 .product-card:hover { box-shadow:0 4px 20px -8px rgba(20,23,27,.18); }
 .product-card.special { border-style:dashed; }
-.product-img { background:var(--paper-2);height:180px; }
+.product-img { background:var(--paper-2);height:180px;overflow:hidden; }
+.product-img img { width:100%;height:100%;object-fit:cover;object-position:center; }
 .product-info { padding:14px 16px; }
 .product-info h3 { font-weight:700;font-size:15px;margin-bottom:6px; }
 .price { font-weight:700;font-size:16px;color:var(--ink); }

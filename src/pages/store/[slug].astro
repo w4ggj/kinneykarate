@@ -72,7 +72,11 @@ const colors = [...new Set((variants as any[]).map((v: any) => v.color).filter(B
 <section class="product-page container">
   <!-- Image -->
   <div class="product-image-area">
-    <div class="product-img-placeholder">No image yet</div>
+    {product.image ? (
+      <img src={product.image} alt={product.name} class="product-img" />
+    ) : (
+      <div class="product-img-placeholder">No image yet</div>
+    )}
   </div>
 
   <!-- Info -->
@@ -256,6 +260,14 @@ const colors = [...new Set((variants as any[]).map((v: any) => v.color).filter(B
   height: 360px;
   display: grid; place-items: center;
   color: var(--text-soft); font-size: 13px;
+}
+.product-img {
+  width: 100%;
+  border-radius: var(--r-lg);
+  border: 1px solid var(--line);
+  object-fit: contain;
+  background: var(--paper-2);
+  max-height: 400px;
 }
 
 .category-label { font-size: 12px; color: var(--text-soft); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 8px; }

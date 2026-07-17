@@ -24,8 +24,8 @@ for (const [sortOrder, p] of catalog.products.entries()) {
   const special = p.special_order ? 1 : 0;
 
   lines.push(
-    `INSERT INTO products (id, slug, name, description, category, kind, fulfillment_type, special_order, active, sort_order) VALUES ` +
-    `(${productId}, ${q(p.slug)}, ${q(p.name)}, ${q(p.note ?? p.description ?? '')}, ${q(p.category ?? '')}, ${q(kind)}, ${q(fulfillment)}, ${special}, 1, ${sortOrder});`
+    `INSERT INTO products (id, slug, name, description, category, kind, fulfillment_type, special_order, active, sort_order, image) VALUES ` +
+    `(${productId}, ${q(p.slug)}, ${q(p.name)}, ${q(p.note ?? p.description ?? '')}, ${q(p.category ?? '')}, ${q(kind)}, ${q(fulfillment)}, ${special}, 1, ${sortOrder}, ${q(p.image ?? '')});`
   );
 
   if (kind === 'simple' && Array.isArray(p.variants)) {
