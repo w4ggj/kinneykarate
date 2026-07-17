@@ -431,56 +431,172 @@ async function renderProducts(el: HTMLElement) {
     </table>`;
 }
 
-async function renderDirectory(el: HTMLElement) {
-  const rows = await api('/admin/api/directory/pending');
+const DIR_CATS = ['Automotive','Business Support & Supplies','Computers & Electronics','Construction & Contractors','Education','Entertainment','Food & Dining','Health & Medicine','Home & Garden','Legal & Financial','Manufacturing, Wholesale, Distribution','Merchants (Retail)','Miscellaneous','Personal Care & Services','Real Estate','Sports','Technology & Software','Travel & Transportation'];
 
-  const renderRows = (items: any[]) => items.length === 0
-    ? '<p style="color:var(--text-soft);font-style:italic">No pending listings.</p>'
-    : `<table class="data-table">
-        <thead><tr>
-          <th>Business</th><th>Owner</th><th>Category</th><th>Location</th><th>Contact</th><th>Description</th><th>Actions</th>
-        </tr></thead>
-        <tbody>
-        ${items.map(r => `<tr data-id="${r.id}">
-          <td><strong>${esc(r.business_name)}</strong></td>
-          <td>${esc(r.owner_name)}</td>
-          <td>${esc(r.category)}</td>
-          <td>${esc([r.city, r.zip].filter(Boolean).join(', '))}</td>
-          <td style="font-size:12px">
-            ${r.phone ? `<div>${esc(r.phone)}</div>` : ''}
-            ${r.email ? `<div>${esc(r.email)}</div>` : ''}
-            ${r.website ? `<div><a href="${esc(r.website)}" target="_blank" rel="noopener" style="color:var(--red)">${esc(r.website)}</a></div>` : ''}
-          </td>
-          <td style="max-width:240px;font-size:12px;color:var(--text-soft)">${esc(r.description)}</td>
-          <td>
-            <button class="dir-approve btn" data-id="${r.id}" style="font-size:12px;padding:5px 12px;margin-bottom:6px">Approve</button>
-            <button class="dir-reject" data-id="${r.id}" style="font-size:12px;padding:5px 12px;background:none;border:1px solid var(--line);border-radius:var(--r);cursor:pointer;color:#c00">Reject</button>
-          </td>
-        </tr>`).join('')}
-        </tbody>
-      </table>`;
+async function renderDirectory(el: HTMLElement) {
+  let allRows: any[] = await api('/admin/api/directory/listings');
+
+  function tableHTML(rows: any[]) {
+    if (!rows.length) return '<p style="color:var(--text-soft);font-style:italic">No listings yet.</p>';
+    return `<table class="data-table" style="table-layout:fixed;width:100%">
+      <colgroup>
+        <col style="width:180px"><col style="width:100px"><col style="width:130px">
+        <col style="width:90px"><col style="width:130px"><col>
+        <col style="width:160px">
+      </colgroup>
+      <thead><tr>
+        <th>Business</th><th>Status</th><th>Category</th><th>Location</th><th>Contact</th><th>Description</th><th>Actions</th>
+      </tr></thead>
+      <tbody>
+      ${rows.map(r => `<tr data-id="${r.id}">
+        <td><strong style="font-size:13px">${esc(r.business_name)}</strong><br><span style="font-size:11px;color:var(--text-soft)">${esc(r.owner_name)}</span></td>
+        <td>
+          <label class="toggle" title="${r.approved ? 'Published — click to unpublish' : 'Pending — click to publish'}">
+            <input type="checkbox" class="dir-toggle" data-id="${r.id}" ${r.approved ? 'checked' : ''}>
+            <span class="toggle-slider"></span>
+          </label>
+          <div style="font-size:11px;color:var(--text-soft);margin-top:4px">${r.approved ? 'Published' : 'Pending'}</div>
+        </td>
+        <td style="font-size:12px">${esc(r.category)}</td>
+        <td style="font-size:12px">${esc([r.city, r.zip].filter(Boolean).join(', '))}</td>
+        <td style="font-size:11px">
+          ${r.phone ? `<div>${esc(r.phone)}</div>` : ''}
+          ${r.email ? `<div>${esc(r.email)}</div>` : ''}
+          ${r.website ? `<div><a href="${esc(r.website)}" target="_blank" rel="noopener" style="color:var(--red)">${esc(r.website)}</a></div>` : ''}
+        </td>
+        <td style="font-size:12px;color:var(--text-soft);word-break:break-word">${esc(r.description)}</td>
+        <td>
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <button class="dir-edit btn" data-id="${r.id}" style="font-size:12px;padding:5px 12px">Edit</button>
+            <button class="dir-delete" data-id="${r.id}" style="font-size:12px;padding:5px 12px;background:none;border:1px solid #fca5a5;border-radius:var(--r);cursor:pointer;color:#c00">Delete</button>
+          </div>
+        </td>
+      </tr>`).join('')}
+      </tbody>
+    </table>`;
+  }
+
+  function editModalHTML(r: any) {
+    const catOpts = DIR_CATS.map(c => `<option value="${esc(c)}" ${r.category===c?'selected':''}>${esc(c)}</option>`).join('');
+    return `<div id="dir-modal-overlay" style="position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;display:flex;align-items:center;justify-content:center;padding:20px">
+      <div style="background:#fff;border-radius:var(--r-lg);width:100%;max-width:560px;max-height:90vh;overflow-y:auto;padding:28px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+          <h2 style="font-size:18px;font-weight:700">Edit Listing</h2>
+          <button id="dir-modal-close" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-soft)">✕</button>
+        </div>
+        <form id="dir-edit-form" style="display:flex;flex-direction:column;gap:14px">
+          <input type="hidden" name="id" value="${r.id}">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+            <div><label style="font-size:13px;font-weight:600;display:block;margin-bottom:4px">Business Name</label>
+              <input name="business_name" value="${esc(r.business_name)}" style="width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:var(--r);font-size:13px;font-family:inherit"></div>
+            <div><label style="font-size:13px;font-weight:600;display:block;margin-bottom:4px">Owner Name</label>
+              <input name="owner_name" value="${esc(r.owner_name)}" style="width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:var(--r);font-size:13px;font-family:inherit"></div>
+          </div>
+          <div><label style="font-size:13px;font-weight:600;display:block;margin-bottom:4px">Category</label>
+            <select name="category" style="width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:var(--r);font-size:13px;font-family:inherit">${catOpts}</select></div>
+          <div><label style="font-size:13px;font-weight:600;display:block;margin-bottom:4px">Description</label>
+            <textarea name="description" rows="3" style="width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:var(--r);font-size:13px;font-family:inherit;resize:vertical">${esc(r.description)}</textarea></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+            <div><label style="font-size:13px;font-weight:600;display:block;margin-bottom:4px">City</label>
+              <input name="city" value="${esc(r.city||'')}" style="width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:var(--r);font-size:13px;font-family:inherit"></div>
+            <div><label style="font-size:13px;font-weight:600;display:block;margin-bottom:4px">ZIP</label>
+              <input name="zip" value="${esc(r.zip||'')}" style="width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:var(--r);font-size:13px;font-family:inherit"></div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+            <div><label style="font-size:13px;font-weight:600;display:block;margin-bottom:4px">Phone</label>
+              <input name="phone" value="${esc(r.phone||'')}" style="width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:var(--r);font-size:13px;font-family:inherit"></div>
+            <div><label style="font-size:13px;font-weight:600;display:block;margin-bottom:4px">Email</label>
+              <input name="email" value="${esc(r.email||'')}" style="width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:var(--r);font-size:13px;font-family:inherit"></div>
+          </div>
+          <div><label style="font-size:13px;font-weight:600;display:block;margin-bottom:4px">Website</label>
+            <input name="website" value="${esc(r.website||'')}" style="width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:var(--r);font-size:13px;font-family:inherit"></div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <label class="toggle"><input type="checkbox" name="approved" ${r.approved?'checked':''}><span class="toggle-slider"></span></label>
+            <span style="font-size:13px;font-weight:600">Published</span>
+          </div>
+          <div id="dir-edit-error" style="display:none;color:#c00;font-size:13px"></div>
+          <div style="display:flex;gap:12px;margin-top:4px">
+            <button type="submit" class="btn" style="font-size:13px">Save Changes</button>
+            <button type="button" id="dir-modal-cancel" style="background:none;border:none;cursor:pointer;font-size:13px;color:var(--text-soft);font-family:inherit">Cancel</button>
+          </div>
+        </form>
+      </div>
+    </div>`;
+  }
 
   el.innerHTML = `
-    <h1>Business Directory</h1>
-    <p style="margin-bottom:20px;font-size:14px;color:var(--text-soft)">Review and approve submitted business listings before they appear on the public directory.</p>
-    <div id="dir-table">${renderRows(rows)}</div>
-    <div style="margin-top:32px">
-      <a href="/directory" target="_blank" rel="noopener" style="color:var(--red);font-size:14px;font-weight:600">View public directory →</a>
-    </div>`;
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <h1>Business Directory</h1>
+      <a href="/directory" target="_blank" rel="noopener" style="color:var(--red);font-size:13px;font-weight:600">View public directory →</a>
+    </div>
+    <p style="margin-bottom:20px;font-size:14px;color:var(--text-soft)">Manage all business listings. Toggle the switch to publish or unpublish a listing.</p>
+    <div id="dir-table">${tableHTML(allRows)}</div>`;
 
-  el.addEventListener('click', async (e) => {
-    const btn = (e.target as HTMLElement).closest('[data-id]') as HTMLElement | null;
-    if (!btn) return;
-    const id = btn.dataset.id;
-    const action = btn.classList.contains('dir-approve') ? 'approve' : btn.classList.contains('dir-reject') ? 'reject' : null;
-    if (!action) return;
-    if (action === 'reject' && !confirm('Reject and delete this listing?')) return;
-    btn.closest('tr')?.remove();
-    await api('/admin/api/directory/pending', {
-      method: 'POST',
+  // Toggle published/unpublished
+  el.addEventListener('change', async (e) => {
+    const cb = (e.target as HTMLElement);
+    if (!cb.classList.contains('dir-toggle')) return;
+    const id = Number((cb as HTMLInputElement).dataset.id);
+    const approved = (cb as HTMLInputElement).checked ? 1 : 0;
+    const row = allRows.find(r => r.id === id);
+    if (!row) return;
+    row.approved = approved;
+    const statusDiv = cb.closest('td')?.querySelector('div');
+    if (statusDiv) statusDiv.textContent = approved ? 'Published' : 'Pending';
+    await api('/admin/api/directory/listings', {
+      method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: Number(id), action }),
+      body: JSON.stringify({ ...row, approved }),
     });
+  });
+
+  // Edit / Delete
+  el.addEventListener('click', async (e) => {
+    const btn = (e.target as HTMLElement).closest('button') as HTMLButtonElement | null;
+    if (!btn) return;
+    const id = Number(btn.dataset.id);
+
+    if (btn.classList.contains('dir-delete')) {
+      if (!confirm('Delete this listing permanently?')) return;
+      allRows = allRows.filter(r => r.id !== id);
+      btn.closest('tr')?.remove();
+      await api('/admin/api/directory/listings', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id }),
+      });
+      return;
+    }
+
+    if (btn.classList.contains('dir-edit')) {
+      const row = allRows.find(r => r.id === id);
+      if (!row) return;
+      document.body.insertAdjacentHTML('beforeend', editModalHTML(row));
+      const overlay = document.getElementById('dir-modal-overlay')!;
+      const closeModal = () => overlay.remove();
+      document.getElementById('dir-modal-close')!.addEventListener('click', closeModal);
+      document.getElementById('dir-modal-cancel')!.addEventListener('click', closeModal);
+      overlay.addEventListener('click', e => { if (e.target === overlay) closeModal(); });
+
+      document.getElementById('dir-edit-form')!.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const form = e.target as HTMLFormElement;
+        const errEl = document.getElementById('dir-edit-error')!;
+        const data = Object.fromEntries(new FormData(form));
+        const updated = { ...row, ...data, id, approved: (form.querySelector('[name=approved]') as HTMLInputElement).checked ? 1 : 0 };
+        const res = await api('/admin/api/directory/listings', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updated),
+        });
+        if (res?.error) { errEl.textContent = res.error; errEl.style.display = 'block'; return; }
+        // Update local data and re-render table
+        const idx = allRows.findIndex(r => r.id === id);
+        if (idx >= 0) allRows[idx] = updated;
+        document.getElementById('dir-table')!.innerHTML = tableHTML(allRows);
+        closeModal();
+      });
+    }
   });
 }
 
