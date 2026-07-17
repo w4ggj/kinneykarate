@@ -1,0 +1,67 @@
+---
+export const prerender = true;
+import Base from '../layouts/Base.astro';
+---
+<Base title="Contact Us" description="Get in touch with Kinney Karate — call, email, or send a message.">
+
+<div class="belt"><span class="w"></span><span class="y"></span><span class="g"></span><span class="b"></span><span class="k"></span></div>
+
+<section class="page-hero">
+  <div class="container">
+    <p class="eyebrow">Get in Touch</p>
+    <h1 class="cond">Contact Us</h1>
+  </div>
+</section>
+
+<section class="pad">
+  <div class="container">
+    <div class="contact-card">
+      <h2>We'd Love to Hear From You</h2>
+      <p>Questions about classes, enrollment, or the school? Reach out anytime.</p>
+      <p class="contact-direct">Call us: <a href="tel:+17276860864">727-686-0864</a></p>
+      <form class="contact-form" method="POST" action="/api/contact">
+        <div class="field">
+          <label for="cf-name">Your name</label>
+          <input type="text" id="cf-name" name="name" required autocomplete="name" />
+        </div>
+        <div class="field">
+          <label for="cf-email">Email address</label>
+          <input type="email" id="cf-email" name="email" required autocomplete="email" />
+        </div>
+        <div class="field">
+          <label for="cf-msg">Message</label>
+          <textarea id="cf-msg" name="message" rows="5" required></textarea>
+        </div>
+        <div class="cf-turnstile" data-sitekey="0x4AAAAAAD3XYraMXD0jlcAv"></div>
+        <button type="submit" class="btn">Send Message</button>
+      </form>
+    </div>
+  </div>
+</section>
+
+</Base>
+
+<style>
+.page-hero { background:var(--ink);color:var(--text-invert);padding:48px 0 40px; }
+.page-hero h1 { font-size:52px;font-weight:700;margin-bottom:10px; }
+.pad { padding:48px 0; }
+.contact-card {
+  border:1px solid var(--line);border-radius:var(--r-lg);background:#fff;padding:28px;max-width:600px;
+}
+.contact-card h2 { font-weight:700;font-size:22px;margin-bottom:14px; }
+.contact-card > p { font-size:14px;color:var(--text-soft);margin-bottom:10px;line-height:1.7; }
+.contact-direct { font-size:14px;margin-bottom:10px; }
+.contact-direct a { color:var(--red);font-weight:600; }
+.contact-form { margin-top:20px;display:flex;flex-direction:column;gap:16px; }
+.field { display:flex;flex-direction:column;gap:5px; }
+.field label { font-size:13px;font-weight:600;color:var(--text); }
+.field input, .field textarea {
+  border:1px solid var(--line);border-radius:var(--r);padding:9px 12px;
+  font-family:var(--font-body);font-size:14px;color:var(--text);background:#fff;width:100%;
+}
+.field input:focus, .field textarea:focus {
+  outline:2px solid var(--red);outline-offset:0;border-color:transparent;
+}
+</style>
+
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>

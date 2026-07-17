@@ -1,0 +1,109 @@
+---
+export const prerender = true;
+import Base from '../layouts/Base.astro';
+---
+<Base title="Our Instructors" description="Meet the Kinney Karate instructor team — experienced martial artists dedicated to the St. Petersburg community.">
+
+<div class="belt"><span class="w"></span><span class="y"></span><span class="g"></span><span class="b"></span><span class="k"></span></div>
+
+<section class="page-hero">
+  <div class="container">
+    <p class="eyebrow">Who We Are</p>
+    <h1 class="cond">Our Instructors</h1>
+    <p>Our instructor team brings decades of combined martial arts experience across multiple disciplines.</p>
+  </div>
+</section>
+
+<section class="pad">
+  <div class="container">
+    <div class="instructor-grid">
+      {[
+        {
+          name: 'Susan Serota',
+          rank: '9th Degree Black Belt — Soke Dai',
+          photo: '/instructors/Susan.png',
+          bio: 'Susan Serota holds a 9th degree black belt and serves as Soke Dai (successor to the founder) of Kinney Karate. She has been training and teaching under Soke Kinney for decades and leads the school with the same dedication to tradition, community, and personal growth that has defined Kinney Karate for over 55 years.',
+        },
+        {
+          name: 'Seth Koehler',
+          rank: '8th Degree Black Belt — Master Instructor',
+          photo: '/instructors/Seth.png',
+          bio: 'Seth Koehler holds an 8th degree black belt and has been an integral part of the Kinney Karate instructor team for many years. His depth of knowledge across Tang Soo Do, Aikido, Ju Jitsu, and Modern Arnis makes him a versatile and highly skilled teacher.',
+        },
+        {
+          name: 'Richard Serota',
+          rank: '7th Degree Black Belt',
+          photo: '/instructors/Richy.png',
+          bio: "Richard Serota holds a 7th degree black belt and brings decades of martial arts experience to his teaching. He is a cornerstone of the Kinney Karate community and embodies the school's values of discipline, respect, and continuous improvement.",
+        },
+        {
+          name: 'Jackie Prats',
+          rank: '6th Degree Black Belt',
+          photo: '/instructors/Jackie.png',
+          bio: 'Jackie Prats holds a 6th degree black belt and brings energy and dedication to every class. Jackie helps students of all levels grow in technique, confidence, and character.',
+        },
+        {
+          name: 'Stavro Liginos',
+          rank: '5th Degree Black Belt',
+          photo: '/instructors/Stavro.png',
+          bio: 'Stavro Liginos holds a 5th degree black belt and has been teaching at Kinney Karate for many years. His enthusiasm for the martial arts and his students makes his classes both challenging and rewarding.',
+        },
+        {
+          name: 'Sonja Leone',
+          rank: '4th Degree Black Belt',
+          photo: '/instructors/Sonja.png',
+          bio: 'Sonja Leone holds a 4th degree black belt. She brings energy and precision to her classes, helping students of all ages develop technique, confidence, and a love for the martial arts.',
+        },
+        {
+          name: 'Kelly Bonyata',
+          rank: '4th Degree Black Belt',
+          photo: '/instructors/Kelly2.png',
+          bio: 'Kelly Bonyata holds a 4th degree black belt. Her patient and encouraging teaching style is especially effective with younger students and beginners, helping them build a strong foundation in the martial arts.',
+        },
+        {
+          name: 'Tatsiana Haverkamp',
+          rank: '3rd Degree Black Belt',
+          photo: '/instructors/Tats.png',
+          bio: 'Tatsiana Haverkamp holds a 3rd degree black belt. Her commitment to the martial arts and her students makes her a valued member of the Kinney Karate teaching team.',
+        },
+      ].map(i => (
+        <div class="instructor-card">
+          <div class="instructor-avatar">
+            <img src={i.photo} alt={i.name} width="72" height="72" loading="lazy" onerror="this.style.display='none'" />
+          </div>
+          <h3>{i.name}</h3>
+          <p class="rank-label">{i.rank}</p>
+          <p class="bio">{i.bio}</p>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>
+
+</Base>
+
+<style>
+.page-hero { background:var(--ink);color:var(--text-invert);padding:48px 0 40px; }
+.page-hero h1 { font-size:52px;font-weight:700;margin-bottom:10px; }
+.page-hero p { color:var(--text-invert-soft);font-size:15px; }
+.pad { padding:48px 0; }
+.instructor-grid {
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:16px;
+}
+@media (max-width:900px) { .instructor-grid { grid-template-columns:repeat(3,1fr); } }
+@media (max-width:640px) { .instructor-grid { grid-template-columns:repeat(2,1fr); } }
+.instructor-card {
+  border:1px solid var(--line);border-radius:var(--r-lg);background:#fff;padding:24px;text-align:center;
+}
+.instructor-avatar {
+  width:80px;height:80px;border-radius:50%;background:var(--line);margin:0 auto 14px;overflow:hidden;
+}
+.instructor-avatar img {
+  width:100%;height:100%;object-fit:cover;object-position:top center;display:block;
+}
+.instructor-card h3 { font-weight:700;font-size:16px;margin-bottom:4px; }
+.rank-label { font-size:12px;color:var(--red);font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px; }
+.bio { font-size:13px;color:var(--text-soft);line-height:1.6; }
+</style>

@@ -1,0 +1,37 @@
+---
+export const prerender = true;
+import Base from '../layouts/Base.astro';
+---
+<Base title="Our Story" description="The history of Kinney Karate — founded in 1969 by Soke David Kinney in St. Petersburg, FL.">
+
+<div class="belt"><span class="w"></span><span class="y"></span><span class="g"></span><span class="b"></span><span class="k"></span></div>
+
+<section class="page-hero">
+  <div class="container">
+    <p class="eyebrow">Who We Are</p>
+    <h1 class="cond">Our Story</h1>
+  </div>
+</section>
+
+<section class="pad">
+  <div class="container">
+    <div class="story-body">
+      <p>Kinney Karate was founded in 1969 by Soke David Kinney. Over the decades the school grew from a single class into a multi-location program serving students of all ages across St. Petersburg and Pinellas County.</p>
+      <p>Soke Kinney began his martial arts journey in the Korean art of Tang Soo Do, and expanded his studies to include Aikido, Ju Jitsu, and Modern Arnis — eventually earning the rank of 9th degree black belt. He dedicated his life to sharing these arts with his community, believing that martial arts training builds not just physical skill but character, discipline, and resilience.</p>
+      <p>Today, Kinney Karate continues under the leadership of Soke Dai Susan Serota and a team of experienced instructors who carry on Soke Kinney's legacy. Classes are held at St. Petersburg Recreation Centers, making high-quality martial arts training accessible and affordable to everyone.</p>
+      <p>We also partner with <a href="https://balancemartialarts.com" target="_blank" rel="noopener">Balance Martial Arts &amp; Gaming</a> in Pinellas Park for advanced training and specialty programs — including our unique Kinney Karate Dungeons &amp; Dragons program that combines the values of martial arts with the imagination and teamwork of tabletop gaming.</p>
+      <p>Over 55 years and counting, Kinney Karate has trained hundreds of black belts, tournament champions, and — most importantly — better people. Many of our students have been with us for decades. We are proud to now teach the children and grandchildren of our original members.</p>
+      <p>We are a family — and we'd love to have you join us.</p>
+    </div>
+  </div>
+</section>
+
+</Base>
+
+<style>
+.page-hero { background:var(--ink);color:var(--text-invert);padding:48px 0 40px; }
+.page-hero h1 { font-size:52px;font-weight:700;margin-bottom:10px; }
+.pad { padding:48px 0; }
+.story-body p { font-size:15px;color:var(--text-soft);margin-bottom:20px;line-height:1.8;max-width:720px; }
+.story-body a { color:var(--red); }
+</style>
