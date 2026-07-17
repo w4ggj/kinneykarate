@@ -75,23 +75,32 @@ Modern Arnis training includes self-defense (striking, locking, throwing) as wel
 
 <section class="pad">
   <div class="container">
-    {programs.map(p => (
-      <div class="program" id={p.id}>
-        <div class="program-head">
-          <span class="belt-dot" style={`background:${p.color}`}></span>
-          <h2 class="cond">{p.label}</h2>
-        </div>
-        <p class="summary">{p.summary}</p>
-        <details class="accordion">
-          <summary class="accordion-toggle">History &amp; Background <span class="chevron">▾</span></summary>
-          <div class="accordion-body">
-            {p.history.split('\n\n').map(para => (
-              <p>{para}</p>
-            ))}
+
+    <div class="curriculum-card">
+      <h2 class="curriculum-title">Our Curriculum</h2>
+      <p class="curriculum-intro">Kinney Karate teaches four traditional martial arts disciplines as one integrated system. Students train in all four arts — each one complementing the others to produce well-rounded, capable martial artists.</p>
+
+      <div class="discipline-list">
+        {programs.map(p => (
+          <div class="discipline" id={p.id}>
+            <div class="discipline-head">
+              <span class="belt-dot" style={`background:${p.color}`}></span>
+              <h3 class="cond">{p.label}</h3>
+            </div>
+            <p class="summary">{p.summary}</p>
+            <details class="accordion">
+              <summary class="accordion-toggle">History &amp; Background <span class="chevron">▾</span></summary>
+              <div class="accordion-body">
+                {p.history.split('\n\n').map(para => (
+                  <p>{para}</p>
+                ))}
+              </div>
+            </details>
           </div>
-        </details>
+        ))}
       </div>
-    ))}
+    </div>
+
   </div>
 </section>
 
@@ -115,26 +124,55 @@ Modern Arnis training includes self-defense (striking, locking, throwing) as wel
 .page-hero p { color: var(--text-invert-soft); font-size: 15px; }
 
 .pad { padding: 48px 0; }
-.program {
+
+.curriculum-card {
   border: 1px solid var(--line);
   border-radius: var(--r-lg);
   background: #fff;
-  padding: 28px 30px;
-  margin-bottom: 20px;
+  padding: 36px 40px;
 }
-.program-head {
+@media (max-width: 620px) { .curriculum-card { padding: 24px 20px; } }
+
+.curriculum-title {
+  font-size: 26px;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+.curriculum-intro {
+  font-size: 15px;
+  color: var(--text-soft);
+  line-height: 1.7;
+  max-width: 700px;
+  margin-bottom: 32px;
+  padding-bottom: 32px;
+  border-bottom: 1px solid var(--line);
+}
+
+.discipline-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.discipline {
+  padding: 28px 0;
+  border-bottom: 1px solid var(--line);
+}
+.discipline:last-child { border-bottom: none; padding-bottom: 0; }
+.discipline:first-child { padding-top: 0; }
+
+.discipline-head {
   display: flex;
   align-items: center;
   gap: 14px;
-  margin-bottom: 14px;
+  margin-bottom: 10px;
 }
 .belt-dot {
   width: 12px; height: 12px;
   border-radius: 50%;
   flex-shrink: 0;
 }
-.program h2 { font-size: 28px; font-weight: 700; }
-.summary { color: var(--text-soft); font-size: 15px; line-height: 1.7; margin-bottom: 18px; }
+.discipline h3 { font-size: 24px; font-weight: 700; }
+.summary { color: var(--text-soft); font-size: 15px; line-height: 1.7; margin-bottom: 14px; }
 
 .accordion { border-top: 1px solid var(--line); padding-top: 14px; }
 .accordion-toggle {
