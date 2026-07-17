@@ -123,6 +123,8 @@ const authed = cookie?.value === 'authenticated';
   .btn-sm { font-size: 12px; padding: 5px 10px; }
 
   /* Scan panel */
+  .scan-instructions { background: #f0f4ff; border: 1px solid #c7d4f0; border-radius: var(--r-lg); padding: 16px 20px; max-width: 600px; margin-bottom: 20px; font-size: 14px; line-height: 1.7; }
+  .scan-instructions ol { margin: 8px 0 0 18px; padding: 0; }
   .scan-panel { background: #fff; border: 1px solid var(--line); border-radius: var(--r-lg); padding: 24px; max-width: 480px; margin-bottom: 24px; }
   .scan-panel h2 { font-weight: 700; font-size: 18px; margin-bottom: 14px; }
   .scan-input { display: flex; gap: 8px; }
@@ -228,6 +230,15 @@ async function renderInventory(el: HTMLElement) {
 
   el.innerHTML = `
     <h1>Stock &amp; Barcode Scanning</h1>
+    <div class="scan-instructions">
+      <strong>How to use:</strong>
+      <ol>
+        <li>Select <b>Check In</b> when receiving new stock, or <b>Check Out</b> when selling an item in person.</li>
+        <li>Set the <b>quantity</b> using the dropdown (defaults to 1).</li>
+        <li>Scan the item's barcode — the count updates automatically.</li>
+        <li>If a barcode is unrecognized, a dropdown will appear — select the matching item and tap <b>Map</b>, then scan again.</li>
+      </ol>
+    </div>
     <div class="scan-panel">
       <h2>Scan Item</h2>
       <div class="scan-mode-btns">
