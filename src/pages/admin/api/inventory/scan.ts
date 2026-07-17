@@ -10,9 +10,10 @@ export async function POST({ request, locals, cookies }: APIContext) {
   let body: any;
   try { body = await request.json(); } catch { return err('Invalid JSON', 400); }
 
-  const { barcode, mode, staff } = body;
+  const { barcode, mode, staff, qty } = body;
   if (!barcode) return err('barcode required', 400);
   if (!['check_in', 'take_out'].includes(mode)) return err('invalid mode', 400);
+  const quantity = Math.min(10, Math.max(1, parseInt(qty) || 1));
 
   // Look up variant by barcode
   const variant = await env.DB.prepare(`
@@ -23,7 +24,7 @@ export async function POST({ request, locals, cookies }: APIContext) {
 
   if (!variant) return json({ unknown: true });
 
-  const delta = mode === 'check_in' ? 1 : -1;
+  const delta = mode === 'check_in' ? quantity : -quantity;
   const reason = mode === 'check_in' ? 'received' : 'in_person_sale';
 
   // Upsert inventory

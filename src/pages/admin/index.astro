@@ -236,6 +236,9 @@ async function renderInventory(el: HTMLElement) {
       </div>
       <div class="scan-input">
         <input type="text" id="scan-field" placeholder="Scan or type barcode…" autofocus />
+        <select id="scan-qty">
+          ${Array.from({length:10},(_,i)=>`<option value="${i+1}">${i+1}</option>`).join('')}
+        </select>
         <button class="btn" id="scan-submit">Scan</button>
       </div>
       <div class="scan-result" id="scan-result"></div>
@@ -268,14 +271,16 @@ async function renderInventory(el: HTMLElement) {
 
   async function doScan() {
     const field = document.getElementById('scan-field') as HTMLInputElement;
+    const qtyEl = document.getElementById('scan-qty') as HTMLSelectElement;
     const resultEl = document.getElementById('scan-result')!;
     const barcode = field.value.trim();
     if (!barcode) return;
+    const qty = parseInt(qtyEl.value) || 1;
     try {
       const r = await api('/admin/api/inventory/scan', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ barcode, mode: scanMode, staff: 'admin' }),
+        body: JSON.stringify({ barcode, mode: scanMode, qty, staff: 'admin' }),
       });
       if (r.unknown) {
         resultEl.innerHTML = `<span style="color:var(--warn)">Unknown barcode: <b>${esc(barcode)}</b>. <button class="btn btn-sm" id="map-btn">Map to variant</button></span>`;
@@ -287,14 +292,15 @@ async function renderInventory(el: HTMLElement) {
           }).then(() => { resultEl.innerHTML = '<span style="color:var(--ok)">Barcode mapped!</span>'; });
         });
       } else {
-        resultEl.innerHTML = `<span style="color:var(--ok)">✓ ${esc(r.variant.product_name)} ${esc(r.variant.size||'')} — on hand: <b>${r.on_hand}</b></span>`;
-        // Refresh table row
+        const action = scanMode === 'check_in' ? `+${qty} received` : `-${qty} taken out`;
+        resultEl.innerHTML = `<span style="color:var(--ok)">✓ ${esc(r.variant.product_name)} ${esc(r.variant.size||'')} ${esc(r.variant.color||'')} — ${action} — on hand: <b>${r.on_hand}</b></span>`;
         loadPanel('inventory');
       }
     } catch {
       resultEl.innerHTML = '<span style="color:var(--danger)">Scan failed. Check connection.</span>';
     }
     field.value = '';
+    qtyEl.value = '1';
     field.focus();
   }
 
