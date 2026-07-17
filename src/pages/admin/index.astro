@@ -3,8 +3,8 @@ export const prerender = false;
 import Base from '../../layouts/Base.astro';
 
 const env = (Astro.locals as any).runtime?.env;
-const SUPABASE_URL = env?.PUBLIC_SUPABASE_URL || '';
-const SUPABASE_ANON_KEY = env?.PUBLIC_SUPABASE_ANON_KEY || '';
+const SUPABASE_URL = env?.SUPABASE_URL || env?.PUBLIC_SUPABASE_URL || '';
+const SUPABASE_ANON_KEY = env?.SUPABASE_ANON_KEY || env?.PUBLIC_SUPABASE_ANON_KEY || '';
 
 // Check session cookie set by client-side Supabase login
 const cookie = Astro.cookies.get('kk_admin_session');
