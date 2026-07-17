@@ -43,7 +43,7 @@
         "order_via": "instructor",
         "display": "Speak with your instructor for pricing and ordering"
       },
-      "fulfillment_type": "made_to_order",
+      "fulfillment_type": "stocked",
       "size_guide": "uniform",
       "note": "Lightweight white student uniform with official Kinney Karate logo. Designed to fit loose. Black belts and up may special-order other colors.",
       "variants": [
