@@ -37,7 +37,9 @@ export async function GET({ locals }: APIContext) {
   apiUrl.searchParams.set('orderBy', 'startTime');
 
   try {
-    const res = await fetch(apiUrl.toString());
+    const res = await fetch(apiUrl.toString(), {
+      headers: { 'Referer': 'https://kinneykarate.com' },
+    });
     if (!res.ok) {
       const errText = await res.text();
       return new Response(JSON.stringify({ error: 'google_api_error', status: res.status, body: errText }), { status: 502, headers: { 'Content-Type': 'application/json' } });
