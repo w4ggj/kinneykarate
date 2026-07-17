@@ -3,52 +3,74 @@ export const prerender = false;
 import Base from '../../layouts/Base.astro';
 
 const env = (Astro.locals as any).runtime?.env;
-const ADMIN_USER = env?.ADMIN_USER || 'admin';
-const ADMIN_PASS = env?.ADMIN_PASS || '';
+const SUPABASE_URL = env?.PUBLIC_SUPABASE_URL || '';
+const SUPABASE_ANON_KEY = env?.PUBLIC_SUPABASE_ANON_KEY || '';
 
-// Check session cookie
+// Check session cookie set by client-side Supabase login
 const cookie = Astro.cookies.get('kk_admin_session');
-const validSession = cookie?.value === `${ADMIN_USER}:${ADMIN_PASS}`;
-
-// Handle login form submission
-let loginError = false;
-if (Astro.request.method === 'POST') {
-  const form = await Astro.request.formData();
-  const u = form.get('username');
-  const p = form.get('password');
-  if (u === ADMIN_USER && p === ADMIN_PASS && ADMIN_PASS !== '') {
-    Astro.cookies.set('kk_admin_session', `${ADMIN_USER}:${ADMIN_PASS}`, {
-      httpOnly: true, secure: true, sameSite: 'lax', maxAge: 60 * 60 * 24 * 7,
-    });
-    return Astro.redirect('/admin');
-  }
-  loginError = true;
-}
-
-const authed = validSession && ADMIN_PASS !== '';
+const authed = cookie?.value === 'authenticated';
 ---
 <Base title="Admin Console">
 
 {!authed && (
   <div class="login-wrap">
-    <form method="POST" class="login-box">
+    <div class="login-box">
       <div class="login-logo">
         <img src="/logo.png" alt="Kinney Karate" width="48" height="48" />
         <h1>Kinney Karate</h1>
         <p>Admin Console</p>
       </div>
-      {loginError && <div class="login-error">Invalid username or password.</div>}
+      <div id="login-error" class="login-error" style="display:none"></div>
       <div class="login-field">
-        <label for="username">Username</label>
-        <input type="text" id="username" name="username" required autocomplete="username" />
+        <label for="email">Email address</label>
+        <input type="email" id="email" required autocomplete="email" autofocus />
       </div>
       <div class="login-field">
         <label for="password">Password</label>
-        <input type="password" id="password" name="password" required autocomplete="current-password" />
+        <input type="password" id="password" required autocomplete="current-password" />
       </div>
-      <button type="submit" class="btn block" style="margin-top:8px">Sign In</button>
-    </form>
+      <button class="btn block" id="signin-btn" style="margin-top:8px">Sign In</button>
+    </div>
   </div>
+  <script define:vars={{ SUPABASE_URL, SUPABASE_ANON_KEY }}>
+
+    async function signIn() {
+      const email = (document.getElementById('email') as HTMLInputElement).value.trim();
+      const password = (document.getElementById('password') as HTMLInputElement).value;
+      const errEl = document.getElementById('login-error')!;
+      const btn = document.getElementById('signin-btn') as HTMLButtonElement;
+      errEl.style.display = 'none';
+      btn.disabled = true;
+      btn.textContent = 'Signing in…';
+
+      try {
+        const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY },
+          body: JSON.stringify({ email, password }),
+        });
+        const data = await res.json();
+        if (!res.ok || !data.access_token) {
+          errEl.textContent = data.error_description || data.msg || 'Incorrect email or password.';
+          errEl.style.display = 'block';
+          btn.disabled = false;
+          btn.textContent = 'Sign In';
+          return;
+        }
+        // Set session cookie and reload
+        document.cookie = 'kk_admin_session=authenticated; path=/admin; max-age=604800; SameSite=Lax';
+        window.location.reload();
+      } catch {
+        errEl.textContent = 'Network error. Please try again.';
+        errEl.style.display = 'block';
+        btn.disabled = false;
+        btn.textContent = 'Sign In';
+      }
+    }
+
+    document.getElementById('signin-btn')?.addEventListener('click', signIn);
+    document.getElementById('password')?.addEventListener('keydown', (e: any) => { if (e.key === 'Enter') signIn(); });
+  </script>
 )}
 
 {authed && (

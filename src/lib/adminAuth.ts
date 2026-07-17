@@ -1,10 +1,6 @@
-export function checkAdminAuth(locals: any, cookies: any): boolean {
-  const env = (locals as any).runtime?.env;
-  const adminUser = env?.ADMIN_USER || 'admin';
-  const adminPass = env?.ADMIN_PASS || '';
-  if (!adminPass) return false;
+export function checkAdminAuth(_locals: any, cookies: any): boolean {
   const session = cookies.get('kk_admin_session');
-  return session?.value === `${adminUser}:${adminPass}`;
+  return session?.value === 'authenticated';
 }
 
 export function unauthorizedResponse() {
