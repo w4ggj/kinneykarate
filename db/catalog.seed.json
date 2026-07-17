@@ -355,6 +355,7 @@
       "name": "Soke Kinney Memorial patch",
       "kind": "simple",
       "category": "Accessories",
+      "image": "/memorialpatch.jpg",
       "required_for": "Optional",
       "fulfillment_type": "made_to_order",
       "price_cents": 1500
