@@ -38,7 +38,7 @@ export async function GET({ locals }: APIContext) {
 
   try {
     const res = await fetch(apiUrl.toString(), {
-      headers: { 'Referer': 'https://kinneykarate.com' },
+      headers: { 'Referer': 'https://kinneykarate.pages.dev' },
     });
     if (!res.ok) {
       const errText = await res.text();
