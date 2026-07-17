@@ -267,6 +267,7 @@
       "name": "Sparring shin guards",
       "kind": "simple",
       "category": "Sparring gear",
+      "image": "/shin.png",
       "special_order": true,
       "fulfillment_type": "made_to_order",
       "price_cents": null,
