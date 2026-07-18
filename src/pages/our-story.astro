@@ -1,8 +1,118 @@
 ---
 export const prerender = true;
 import Base from '../layouts/Base.astro';
+
+const sections = [
+  {
+    heading: 'The Story of Kinney Karate',
+    intro: 'How different people, their backgrounds, and the styles they studied influenced Michael Kinney.',
+    items: [
+      {
+        label: null,
+        body: `Kinney Karate's unique system of martial arts emerged from Michael Kinney's 50+ years of training, and his vault of knowledge was influenced by a number of historical figures and mentorships.`,
+        bodyParagraphs: false,
+      },
+    ],
+  },
+  {
+    heading: "Michael Kinney's Background (in his own words)",
+    intro: null,
+    items: [
+      {
+        label: 'My 1963–1980 Washington DC / Maryland Period',
+        body: `It all started in a little traditional karate school. It was on the second floor of a strip center on Georgia Avenue in Silver Spring, Maryland, near the D.C. line — a simply named school, like mine. It was named Kim Studio.
+
+I began my martial arts career in 1963 at Kim Studio in Silver Spring, Maryland. The first 20 years of the skills that formulated my knowledge came directly from Mr. Kim and his influence. Even today, the forms, the tang-soo-do, and aikido that he taught in his second floor studio carried me to heights that I am sure he would be proud of. The dynamic kicking and fighting style that he taught to me fifty years ago has become the foundation of Kinney Karate.
+
+My father passed away in late 1964, and my mother arranged for me to take my lessons from one of Mr. Kim's black belts at the YMCA, who offered classes at a lower cost. She was working three jobs to make ends meet. In some ways, this was both a blessing and a curse. I never got my black belt rank from Mr. Kim, but I never would have gotten to the unbelievable place I am now if it hadn't been for the vision of a rebel black belt, Dale Tompkins. He had broken away from Kim Studio and taken me under his wing for the ride of my life.
+
+Major changes were happening in the martial arts in America. I had stepped into the middle of the "Golden Age of the Martial Arts." I received my black belt in 1969; I had been a brown belt for four years because there was no such thing as a "junior" black belt. I had to wait until I was eighteen to be promoted to black belt. It was a good thing. I became the FIRST black belt in this new school started by the man who had "kidnapped me" from Mr. Kim.
+
+Dale Tompkins had named the school TKA (The Tang Soo Do Karate Association). I became the chief black belt instructor of the school. TKA grew to over 50 locations with over 2,000 students by 1975. We were the first school to contract into recreation centers and school gymnasiums. We brought martial arts into small communities on a large scale. Before TKA, it was rare to see children and women in the martial arts. This was a ground-breaking school that introduced family-style martial arts into suburbia for the first time.
+
+After I graduated from Springbrook High School, I began college at the University of Maryland. That year I also opened a studio in Adelphi, near campus, with my instructor, Dale Tompkins. Over the next 8 years, the huge base of instructors that I produced would lead TKA into the future. Today, scores of black belts that I trained as kids are teaching thousands of students in their own schools, both in the Washington, DC metropolitan area and around the country.
+
+During the growth of the school, I was an active competitor, and I was training other instructors and students to be competitors to represent our school. We were highly successful, with hundreds of competitors throughout the East Coast. I coached and fought on a school team that represented Washington, DC — no one was doing this at the time. I was also well-known as a breaking competitor.
+
+TKA sponsored the Eastern Regional Karate Championship, one of the first large annual open tournaments, which started in 1970 and is still running today. We also sponsored an annual Karate Camp with over 500 campers. The first camp was held in Buffalo Gap West, Virginia in 1968.
+
+The amazing size of TKA resulted in hundreds of thousands of students participating in this visionary program. We taught celebrities, politicians, athletes, diplomats, writers, newscasters, professors, government agents, and their families. The area was a hotbed of activity.`,
+      },
+      {
+        label: 'St. Petersburg (1980–present)',
+        body: `In November 1980, I made the decision to move to St. Petersburg, Florida, and the adventure in the south began. My mother had remarried and, after 40 years, was retiring to Florida. My wife and I decided we were going to make a lifestyle change, and the time was right. Soon after arriving, I quickly reestablished my reputation in the south. Florida was a decade behind in development in the martial arts, and I quickly was able to duplicate what I had previously established as a school model, using the successful formula I was comfortable with.
+
+Nobody believed in me when I approached the City of St. Petersburg Recreation Department. They said it couldn't be done — no one before had built a successful martial arts program. I was turned down for the gym and given a little room in the back of one of the city's largest centers. Within three months, Kinney Karate had taken over the gym two nights a week and on Saturdays. Before long, the program became city-wide.
+
+I give credit to my mother — her dedication as a single mom. She was a teacher who worked three jobs — as a music teacher, a waitress, and a church organist — to pay the bills. She always had faith that I would make something of myself and give back to my community.`,
+      },
+      {
+        label: 'Michael Kinney: a 50-Year Career',
+        body: `In his 50+ year career, Michael Kinney introduced hundreds of thousands of students to the martial arts. He trained and performed with many of the world's greatest legendary masters. His seminars were in high demand at conferences, schools, camps and clinics. Mr. Kinney received service awards from schools, universities, city and state governments, international organizations, and President Obama.
+
+He was featured in Black Belt Magazine, U.S. News and World Report, Professional Karate Magazine, Who's Who, International Martial Arts Elite, Washington Post Magazine, and Karate Illustrated, along with hundreds of other publications. He was inducted into the EUSA International Martial Arts Black Belt Hall of Fame, and is recognized as a martial arts pioneer and legend.
+
+His numerous television appearances included NBC's Today Show and ABC's Wide World of Sports. Mr. Kinney was the host of Kinney Karate World, a series syndicated nationally and produced by Group W Television. He also produced professional DVDs for instructors and school owners.
+
+Soke Michael Kinney promoted thousands of black belts, many who now own their own schools around the country. Proudly, hundreds of his young black belts have gone into the military, served in combat, and many have gone directly into our nation's military academies. Many are career soldiers holding high ranks; many are professors, teachers, scientists, lawyers, law enforcement officers, judges, and leaders of industry.
+
+Michael Kinney continued to teach beginners and advanced students in his classes in St. Petersburg throughout his life. He was proud to work alongside his instructors. The year 2014 was his 51st continuous year as a practicing martial artist.`,
+      },
+    ],
+  },
+  {
+    heading: 'Influences: People',
+    intro: null,
+    items: [
+      {
+        label: 'Ki Whang Kim (1920–1993)',
+        body: `Kim Ki Whang, also known in the United States as Ki Whang Kim, was a Korean martial arts Grand Master. He was Chairman in the US of the Tang Soo Do Moo Duk Kwan Association, Chairman of the US Olympic Taekwondo team, and helped unify several Korean martial arts into the overall style of Taekwondo.
+
+Kim was born in Seoul, South Korea in 1920. At the time, Korea was occupied by Japan. Under their regime, martial arts had been banned since 1909, though the practice of taekkyon was not banned until the year of Kim's birth.
+
+Despite the Japanese ban, Koreans still practiced martial arts in secret, and Kim was able to study Judo at the Kodokan from 1931, earning a Black Belt five years later. The ban did not extend to Koreans who lived in Japan, and Kim learned Shudokan Karate from its founder, Kanken Toyama, at Nihon University in Japan. He became captain of the team, earned the nickname "Typhoon," and earned a fourth degree Black Belt rank in this style.
+
+He also went to China for two years, where he learned Kempo and Shaolin Kung Fu. He returned to Korea where he founded the Chung Do Kwan style, teaching it at Sung Kyun Kwan University. A notable early student during this period was Sang Kee Paik.
+
+In 1963, he emigrated to the United States, where he remained for the rest of his life. His U.S. students included Richard Chun, Chuck Norris, John Critzos II, Pat E. Johnson and Mitchell Bobrow. He taught more than 25,000 students and issued 424 black belts. He was awarded a 10th dan black belt while in the hospital with liver cancer at the age of 73 and died on 16 September 1993. More than 650 people attended his funeral.`,
+      },
+      {
+        label: 'Remy Presas (1936–2001)',
+        body: `Remy Presas was born in the town of Hinigaran, Negros Occidental, Philippines. By the age of fourteen, he had his first stick fighting match with a Sinawali master. He continued to travel across the Philippine Islands to learn from other masters and to compete in competitions and many street fights. Presas eventually focused on Balintawak Eskrima, but also earned a 6th degree black belt in Shotokan Karate and a black belt in Judo.
+
+In 1966, Presas began developing his own system, which he called Modern Arnis, by identifying and merging the basic concepts of the numerous systems he had learned. By 1969 Modern Arnis had been approved by the Philippine Amateur Athletic Federation as a regular subject to be taught at the National College of Physical Education.
+
+In 1982 Presas was inducted into the Black Belt Hall of Fame as Instructor of the Year. In 1994 he was again honored as Weapons Instructor of the Year.
+
+Presas earned a bachelor's degree in physical education and taught the subject at the University of Negros Occidental-Recoletos. Because of this, he was addressed as Professor Presas. He later worked for the Philippine government spreading arnis instruction through the high schools.
+
+He moved to the United States and lived the rest of his life in North America, traveling worldwide to conduct seminars. Presas died on August 28, 2001 in Victoria, Canada from brain cancer. Since his death, several groups have emerged to carry on instruction in his art.`,
+      },
+      {
+        label: 'Wally Jay (1917–2011)',
+        body: `Wally Jay was born in Hawaii of Chinese descent. At age 11, he began to study boxing under a community program. In 1940, he studied Danzan Ryu jujutsu under Juan Gomez and learned Judo under the former Hawaiian Champion, Ken Kawachi. Jay and his wife Bernice were awarded a Certificate of Mastery by Seishiro Okazaki, the founder of Danzan Ryu jujutsu, on February 22, 1948. Jay spent time with Bruce Lee and his associates in 1962 teaching them Judo and Jujutsu techniques.
+
+Jay was the head instructor of Jay's Jujitsu Studio (Island Judo/JiuJitsu Club) in Alameda, California. Even past the age of 90, he traveled worldwide teaching seminars on Small Circle Jujitsu. Jay published two books, Dynamic Jujitsu and Small Circle Jujitsu, and numerous instructional videos.
+
+In 1969, Jay was inducted into Black Belt Magazine's Black Belt Hall of Fame as Ju-Jitsu Sensei of the Year and again in 1990 as Man of the Year. In August 2002, Jay held a ceremony officially handing the title of grand master over to his son Leon Jay in Alameda, California.`,
+      },
+      {
+        label: 'Bob Maxwell',
+        body: `Michael Kinney was influenced as a young man by his friend Bob Maxwell. As a young teen, he was befriended by Bob, and they spent hundreds of hours together sparring and sharing time training. At the time, Michael didn't really understand the meaning of what he was learning and what Bando was. He had heard endless conversations about Dr. Gyi, the founder of American Bando. A big part of Michael's background in combat skills, sparring strategies and philosophy was directly influenced by his friendship with Bob Maxwell.
+
+Bob Maxwell studied Bando as part of the first generation of students with Dr. Gyi. He was an early competitor in the 1960s.
+
+Bando (pronounced bun doe) is a multifaceted martial art, with roots in China, Burma, and India. The system was brought to America in the late 1950s by Maung Gyi (now Dr. U M. Gyi, Grandmaster) from Burma. Dr. Gyi later formed the American Bando Association [ABA]. This Burmese art is practiced by a small group of dedicated students and teachers here in the U.S. under the direction of Dr. Maung Gyi.`,
+      },
+      {
+        label: 'Soke Sean Martin, PhD',
+        body: `Dr. Martin introduced Kinney Karate to Kage-Essensu, a modern martial art style emphasizing practical self-defense techniques.`,
+      },
+    ],
+  },
+];
 ---
-<Base title="Our Story" description="The history of Kinney Karate — founded in 1969 by Soke David Kinney in St. Petersburg, FL.">
+<Base title="Our Story" description="The history of Kinney Karate — founded by Soke Michael Kinney, shaped by 50+ years of training and legendary mentors.">
 
 <div class="belt"><span class="w"></span><span class="y"></span><span class="g"></span><span class="b"></span><span class="k"></span></div>
 
@@ -15,14 +125,26 @@ import Base from '../layouts/Base.astro';
 
 <section class="pad">
   <div class="container">
-    <div class="story-body">
-      <p>Kinney Karate was founded in 1969 by Soke David Kinney. Over the decades the school grew from a single class into a multi-location program serving students of all ages across St. Petersburg and Pinellas County.</p>
-      <p>Soke Kinney began his martial arts journey in the Korean art of Tang Soo Do, and expanded his studies to include Aikido, Ju Jitsu, and Modern Arnis — eventually earning the rank of 9th degree black belt. He dedicated his life to sharing these arts with his community, believing that martial arts training builds not just physical skill but character, discipline, and resilience.</p>
-      <p>Today, Kinney Karate continues under the leadership of Soke Dai Susan Serota and a team of experienced instructors who carry on Soke Kinney's legacy. Classes are held at St. Petersburg Recreation Centers, making high-quality martial arts training accessible and affordable to everyone.</p>
-      <p>We also partner with <a href="https://balancemartialarts.com" target="_blank" rel="noopener">Balance Martial Arts &amp; Gaming</a> in Pinellas Park for advanced training and specialty programs — including our unique Kinney Karate Dungeons &amp; Dragons program that combines the values of martial arts with the imagination and teamwork of tabletop gaming.</p>
-      <p>Over 55 years and counting, Kinney Karate has trained hundreds of black belts, tournament champions, and — most importantly — better people. Many of our students have been with us for decades. We are proud to now teach the children and grandchildren of our original members.</p>
-      <p>We are a family — and we'd love to have you join us.</p>
-    </div>
+    {sections.map(sec => (
+      <div class="story-section">
+        <h2 class="section-heading cond">{sec.heading}</h2>
+        {sec.intro && <p class="section-intro">{sec.intro}</p>}
+        {sec.items.map(item => (
+          item.label ? (
+            <details class="accordion">
+              <summary class="accordion-toggle">{item.label} <span class="chevron">▾</span></summary>
+              <div class="accordion-body">
+                {item.body.split('\n\n').map((para: string) => (
+                  <p>{para}</p>
+                ))}
+              </div>
+            </details>
+          ) : (
+            <p class="section-body">{item.body}</p>
+          )
+        ))}
+      </div>
+    ))}
   </div>
 </section>
 
@@ -32,6 +154,66 @@ import Base from '../layouts/Base.astro';
 .page-hero { background:var(--ink);color:var(--text-invert);padding:48px 0 40px; }
 .page-hero h1 { font-size:52px;font-weight:700;margin-bottom:10px; }
 .pad { padding:48px 0; }
-.story-body p { font-size:15px;color:var(--text-soft);margin-bottom:20px;line-height:1.8;max-width:720px; }
-.story-body a { color:var(--red); }
+
+.story-section {
+  margin-bottom: 48px;
+}
+.section-heading {
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  color: var(--ink);
+}
+.section-intro {
+  font-size: 15px;
+  color: var(--text-soft);
+  font-style: italic;
+  margin-bottom: 20px;
+  line-height: 1.7;
+  max-width: 720px;
+}
+.section-body {
+  font-size: 15px;
+  color: var(--text-soft);
+  line-height: 1.8;
+  max-width: 720px;
+}
+
+.accordion {
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  background: #fff;
+  margin-bottom: 10px;
+  overflow: hidden;
+}
+.accordion-toggle {
+  list-style: none;
+  cursor: pointer;
+  padding: 16px 20px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  user-select: none;
+  gap: 12px;
+}
+.accordion-toggle::-webkit-details-marker { display: none; }
+.accordion-toggle:hover { color: var(--red); }
+.chevron { font-size: 11px; transition: transform .2s; flex-shrink: 0; }
+details[open] .chevron { transform: rotate(180deg); }
+details[open] .accordion-toggle { border-bottom: 1px solid var(--line); }
+
+.accordion-body {
+  padding: 20px 20px 20px;
+}
+.accordion-body p {
+  font-size: 14px;
+  color: var(--text-soft);
+  line-height: 1.8;
+  margin-bottom: 14px;
+  max-width: 720px;
+}
+.accordion-body p:last-child { margin-bottom: 0; }
 </style>
