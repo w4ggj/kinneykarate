@@ -94,13 +94,15 @@ import Base from '../layouts/Base.astro';
 <!-- First class free -->
 <section class="free-class">
   <div class="container free-class-inner">
-    <div>
-      <p class="eyebrow">New Students</p>
-      <h2 class="cond">Your First Class is Free</h2>
-      <p>Come see what Kinney Karate is all about — no commitment, no cost. Just show up ready to learn.</p>
+    <div class="free-class-text">
+      <h2 class="cond">How do I get started?</h2>
+      <p class="free-class-sub">YOUR FIRST CLASS IS FREE</p>
+      <p>To enroll, <strong>just show up</strong> at a <a href="/locations">location</a> you'd like to attend. You don't need to start at the beginning of the month. No uniform needed to begin — wear loose-fitting pants and a t-shirt.</p>
+      <p style="margin-top:10px;font-weight:600">We're looking forward to meeting you!</p>
     </div>
-    <div>
-      <a href="/students#new" class="btn">Get Started</a>
+    <div class="free-class-btns">
+      <a href="/locations" class="btn">Find a Class</a>
+      <a href="/about#contact" class="btn ghost-white">Contact Us</a>
     </div>
   </div>
 </section>
@@ -235,19 +237,26 @@ import Base from '../layouts/Base.astro';
 .free-class {
   background: var(--red);
   color: #fff;
-  padding: 40px 0;
+  padding: 48px 0;
 }
 .free-class-inner {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 24px;
+  gap: 32px;
   flex-wrap: wrap;
 }
+.free-class-text { max-width: 640px; }
 .free-class h2 { font-size: 36px; font-weight: 700; margin-bottom: 6px; }
-.free-class p { font-size: 14px; opacity: .85; }
-.free-class .btn { background: #fff; color: var(--red); font-size: 14px; }
+.free-class-sub { font-size: 12px; font-weight: 700; letter-spacing: .08em; opacity: .75; margin-bottom: 14px; }
+.free-class p { font-size: 15px; opacity: .9; line-height: 1.65; }
+.free-class a[href="/locations"] { color: #fff; text-decoration: underline; }
+.free-class-btns { display: flex; flex-direction: column; gap: 10px; min-width: 160px; }
+.free-class .btn { background: #fff; color: var(--red); font-size: 14px; text-align: center; }
 .free-class .btn:hover { background: var(--paper); }
+.free-class .ghost-white { background: transparent; color: #fff; border: 2px solid rgba(255,255,255,0.6); }
+.free-class .ghost-white:hover { background: rgba(255,255,255,0.1); }
+@media (max-width: 620px) { .free-class-btns { flex-direction: row; } }
 
 .prog {
   display: block;
