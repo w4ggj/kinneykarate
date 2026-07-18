@@ -63,6 +63,8 @@ function fmtPrice(cents: number | null) {
 
 const sizes = [...new Set((variants as any[]).map((v: any) => v.size).filter(Boolean))];
 const colors = [...new Set((variants as any[]).map((v: any) => v.color).filter(Boolean))];
+// For special-order gear with no DB variants, pull size options from catalog
+const catalogSizes: string[] = (isSpecial && sizes.length === 0) ? (seedProduct?.size_options ?? []) : [];
 ---
 <Base title={product.name as string}>
 
@@ -91,6 +93,14 @@ const colors = [...new Set((variants as any[]).map((v: any) => v.color).filter(B
       <div class="special-box">
         <p class="special-msg">Speak with your instructor for pricing and ordering.</p>
         <p class="special-sub">Individual sparring pieces and non-standard items are special order — your instructor will confirm eligibility, quote the price, and place the order.</p>
+        {catalogSizes.length > 0 && (
+          <div class="special-sizes">
+            <label>Available sizes {sizeGuideKey && <button type="button" class="size-guide-btn">Size Guide</button>}</label>
+            <div class="size-grid">
+              {catalogSizes.map((s: string) => <span class="size-chip">{s}</span>)}
+            </div>
+          </div>
+        )}
       </div>
     ) : (
       <div class="price-area">
@@ -281,6 +291,9 @@ h1 { font-size: 36px; font-weight: 700; margin-bottom: 14px; }
 .product-desc { font-size: 14px; color: var(--text-soft); line-height: 1.7; margin-bottom: 24px; }
 
 .special-box { background: var(--paper); border: 1px solid var(--line); border-radius: var(--r); padding: 18px; margin-bottom: 20px; }
+.special-sizes { margin-top: 16px; }
+.special-sizes label { font-size: 13px; font-weight: 600; display: block; margin-bottom: 8px; }
+.size-chip { display: inline-block; padding: 5px 12px; border: 1px solid var(--line); border-radius: var(--r); font-size: 13px; margin: 3px; background: #fff; }
 .special-msg { font-weight: 700; font-size: 15px; margin-bottom: 8px; }
 .special-sub { font-size: 13px; color: var(--text-soft); line-height: 1.6; }
 
