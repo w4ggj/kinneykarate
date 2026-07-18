@@ -174,15 +174,23 @@ for (const cat of CATEGORIES) counts[cat] = byCategory[cat]?.length ?? 0;
 
   function cardHTML(l) {
     const loc = [l.city, l.state].filter(Boolean).join(', ');
+    const initials = l.business_name.split(' ').slice(0,2).map(w => w[0]).join('').toUpperCase();
     return `<div class="listing-card">
-      <div class="lc-name">${esc(l.business_name)}</div>
-      <div class="lc-owner">Owner: ${esc(l.owner_name)}</div>
-      ${loc ? `<div class="lc-loc">📍 ${esc(loc)}</div>` : ''}
+      <div class="lc-header">
+        <div class="lc-avatar">${initials}</div>
+        <div class="lc-title-group">
+          <div class="lc-name">${esc(l.business_name)}</div>
+          <div class="lc-meta">
+            <span class="lc-owner">${esc(l.owner_name)}</span>
+            ${loc ? `<span class="lc-sep">·</span><span class="lc-loc">${esc(loc)}</span>` : ''}
+          </div>
+        </div>
+      </div>
       <p class="lc-desc">${esc(l.description)}</p>
       <div class="lc-contact">
-        ${l.phone ? `<a href="tel:${esc(l.phone)}">${esc(l.phone)}</a>` : ''}
-        ${l.email ? `<a href="mailto:${esc(l.email)}">${esc(l.email)}</a>` : ''}
-        ${l.website ? `<a href="${esc(l.website)}" target="_blank" rel="noopener">Website →</a>` : ''}
+        ${l.phone ? `<a href="tel:${esc(l.phone)}" class="lc-contact-item"><span class="lc-icon">📞</span>${esc(l.phone)}</a>` : ''}
+        ${l.email ? `<a href="mailto:${esc(l.email)}" class="lc-contact-item"><span class="lc-icon">✉️</span>${esc(l.email)}</a>` : ''}
+        ${l.website ? `<a href="${esc(l.website)}" target="_blank" rel="noopener" class="lc-contact-item lc-website"><span class="lc-icon">🌐</span>Visit Website</a>` : ''}
       </div>
     </div>`;
   }
@@ -402,14 +410,46 @@ for (const cat of CATEGORIES) counts[cat] = byCategory[cat]?.length ?? 0;
   border: 1px solid var(--line);
   border-radius: var(--r-lg);
   background: #fff;
-  padding: 20px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  transition: box-shadow .15s;
 }
-.lc-name { font-weight: 700; font-size: 16px; margin-bottom: 4px; }
-.lc-owner { font-size: 12px; color: var(--text-soft); margin-bottom: 4px; }
-.lc-loc { font-size: 12px; color: var(--text-soft); margin-bottom: 8px; }
-.lc-desc { font-size: 13px; color: var(--text-soft); line-height: 1.6; margin-bottom: 12px; }
-.lc-contact { display: flex; flex-direction: column; gap: 4px; }
-.lc-contact a { font-size: 13px; color: var(--red); font-weight: 500; }
+.listing-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,.08); }
+.lc-header { display: flex; align-items: center; gap: 14px; }
+.lc-avatar {
+  width: 48px; height: 48px; flex-shrink: 0;
+  background: var(--red);
+  color: #fff;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 16px;
+  letter-spacing: .02em;
+}
+.lc-title-group { min-width: 0; }
+.lc-name { font-weight: 700; font-size: 16px; color: var(--ink); line-height: 1.3; }
+.lc-meta { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 3px; }
+.lc-owner { font-size: 12px; color: var(--text-soft); }
+.lc-sep { font-size: 12px; color: var(--line); }
+.lc-loc { font-size: 12px; color: var(--text-soft); }
+.lc-desc { font-size: 13px; color: var(--text-soft); line-height: 1.65; margin: 0; }
+.lc-contact {
+  display: flex; flex-direction: column; gap: 6px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+  margin-top: auto;
+}
+.lc-contact-item {
+  display: flex; align-items: center; gap: 7px;
+  font-size: 13px; color: var(--text); font-weight: 500;
+  text-decoration: none;
+}
+.lc-contact-item:hover { color: var(--red); }
+.lc-icon { font-size: 13px; flex-shrink: 0; }
+.lc-website {
+  color: var(--red); font-weight: 600;
+}
 .empty-msg { color: var(--text-soft); font-style: italic; }
 
 .back-btn {
