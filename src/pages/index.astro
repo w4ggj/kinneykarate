@@ -252,8 +252,8 @@ import Base from '../layouts/Base.astro';
 .free-class p { font-size: 15px; opacity: .9; line-height: 1.65; }
 .free-class a[href="/locations"] { color: #fff; text-decoration: underline; }
 .free-class-btns { display: flex; flex-direction: column; gap: 10px; min-width: 160px; }
-.free-class .btn { background: #fff; color: var(--red); font-size: 14px; text-align: center; }
-.free-class .btn:hover { background: var(--paper); }
+.free-class .btn { background: #fff !important; color: var(--red) !important; font-size: 14px; text-align: center; font-weight: 700; }
+.free-class .btn:hover { background: var(--paper) !important; }
 .free-class .ghost-white { background: transparent; color: #fff; border: 2px solid rgba(255,255,255,0.6); }
 .free-class .ghost-white:hover { background: rgba(255,255,255,0.1); }
 @media (max-width: 620px) { .free-class-btns { flex-direction: row; } }
