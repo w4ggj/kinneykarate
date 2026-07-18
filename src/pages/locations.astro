@@ -15,10 +15,10 @@ interface Location {
 const locations: Location[] = [
   {
     name: 'JW Cate Recreation Center',
-    address: '5801 22nd Ave N, St. Petersburg, FL 33710',
+    address: '5454 4th Ave N, St. Petersburg, FL 33710',
     schedule: [
-      { day: 'Tuesday & Thursday', time: '6:00 PM', level: 'Beginner' },
-      { day: 'Tuesday & Thursday', time: '7:00 PM', level: 'Intermediate' },
+      { day: 'Tue & Thu', time: '6:00 PM', level: 'Beginner' },
+      { day: 'Tue & Thu', time: '7:00 PM', level: 'Intermediate' },
     ],
     pricing: '$30/month (1× per week) · $60/month (2× per week)',
     note: 'Tuition paid in person to the City of St. Petersburg Parks & Recreation.',
@@ -26,10 +26,10 @@ const locations: Location[] = [
   },
   {
     name: 'Willis S Johns Recreation Center',
-    address: '6635 Dr M.L.K. Jr St N, St. Petersburg, FL 33702',
+    address: '6085 54th Ave N, St. Petersburg, FL 33709',
     schedule: [
-      { day: 'Tuesday & Thursday', time: '6:00 PM', level: 'Beginner' },
-      { day: 'Tuesday & Thursday', time: '7:00 PM', level: 'Intermediate' },
+      { day: 'Tue & Thu', time: '6:00 PM', level: 'Beginner' },
+      { day: 'Tue & Thu', time: '7:00 PM', level: 'Intermediate' },
     ],
     pricing: '$30/month (1× per week) · $60/month (2× per week)',
     note: 'Tuition paid in person to the City of St. Petersburg Parks & Recreation.',
@@ -37,24 +37,20 @@ const locations: Location[] = [
   },
   {
     name: 'Gladden Park Recreation Center',
-    address: '3901 30th Ave N, St. Petersburg, FL 33713',
+    address: 'St. Petersburg, FL',
     schedule: [
-      { day: 'Monday & Wednesday', time: '6:00 PM', level: 'Beginner' },
-      { day: 'Monday & Wednesday', time: '7:00 PM', level: 'Intermediate' },
+      { day: 'Mon & Wed', time: '6:00 PM', level: 'Beginner' },
+      { day: 'Mon & Wed', time: '7:00 PM', level: 'Intermediate' },
     ],
-    pricing: '$30/month (1× per week) · $60/month (2× per week)',
-    note: 'Tuition paid in person to the City of St. Petersburg Parks & Recreation.',
     mapUrl: 'https://maps.google.com/?q=Gladden+Park+St+Petersburg+FL',
   },
   {
     name: 'Lake Vista Recreation Center',
-    address: '1401 62nd Ave S, St. Petersburg, FL 33705',
+    address: 'St. Petersburg, FL',
     schedule: [
-      { day: 'Monday & Thursday', time: '6:00 PM', level: 'Beginner' },
-      { day: 'Monday & Thursday', time: '6:00 PM', level: 'Intermediate' },
+      { day: 'Mon & Thu', time: '6:00 PM', level: 'Beginner' },
+      { day: 'Mon & Thu', time: '6:00 PM', level: 'Intermediate' },
     ],
-    pricing: '$30/month (1× per week) · $60/month (2× per week)',
-    note: 'Tuition paid in person to the City of St. Petersburg Parks & Recreation.',
     mapUrl: 'https://maps.google.com/?q=Lake+Vista+Recreation+Center+St+Petersburg+FL',
   },
   {
@@ -73,52 +69,16 @@ const locations: Location[] = [
 <div class="belt"><span class="w"></span><span class="y"></span><span class="g"></span><span class="b"></span><span class="k"></span></div>
 
 <section class="page-hero">
-  <div class="hero-img-wrap">
-    <img src="/exam-stretch2.png" alt="Kinney Karate students stretching in class" class="hero-img" />
-    <div class="hero-overlay"></div>
-  </div>
-  <div class="container hero-content">
+  <div class="container">
     <p class="eyebrow">Where to Train</p>
-    <h1 class="cond">Recreation Center Classes</h1>
-    <p>Kinney Karate offers low-cost classes at four St. Petersburg Recreation Centers. <strong>Your first class is free</strong> — just show up at any location. No uniform needed to start; wear loose-fitting pants and a t-shirt.</p>
-    <p style="margin-top:12px">Tuition is paid monthly through the recreation center and can be cancelled at any time. Missed classes can be made up — we always work with you to make sure you get your training.</p>
-  </div>
-</section>
-
-<!-- Pricing + Flyer -->
-<section class="pricing-strip">
-  <div class="container pricing-row">
-    <div class="pricing-block">
-      <div class="price-amount">$30<span>/month</span></div>
-      <div class="price-label">1 class per week</div>
-    </div>
-    <div class="pricing-divider"></div>
-    <div class="pricing-block">
-      <div class="price-amount">$60<span>/month</span></div>
-      <div class="price-label">2 classes per week</div>
-    </div>
-    <div class="flyer-block">
-      <a href="/class-flyer.pdf" target="_blank" rel="noopener" class="flyer-link" title="Download printable class flyer">
-        <div class="flyer-thumb">
-          <img src="/Class-Flyer-2023-Sept.png" alt="Kinney Karate class flyer" class="flyer-img" />
-          <div class="flyer-badge">PDF</div>
-        </div>
-        <span>Class Flyer<br/><small>(click for printable version)</small></span>
-      </a>
-    </div>
+    <h1 class="cond">Locations &amp; Schedule</h1>
+    <p>Kinney Karate operates at St. Petersburg Recreation Centers and the Balance Dojo.</p>
   </div>
 </section>
 
 <section class="pad">
   <div class="container">
-    <div class="schedule-note" style="margin-bottom:32px">
-      <h3>Tuition &amp; Registration</h3>
-      <p>To enroll, just show up at the location you'd like to attend — no need to wait for the beginning of the month. Recreation Center classes are administered through the City of St. Petersburg Parks &amp; Recreation. Tuition is <strong>$30/month for one class per week</strong> or <strong>$60/month for two classes per week</strong> — paid in person at the Recreation Center.</p>
-      <p style="margin-top:10px"><strong>Tuition is never paid on this website.</strong> Advanced dojo billing is handled through <a href="https://balancemartialarts.com" target="_blank" rel="noopener" style="color:var(--red)">Balance Martial Arts</a>.</p>
-      <p style="margin-top:10px">Questions? Call <a href="tel:+17276860864" style="color:var(--red);font-weight:600">727-686-0864</a> or use the <a href="/about#contact" style="color:var(--red)">contact form</a>.</p>
-    </div>
-
-    <p class="kick">Class Schedule by Location</p>
+    <p class="kick">Our Locations</p>
     <div class="loc-grid">
       {locations.map(l => (
         <div class="loc-card">
@@ -139,6 +99,13 @@ const locations: Location[] = [
         </div>
       ))}
     </div>
+
+    <div class="schedule-note">
+      <h3>Tuition &amp; Registration</h3>
+      <p>Recreation Center classes are administered through the City of St. Petersburg Parks &amp; Recreation. Tuition is <strong>$30/month for one class per week</strong> or <strong>$60/month for two classes per week</strong> — paid in person at the Recreation Center. Your first class is always free.</p>
+      <p style="margin-top:10px"><strong>Tuition is never paid on this website.</strong> Advanced dojo billing is handled through <a href="https://balancemartialarts.com" target="_blank" rel="noopener" style="color:var(--red)">Balance Martial Arts</a>.</p>
+      <p style="margin-top:10px">Questions? Call <a href="tel:+17276860864" style="color:var(--red);font-weight:600">727-686-0864</a> or use the <a href="/about#contact" style="color:var(--red)">contact form</a>.</p>
+    </div>
   </div>
 </section>
 
@@ -146,101 +113,11 @@ const locations: Location[] = [
 
 <style>
 .page-hero {
-  position: relative;
   background: var(--ink); color: var(--text-invert);
-  overflow: hidden;
-}
-.hero-img-wrap {
-  position: relative;
-  width: 100%;
-  max-height: 420px;
-  overflow: hidden;
-}
-.hero-img {
-  width: 100%;
-  height: 420px;
-  object-fit: cover;
-  object-position: center 30%;
-  display: block;
-}
-.hero-overlay {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(to bottom, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0.6) 100%);
-}
-.hero-content {
-  padding: 40px 0 40px;
+  padding: 48px 0 40px;
 }
 .page-hero h1 { font-size: 52px; font-weight: 700; margin-bottom: 10px; }
-.page-hero p { color: var(--text-invert-soft); font-size: 15px; line-height: 1.7; }
-
-/* Pricing strip */
-.pricing-strip {
-  background: #fff;
-  border-bottom: 1px solid var(--line);
-  padding: 32px 0;
-}
-.pricing-row {
-  display: flex;
-  align-items: center;
-  gap: 40px;
-  flex-wrap: wrap;
-}
-.pricing-block { text-align: center; min-width: 140px; }
-.price-amount {
-  font-size: 48px;
-  font-weight: 800;
-  color: var(--ink);
-  line-height: 1;
-}
-.price-amount span { font-size: 20px; font-weight: 600; color: var(--text-soft); }
-.price-label { font-size: 14px; color: var(--text-soft); margin-top: 4px; }
-.pricing-divider {
-  width: 1px; height: 60px; background: var(--line);
-}
-.flyer-block { margin-left: auto; }
-.flyer-link {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  text-decoration: none;
-  color: var(--text-soft);
-  font-size: 13px;
-  text-align: center;
-}
-.flyer-link:hover { color: var(--red); }
-.flyer-thumb {
-  position: relative;
-  border: 1px solid var(--line);
-  border-radius: 4px;
-  overflow: hidden;
-  background: #f3f4f6;
-  transition: box-shadow 0.15s;
-}
-.flyer-link:hover .flyer-thumb { box-shadow: 0 4px 12px rgba(0,0,0,0.12); }
-.flyer-img {
-  width: 60px;
-  height: 75px;
-  object-fit: cover;
-  object-position: top;
-  display: block;
-}
-.flyer-badge {
-  position: absolute;
-  bottom: 4px; right: 4px;
-  background: var(--red);
-  color: #fff;
-  font-size: 9px;
-  font-weight: 700;
-  padding: 1px 5px;
-  border-radius: 3px;
-}
-@media (max-width: 620px) {
-  .pricing-divider { display: none; }
-  .flyer-block { margin-left: 0; }
-}
-
+.page-hero p { color: var(--text-invert-soft); font-size: 15px; }
 .pad { padding: 48px 0; }
 .loc-grid {
   display: grid;
