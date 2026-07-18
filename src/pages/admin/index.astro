@@ -465,10 +465,10 @@ async function renderDirectory(el: HTMLElement) {
         </td>
         <td style="font-size:12px">${esc(r.category)}</td>
         <td style="font-size:12px">${esc([r.city, r.zip].filter(Boolean).join(', '))}</td>
-        <td style="font-size:11px">
+        <td style="font-size:11px;word-break:break-all;overflow-wrap:break-word">
           ${r.phone ? `<div>${esc(r.phone)}</div>` : ''}
           ${r.email ? `<div>${esc(r.email)}</div>` : ''}
-          ${r.website ? `<div><a href="${esc(r.website)}" target="_blank" rel="noopener" style="color:var(--red)">${esc(r.website)}</a></div>` : ''}
+          ${r.website ? `<div><a href="${esc(r.website)}" target="_blank" rel="noopener" style="color:var(--red);word-break:break-all">${esc(r.website)}</a></div>` : ''}
         </td>
         <td style="font-size:12px;color:var(--text-soft);word-break:break-word">${esc(r.description)}</td>
         <td>
