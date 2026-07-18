@@ -7,9 +7,9 @@ const nav = [
 ];
 const aboutLinks = [
   { label: 'Our Instructors', href: '/instructors' },
-  { label: 'Contact Us',      href: '/contact' },
   { label: 'Memorial Fund',   href: '/memorial' },
   { label: 'Our Story',       href: '/our-story' },
+  { label: 'Contact Us',      href: '/contact' },
 ];
 const { pathname } = Astro.url;
 const aboutActive = ['/instructors', '/contact', '/memorial', '/our-story', '/about'].some(p => pathname.startsWith(p));
