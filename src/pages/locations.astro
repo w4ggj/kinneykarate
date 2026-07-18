@@ -159,6 +159,32 @@ const locations: Location[] = [
           <img src="/balance-dojo.jpg" alt="Kinney Karate dojo at Balance Martial Arts" class="balance-photo" />
         </div>
       </div>
+
+      <div class="balance-schedule">
+        <div class="bsched-group">
+          <div class="bsched-title">Beginner (all ages)</div>
+          <table class="sched">
+            <tr><td class="sday">Mon – Fri</td><td class="stime">6:00 PM</td></tr>
+            <tr><td class="sday">Sat – Sun</td><td class="stime">12:00 PM</td></tr>
+          </table>
+        </div>
+        <div class="bsched-group">
+          <div class="bsched-title">Intermediate / Advanced</div>
+          <table class="sched">
+            <tr><td class="sday">Monday</td><td class="stime">6:00 PM</td></tr>
+            <tr><td class="sday">Tue – Thu</td><td class="stime">7:00 PM</td></tr>
+            <tr><td class="sday">Friday</td><td class="stime">6:00 PM</td></tr>
+            <tr><td class="sday">Saturday</td><td class="stime">11:00 AM</td></tr>
+          </table>
+        </div>
+        <div class="bsched-group">
+          <div class="bsched-title">Women's Class (all levels)</div>
+          <table class="sched">
+            <tr><td class="sday">Monday</td><td class="stime">7:00 PM</td></tr>
+          </table>
+        </div>
+      </div>
+
       <p class="balance-desc">The Kinney Karate dojo location is a 4000 sq. ft. facility featuring a beautiful workout space for classes, a comfortable lounge for hanging out or watching class, a quiet study room for homework, and a high-end gaming space featuring beautiful gaming tables. Train, study, relax, socialize, and play—all in one place.</p>
       <p class="balance-link-line">For more information &amp; pricing, visit the <a href="https://balancemartialarts.com" target="_blank" rel="noopener">Balance Martial Arts &amp; Gaming website</a>.</p>
     </div>
@@ -336,6 +362,24 @@ const locations: Location[] = [
 .balance-link-line a {
   color: var(--red);
   font-weight: 600;
+}
+.balance-schedule {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  margin-bottom: 20px;
+  padding: 16px;
+  background: var(--paper);
+  border-radius: var(--r);
+}
+.bsched-group { min-width: 180px; }
+.bsched-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--red);
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 .schedule-note {
