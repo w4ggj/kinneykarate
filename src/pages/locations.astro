@@ -120,7 +120,7 @@ const locations: Location[] = [
 
     <p class="kick">Class Schedule by Location</p>
     <div class="loc-grid">
-      {locations.map(l => (
+      {locations.filter(l => l.name !== 'Balance Dojo').map(l => (
         <div class="loc-card">
           <h2>{l.name}</h2>
           <p class="addr">{l.address}</p>
@@ -138,6 +138,29 @@ const locations: Location[] = [
           <a href={l.mapUrl} target="_blank" rel="noopener" class="map-link">View on map →</a>
         </div>
       ))}
+    </div>
+
+    <!-- Balance Dojo — full-width featured card -->
+    <div class="balance-card">
+      <div class="balance-header">
+        <h2>Balance Martial Arts &amp; Gaming</h2>
+      </div>
+      <div class="balance-body">
+        <div class="balance-left">
+          <img src="/balance-logo.png" alt="Balance Martial Arts & Gaming logo" class="balance-logo" />
+          <div class="balance-address">
+            <strong>Kinney Karate Dojo</strong><br />
+            6701 49th St N<br />
+            Pinellas Park, FL 33781
+          </div>
+          <a href="https://maps.google.com/?q=6701+49th+St+N+Pinellas+Park+FL+33781" target="_blank" rel="noopener" class="map-link" style="margin-top:12px;display:inline-block">View on map →</a>
+        </div>
+        <div class="balance-right">
+          <img src="/balance-dojo.jpg" alt="Kinney Karate dojo at Balance Martial Arts" class="balance-photo" />
+        </div>
+      </div>
+      <p class="balance-desc">The Kinney Karate dojo location is a 4000 sq. ft. facility featuring a beautiful workout space for classes, a comfortable lounge for hanging out or watching class, a quiet study room for homework, and a high-end gaming space featuring beautiful gaming tables. Train, study, relax, socialize, and play—all in one place.</p>
+      <p class="balance-link-line">For more information &amp; pricing, visit the <a href="https://balancemartialarts.com" target="_blank" rel="noopener">Balance Martial Arts &amp; Gaming website</a>.</p>
     </div>
   </div>
 </section>
@@ -255,6 +278,66 @@ const locations: Location[] = [
 .sday { font-weight: 600; color: var(--text); white-space: nowrap; }
 .stime, .slevel { color: var(--text-soft); }
 .pricing { font-size: 13px; font-weight: 600; color: var(--ink); margin-bottom: 6px; }
+/* Balance Dojo featured card */
+.balance-card {
+  border: 2px solid var(--red);
+  border-radius: var(--r-lg);
+  background: #fff;
+  padding: 28px;
+  margin-bottom: 32px;
+}
+.balance-header h2 {
+  font-size: 22px;
+  font-weight: 700;
+  margin-bottom: 20px;
+}
+.balance-body {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 28px;
+  margin-bottom: 20px;
+  align-items: start;
+}
+@media (max-width: 620px) {
+  .balance-body { grid-template-columns: 1fr; }
+}
+.balance-left {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 16px;
+}
+.balance-logo {
+  max-width: 200px;
+  height: auto;
+}
+.balance-address {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.7;
+  color: var(--ink);
+}
+.balance-photo {
+  width: 100%;
+  border-radius: var(--r);
+  object-fit: cover;
+  max-height: 260px;
+}
+.balance-desc {
+  font-size: 14px;
+  color: var(--text-soft);
+  line-height: 1.75;
+  margin-bottom: 12px;
+}
+.balance-link-line {
+  font-size: 14px;
+  color: var(--text-soft);
+}
+.balance-link-line a {
+  color: var(--red);
+  font-weight: 600;
+}
+
 .schedule-note {
   background: var(--paper);
   border: 1px solid var(--line);
