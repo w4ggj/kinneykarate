@@ -1,6 +1,65 @@
 ---
 export const prerender = true;
 import Base from '../layouts/Base.astro';
+
+const programs = [
+  {
+    id: 'tang-soo-do',
+    label: 'Tang Soo Do',
+    color: 'var(--belt-black)',
+    summary: 'Traditional Korean martial art — the heart of our curriculum. Emphasizes kicks, strikes, and blocks. Builds physical fitness, mental discipline, and deep respect for the art. Students progress through a structured belt system. Appropriate for all ages and fitness levels — no experience required.',
+    history: `During the Japanese occupation (1910–1945), Hwang Kee left Korea and ventured into Manchuria. There he came into contact with an art similar to T'ai chi ch'uan. Hwang Kee eventually incorporated the flowing and graceful motions of the Chinese system with the linear, strong movements of Karate Do. This blend resulted in what is currently known as Soo Bahk Do.
+
+Around the time of the liberation of Korea in 1945, five martial arts schools called the kwans were formed by men who were primarily trained in some form of karate, but also had exposure to kung fu. The five prominent kwans (and respective founders) were: Chung Do Kwan (Lee Won Kuk), Jidokwan (Chun Sang Sup), Chang Moo Kwan (Lee Nam Suk and Kim Soon Bae), Moo Duk Kwan (Hwang Kee), and Song Moo Kwan (Ro Byung Jik). These schools taught what most Americans know as "Korean Karate." There were some philosophical differences in technique application and more of an emphasis on kicking in the Tang Soo Do systems.
+
+Around 1953, four more kwans formed. In 1955, these arts were ordered to unify by South Korea's President Syngman Rhee. A governmental committee selected "Taekwondo" as the unified name. In 1959, the Korea Tae Kwon Do Association (KTA) was formed to standardize the art. Despite this unification effort, the kwans continued to teach their individual styles. Hwang Kee and the Moo Duk Kwan continued developing tang soo do, which eventually became "Soo Bahk Do Moo Duk Kwan."
+
+Other modern tang soo do systems — such as the World Tang Soo Do Association and the International Tang Soo Do Federation — teach systems that existed before the taekwondo merger. These versions are heavily influenced by Korean culture and appear related to Okinawan karate as initially taught in Japan by Funakoshi Gichin.
+
+The term "tang soo do" has evolved to describe a form of karate that is distinctly Korean, but different from both taekwondo and Soo Bahk Do. Chuck Norris popularized tang soo do in the United States. He was taught by Ki Whang Kim — Mr. Kinney's own instructor.`,
+  },
+  {
+    id: 'aikido',
+    label: 'Aikido',
+    color: 'var(--belt-brown)',
+    summary: 'The art of harmony — using an attacker\'s energy against them rather than meeting force with force. Students learn throws, joint locks, and redirections that work regardless of size or strength. A deeply practical self-defense system rooted in Japanese budo philosophy.',
+    history: `Aikido was created by Morihei Ueshiba, who envisioned it not only as the synthesis of his martial training, but as an expression of his personal philosophy of universal peace and reconciliation. Ueshiba developed aikido primarily during the late 1920s through the 1930s, through the synthesis of older martial arts he had studied. The core martial art from which aikido derives is Daitō-ryū aiki-jūjutsu, studied directly with Takeda Sōkaku.
+
+The aim of Aikido is to master an attack and harmlessly redirect it. In an ideal resolution, not only is the receiver unharmed, but so is the attacker. Aikido was first introduced to the United States in 1951 and was popularized by Steven Seagal in the 1990s.
+
+In Aikido, as in virtually all Japanese martial arts, there are both physical and mental aspects of training. Because a substantial portion of any Aikido curriculum consists of throws, the first thing most students learn is how to safely fall or roll. After basic techniques are learned, students study freestyle defense against multiple opponents and techniques with weapons.
+
+Mr. Kinney studied Aikido beginning in his teenage years, from a variety of instructors — starting with Mr. Ki Whang Kim, then Mr. Dick Kern. In Kinney Karate, we teach important and realistic applications of aikido techniques. We teach throwing, falling, and rolling first. As our students advance in rank, aikido becomes more of a dominant part of the style.`,
+  },
+  {
+    id: 'ju-jitsu',
+    label: 'Ju Jitsu',
+    color: 'var(--belt-green)',
+    summary: 'Covers ground fighting, takedowns, and joint control — skills that matter when a confrontation goes to the floor. Combined with Tang Soo Do\'s striking and Aikido\'s throws, Ju Jitsu training produces well-rounded martial artists prepared for real-world scenarios.',
+    history: `Even though the true origins of Jujitsu are impossible to trace, elements of the art can be traced back over 2,500 years. Chikura Kurabe, a wrestling sport that appeared in Japan in 230 BC, had many techniques that were incorporated into Jujitsu training. During the Heian Period (784 AD), Jujitsu was incorporated into the Samurai warrior's training so that he could defend himself against an armed attacker if he lost his sword.
+
+One of the first Ryu that used Jujitsu as a primary art was founded in 1532 by Takenouche Hisamori. Prior to this, openhanded combat techniques existed solely as a subordinate art to a major weapons system. During the Edo Period (1603–1868), under the Tokugawa military government, Japan became more peaceful, and weaponless styles began to replace the weaponed forms of old. It is believed that more than 700 systems of Jujitsu existed during this period.
+
+During the Meiji Restoration, an Imperial edict made it a crime to practice the martial arts of the Samurai. Many practitioners took the art underground or practiced abroad until the ban was lifted in the mid-twentieth century.
+
+Jujitsu is the father of several newer martial arts. In 1882, Jigaro Kano developed Judo using Jujitsu as the model. In the 1920s, Ueshiba Morihei developed Aikido, which is based on Jujitsu. Brazilian and grappling styles have also emerged from these roots.
+
+True classical Jujitsu — including ground-style grappling — is taught as part of the Kinney Karate System. The techniques recognized as "Brazilian" have always been part of the classical style of the art. Mr. Kinney's first Jujitsu instructor was Jim Bregman, who in 1964 became the first American to win an Olympic medal in Judo — a bronze — surprising the world.`,
+  },
+  {
+    id: 'arnis',
+    label: 'Modern Arnis',
+    color: 'var(--belt-yellow)',
+    summary: 'The national martial art of the Philippines, developed by Grandmaster Remy Presas. Students train with rattan sticks, learning single and double weapon techniques that translate directly into empty-hand combat. Fast, dynamic, and highly effective. Arnis sticks are available in the school store.',
+    history: `Modern Arnis is the system of Filipino martial arts founded by the late Remy Presas as a self-defense system. His goal was to create a training method — as well as an effective self-defense system — in order to preserve the older Arnis systems. Arnis was designated the Philippines' national martial art and sport after President Gloria Macapagal-Arroyo signed the Republic Act mandating it as a Physical Education course beginning in 2010.
+
+One of the characteristics of Filipino martial arts is the use of weapons from the very beginning of training. The primary weapon is the rattan stick (baston), which varies in size but is usually about 28 inches (71 cm) in length. Both single and double stick techniques are used.
+
+In most areas of the Philippines, Japanese martial arts such as Karate and Judo were much more popular than the indigenous systems. Remy Presas' modernization was intended to help preserve the Filipino martial arts. He taught a method of hitting your opponent's stick (instead of the hand or arm) during practice, which attracted more newcomers and allowed the art to be taught in Philippine schools.
+
+Modern Arnis training includes self-defense (striking, locking, throwing) as well as the trademark single and double stick techniques. Emphasis is placed on fitting the art within a student's previous training ("the art within your art"), smoothly reacting to changing situations ("the flow"), and countering the opponent's attempt to counter strikes. Practitioners are called Arisdadors or Modern Arnis players.`,
+  },
+];
 ---
 <Base title="Programs" description="Tang Soo Do, Aikido, Ju Jitsu, and Modern Arnis at Kinney Karate in St. Petersburg, FL.">
 
@@ -16,41 +75,23 @@ import Base from '../layouts/Base.astro';
 
 <section class="pad">
   <div class="container">
-
-    <div class="program" id="tang-soo-do">
-      <div class="program-head">
-        <span class="belt-dot" style="background:var(--belt-black)"></span>
-        <h2 class="cond">Tang Soo Do</h2>
+    {programs.map(p => (
+      <div class="program" id={p.id}>
+        <div class="program-head">
+          <span class="belt-dot" style={`background:${p.color}`}></span>
+          <h2 class="cond">{p.label}</h2>
+        </div>
+        <p class="summary">{p.summary}</p>
+        <details class="accordion">
+          <summary class="accordion-toggle">History &amp; Background <span class="chevron">▾</span></summary>
+          <div class="accordion-body">
+            {p.history.split('\n\n').map(para => (
+              <p>{para}</p>
+            ))}
+          </div>
+        </details>
       </div>
-      <p>Tang Soo Do is the heart of Kinney Karate's curriculum. A traditional Korean martial art emphasizing kicks, strikes, and blocks, Tang Soo Do builds physical fitness, mental discipline, and deep respect for the art. Students progress through a structured rank system, earning belts that reflect their dedication and skill.</p>
-      <p>Appropriate for all ages and fitness levels. No experience required.</p>
-    </div>
-
-    <div class="program" id="aikido">
-      <div class="program-head">
-        <span class="belt-dot" style="background:var(--belt-brown)"></span>
-        <h2 class="cond">Aikido</h2>
-      </div>
-      <p>Aikido is the art of harmony — using an attacker's energy against them rather than meeting force with force. Students learn throws, joint locks, and redirections that work regardless of size or strength. A deeply practical self-defense system rooted in Japanese budo philosophy.</p>
-    </div>
-
-    <div class="program" id="ju-jitsu">
-      <div class="program-head">
-        <span class="belt-dot" style="background:var(--belt-green)"></span>
-        <h2 class="cond">Ju Jitsu</h2>
-      </div>
-      <p>Ju Jitsu covers ground fighting, takedowns, and joint control — skills that matter when a confrontation goes to the floor. Combined with Tang Soo Do's striking and Aikido's throws, our Ju Jitsu training produces well-rounded martial artists prepared for real-world scenarios.</p>
-    </div>
-
-    <div class="program" id="arnis">
-      <div class="program-head">
-        <span class="belt-dot" style="background:var(--belt-yellow)"></span>
-        <h2 class="cond">Modern Arnis</h2>
-      </div>
-      <p>Modern Arnis is the national martial art of the Philippines, developed by Grandmaster Remy Presas. Students train with rattan sticks, learning single and double weapon techniques that translate directly into empty-hand combat. Fast, dynamic, and highly effective — Arnis is a fan favorite across all skill levels.</p>
-      <p>Arnis sticks are available in the <a href="/store" style="color:var(--red);font-weight:600">school store</a>.</p>
-    </div>
-
+    ))}
   </div>
 </section>
 
@@ -58,7 +99,7 @@ import Base from '../layouts/Base.astro';
   <div class="container">
     <h2 class="cond">Your first class is free.</h2>
     <p>Come try any class — no commitment, no cost.</p>
-    <a href="/students#new" class="btn">New Student Info</a>
+    <a href="/locations" class="btn">Find a Location</a>
   </div>
 </section>
 
@@ -85,7 +126,7 @@ import Base from '../layouts/Base.astro';
   display: flex;
   align-items: center;
   gap: 14px;
-  margin-bottom: 16px;
+  margin-bottom: 14px;
 }
 .belt-dot {
   width: 12px; height: 12px;
@@ -93,8 +134,34 @@ import Base from '../layouts/Base.astro';
   flex-shrink: 0;
 }
 .program h2 { font-size: 28px; font-weight: 700; }
-.program p { color: var(--text-soft); font-size: 15px; margin-bottom: 10px; line-height: 1.7; }
-.program p:last-child { margin-bottom: 0; }
+.summary { color: var(--text-soft); font-size: 15px; line-height: 1.7; margin-bottom: 18px; }
+
+.accordion { border-top: 1px solid var(--line); padding-top: 14px; }
+.accordion-toggle {
+  list-style: none;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-soft);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  user-select: none;
+}
+.accordion-toggle::-webkit-details-marker { display: none; }
+.accordion-toggle:hover { color: var(--red); }
+.chevron { font-size: 10px; transition: transform .2s; }
+details[open] .chevron { transform: rotate(180deg); }
+.accordion-body {
+  padding-top: 16px;
+}
+.accordion-body p {
+  font-size: 14px;
+  color: var(--text-soft);
+  line-height: 1.8;
+  margin-bottom: 14px;
+}
+.accordion-body p:last-child { margin-bottom: 0; }
 
 .cta-band {
   background: var(--red);
@@ -104,6 +171,6 @@ import Base from '../layouts/Base.astro';
 }
 .cta-band h2 { font-size: 36px; font-weight: 700; margin-bottom: 8px; }
 .cta-band p { margin-bottom: 20px; opacity: .85; }
-.cta-band .btn { background: #fff; color: var(--red); }
-.cta-band .btn:hover { background: var(--paper); }
+.cta-band .btn { background: #fff !important; color: var(--red) !important; }
+.cta-band .btn:hover { background: var(--paper) !important; }
 </style>
