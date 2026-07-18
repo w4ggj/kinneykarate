@@ -59,7 +59,7 @@ for (const [sortOrder, p] of catalog.products.entries()) {
       for (const [ci, c] of p.components.entries()) {
         lines.push(
           `INSERT INTO bundle_components (id, bundle_product_id, component_name, size_options, required, sort_order) VALUES ` +
-          `(${componentId}, ${productId}, ${q(c.name)}, ${q(JSON.stringify(c.sizes ?? []))}, ${c.required !== false ? 1 : 0}, ${ci});`
+          `(${componentId}, ${productId}, ${q(c.name)}, ${q(JSON.stringify(c.size_options ?? c.sizes ?? []))}, ${c.required !== false ? 1 : 0}, ${ci});`
         );
         componentId++;
       }
