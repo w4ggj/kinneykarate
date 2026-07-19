@@ -16,19 +16,6 @@ import Base from '../layouts/Base.astro';
 <section class="pad">
   <div class="container">
 
-    <!-- Our Story -->
-    <div class="story" id="story">
-      <p class="kick">Our Story</p>
-      <div class="story-body">
-        <p>Kinney Karate was founded in 1969 by Soke David Kinney. Over the decades the school grew from a single class into a multi-location program serving students of all ages across St. Petersburg and Pinellas County.</p>
-        <p>Soke Kinney began his martial arts journey in the Korean art of Tang Soo Do, and expanded his studies to include Aikido, Ju Jitsu, and Modern Arnis — eventually earning the rank of 9th degree black belt. He dedicated his life to sharing these arts with his community, believing that martial arts training builds not just physical skill but character, discipline, and resilience.</p>
-        <p>Today, Kinney Karate continues under the leadership of Soke Dai Susan Serota and a team of experienced instructors who carry on Soke Kinney's legacy. Classes are held at St. Petersburg Recreation Centers, making high-quality martial arts training accessible and affordable to everyone.</p>
-        <p>We also partner with <a href="https://balancemartialarts.com" target="_blank" rel="noopener" style="color:var(--red)">Balance Martial Arts &amp; Gaming</a> in Pinellas Park for advanced training and specialty programs — including our unique Kinney Karate Dungeons &amp; Dragons program that combines the values of martial arts with the imagination and teamwork of tabletop gaming.</p>
-        <p>Over 55 years and counting, Kinney Karate has trained hundreds of black belts, tournament champions, and — most importantly — better people. Many of our students have been with us for decades. We are proud to now teach the children and grandchildren of our original members.</p>
-        <p>We are a family — and we'd love to have you join us.</p>
-      </div>
-    </div>
-
     <!-- Instructors -->
     <div class="instructors" id="instructors">
       <p class="kick">Our Instructors</p>
@@ -120,33 +107,6 @@ import Base from '../layouts/Base.astro';
       </div>
     </div>
 
-    <!-- Contact -->
-    <div class="contact" id="contact">
-      <p class="kick">Contact</p>
-      <div class="contact-card">
-        <h2>Get in Touch</h2>
-        <p>Questions about classes, enrollment, or the school? We'd love to hear from you.</p>
-        <p class="contact-direct">Call us: <a href="tel:+17276860864">727-686-0864</a></p>
-        <form class="contact-form" method="POST" action="/api/contact">
-          <div class="field">
-            <label for="cf-name">Your name</label>
-            <input type="text" id="cf-name" name="name" required autocomplete="name" />
-          </div>
-          <div class="field">
-            <label for="cf-email">Email address</label>
-            <input type="email" id="cf-email" name="email" required autocomplete="email" />
-          </div>
-          <div class="field">
-            <label for="cf-msg">Message</label>
-            <textarea id="cf-msg" name="message" rows="5" required></textarea>
-          </div>
-          <!-- Turnstile widget — site key set via env -->
-          <div class="cf-turnstile" data-sitekey="0x4AAAAAAD3XYraMXD0jlcAv"></div>
-          <button type="submit" class="btn">Send Message</button>
-        </form>
-      </div>
-    </div>
-
   </div>
 </section>
 
@@ -157,7 +117,7 @@ import Base from '../layouts/Base.astro';
 .page-hero h1 { font-size:52px;font-weight:700;margin-bottom:10px; }
 .pad { padding:48px 0; }
 
-.story, .instructors, .memorial, .contact { margin-bottom:56px; }
+.instructors, .memorial { margin-bottom:56px; }
 .instructor-grid {
   display:grid;
   grid-template-columns:repeat(4,1fr);
@@ -165,7 +125,6 @@ import Base from '../layouts/Base.astro';
 }
 @media (max-width:900px) { .instructor-grid { grid-template-columns:repeat(3,1fr); } }
 @media (max-width:640px) { .instructor-grid { grid-template-columns:repeat(2,1fr); } }
-.story-body p { font-size:15px;color:var(--text-soft);margin-bottom:16px;line-height:1.8;max-width:720px; }
 
 .instructor-card {
   border:1px solid var(--line);border-radius:var(--r-lg);background:#fff;padding:24px;text-align:center;
@@ -201,20 +160,5 @@ import Base from '../layouts/Base.astro';
 .memorial-card h2, .contact-card h2 { font-weight:700;font-size:22px;margin-bottom:14px; }
 .memorial-card p { font-size:14px;color:var(--text-soft);margin-bottom:10px;line-height:1.7; }
 
-.contact-direct { font-size:14px;margin-bottom:10px; }
-.contact-direct a { color:var(--red);font-weight:600; }
-.contact-form { margin-top:20px;display:flex;flex-direction:column;gap:16px;max-width:520px; }
-.field { display:flex;flex-direction:column;gap:5px; }
-.field label { font-size:13px;font-weight:600;color:var(--text); }
-.field input, .field textarea {
-  border:1px solid var(--line);border-radius:var(--r);padding:9px 12px;
-  font-family:var(--font-body);font-size:14px;color:var(--text);
-  background:#fff;width:100%;
-}
-.field input:focus, .field textarea:focus {
-  outline:2px solid var(--red);outline-offset:0;border-color:transparent;
-}
 </style>
 
-<!-- Turnstile script — loads asynchronously -->
-<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
