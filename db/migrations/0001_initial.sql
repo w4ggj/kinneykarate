@@ -11,7 +11,8 @@ CREATE TABLE products (
   special_order INTEGER NOT NULL DEFAULT 0,
   allow_backorders INTEGER,            -- NULL = inherit global; 0/1 = per-product override
   active INTEGER NOT NULL DEFAULT 1,
-  sort_order INTEGER NOT NULL DEFAULT 0
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  image TEXT NOT NULL DEFAULT ''
 );
 
 CREATE TABLE variants (

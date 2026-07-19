@@ -42,6 +42,25 @@ for (const [sortOrder, p] of catalog.products.entries()) {
       }
       variantId++;
     }
+  } else if (kind === 'simple' && p.options?.size && !Array.isArray(p.variants)) {
+    // Size-options product (e.g. t-shirt) — one variant per size at flat price
+    for (const size of p.options.size) {
+      lines.push(
+        `INSERT INTO variants (id, product_id, size, price_cents, active) VALUES ` +
+        `(${variantId}, ${productId}, ${q(size)}, ${qi(p.price_cents)}, 1);`
+      );
+      variantId++;
+    }
+  } else if (kind === 'simple' && p.price_cents != null && !Array.isArray(p.variants)) {
+    // Flat-price product with no explicit variants — insert a single one-size variant
+    lines.push(
+      `INSERT INTO variants (id, product_id, price_cents, active) VALUES ` +
+      `(${variantId}, ${productId}, ${qi(p.price_cents)}, 1);`
+    );
+    if (fulfillment === 'stocked') {
+      lines.push(`INSERT INTO inventory (variant_id, on_hand) VALUES (${variantId}, 0);`);
+    }
+    variantId++;
   }
 
   if (kind === 'bundle') {
