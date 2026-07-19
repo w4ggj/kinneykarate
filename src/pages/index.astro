@@ -111,19 +111,24 @@ import Base from '../layouts/Base.astro';
 <section class="programs pad">
   <div class="container">
     <p class="kick">Programs</p>
-    <div class="grid4">
-      {[
-        { slug:'tang-soo-do', label:'Tang Soo Do', color:'var(--belt-black)', desc:'Traditional Korean karate — the heart of our curriculum.' },
-        { slug:'aikido',      label:'Aikido',      color:'var(--belt-brown)', desc:'Harmony and redirection — elegant, effective self-defense.' },
-        { slug:'ju-jitsu',   label:'Ju Jitsu',    color:'var(--belt-green)', desc:'Ground techniques and joint locks for all body types.' },
-        { slug:'arnis',      label:'Modern Arnis', color:'var(--belt-yellow)', desc:'Filipino stick &amp; blade art — fast, fun, and formidable.' },
-      ].map(p => (
-        <a href={`/programs#${p.slug}`} class="prog">
-          <div class="rank" style={`background:${p.color}`}></div>
-          <p class="pt">{p.label}</p>
-          <p class="pd" set:html={p.desc} />
-        </a>
-      ))}
+    <div class="programs-card">
+      <p class="programs-intro">Kinney Karate teaches four traditional martial arts disciplines as one integrated system. Students train in all four arts — each one complementing the others to produce well-rounded, capable martial artists.</p>
+      <div class="prog-list">
+        {[
+          { slug:'tang-soo-do', label:'Tang Soo Do', color:'var(--belt-black)', desc:'Traditional Korean martial art — the heart of our curriculum. Emphasizes kicks, strikes, and blocks. Builds physical fitness, mental discipline, and deep respect for the art.' },
+          { slug:'aikido',      label:'Aikido',      color:'var(--belt-brown)', desc:'The art of harmony — using an attacker\'s energy against them rather than meeting force with force. Students learn throws, joint locks, and redirections that work regardless of size or strength.' },
+          { slug:'ju-jitsu',   label:'Ju Jitsu',    color:'var(--belt-green)', desc:'Covers ground fighting, takedowns, and joint control — skills that matter when a confrontation goes to the floor. Combined with Tang Soo Do\'s striking and Aikido\'s throws, Ju Jitsu training produces well-rounded martial artists.' },
+          { slug:'arnis',      label:'Modern Arnis', color:'var(--belt-yellow)', desc:'The national martial art of the Philippines. Students train with rattan sticks, learning single and double weapon techniques that translate directly into empty-hand combat.' },
+        ].map(p => (
+          <div class="prog-item">
+            <div class="prog-head">
+              <span class="prog-dot" style={`background:${p.color}`}></span>
+              <h3 class="cond prog-label"><a href={`/programs#${p.slug}`}>{p.label}</a></h3>
+            </div>
+            <p class="prog-desc">{p.desc}</p>
+          </div>
+        ))}
+      </div>
     </div>
     <div style="margin-top:20px;text-align:center">
       <a href="/programs" class="btn dark">View All Programs</a>
@@ -258,18 +263,27 @@ import Base from '../layouts/Base.astro';
 .free-class .ghost-white:hover { background: rgba(255,255,255,0.1); }
 @media (max-width: 620px) { .free-class-btns { flex-direction: row; } }
 
-.prog {
-  display: block;
+.programs-card {
   border: 1px solid var(--line);
-  border-radius: var(--r);
-  padding: 18px;
+  border-radius: var(--r-lg);
   background: #fff;
-  transition: box-shadow .15s;
+  padding: 32px 36px;
 }
-.prog:hover { box-shadow: 0 4px 16px -8px rgba(20,23,27,.18); }
-.prog .rank { width: 28px; height: 6px; border-radius: 3px; margin-bottom: 14px; }
-.prog .pt { font-family: var(--font-condensed); text-transform: uppercase; font-weight: 700; font-size: 19px; letter-spacing: .02em; margin-bottom: 6px; }
-.prog .pd { color: var(--text-soft); font-size: 13px; }
+@media (max-width: 620px) { .programs-card { padding: 20px; } }
+.programs-intro {
+  font-size: 15px; color: var(--text-soft); line-height: 1.7; max-width: 700px;
+  margin-bottom: 28px; padding-bottom: 28px; border-bottom: 1px solid var(--line);
+}
+.prog-list { display: flex; flex-direction: column; gap: 0; }
+.prog-item { padding: 22px 0; border-bottom: 1px solid var(--line); }
+.prog-item:last-child { border-bottom: none; padding-bottom: 0; }
+.prog-item:first-child { padding-top: 0; }
+.prog-head { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+.prog-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+.prog-label { font-size: 22px; font-weight: 700; }
+.prog-label a { color: var(--ink); text-decoration: none; }
+.prog-label a:hover { color: var(--red); }
+.prog-desc { color: var(--text-soft); font-size: 14px; line-height: 1.7; }
 
 .loc-card {
   border: 1px solid var(--line);
