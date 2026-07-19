@@ -311,6 +311,17 @@
       "display_price": "Speak with your instructor for pricing and ordering"
     },
     {
+      "slug": "mesh-duffle-bag",
+      "name": "Mesh duffle bag",
+      "kind": "simple",
+      "category": "Sparring gear",
+      "image": "/meshdufflebag.jpg",
+      "required_for": "Optional",
+      "fulfillment_type": "stocked",
+      "note": "Kinney Karate mesh duffle bag. Great for carrying your gear to and from class.",
+      "price_cents": 4000
+    },
+    {
       "slug": "t-shirt",
       "name": "Kinney Karate t-shirt",
       "kind": "simple",
