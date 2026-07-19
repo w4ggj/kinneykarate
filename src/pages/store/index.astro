@@ -11,8 +11,10 @@ interface Variant {
 interface Product {
   id: number; slug: string; name: string; category: string; kind: string;
   fulfillment_type: string; special_order: number; description: string;
-  min_price_cents: number | null; max_price_cents: number | null;
+  image: string; min_price_cents: number | null; max_price_cents: number | null;
 }
+
+Astro.response.headers.set('Cache-Control', 'no-store');
 
 let products: Product[] = [];
 let error = '';
