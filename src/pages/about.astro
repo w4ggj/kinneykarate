@@ -37,48 +37,56 @@ import Base from '../layouts/Base.astro';
         {[
           {
             name: 'Susan Serota',
-            rank: '9th Degree Black Belt — Soke Dai',
+            title: 'Soke Dai Grand Master, Ph.D.',
+            rank: '9th Degree Black Belt',
             photo: '/instructors/Susan.png',
             bio: 'Susan Serota holds a 9th degree black belt and serves as Soke Dai (successor to the founder) of Kinney Karate. She has been training and teaching under Soke Kinney for decades and leads the school with the same dedication to tradition, community, and personal growth that has defined Kinney Karate for over 55 years.',
           },
           {
             name: 'Seth Koehler',
-            rank: '8th Degree Black Belt — Master Instructor',
+            title: 'Grand Master',
+            rank: '8th Degree Black Belt',
             photo: '/instructors/Seth.png',
             bio: 'Seth Koehler holds an 8th degree black belt and has been an integral part of the Kinney Karate instructor team for many years. His depth of knowledge across Tang Soo Do, Aikido, Ju Jitsu, and Modern Arnis makes him a versatile and highly skilled teacher.',
           },
           {
             name: 'Richard Serota',
+            title: 'Senior Master Instructor',
             rank: '7th Degree Black Belt',
             photo: '/instructors/Richy.png',
             bio: 'Richard Serota holds a 7th degree black belt and brings decades of martial arts experience to his teaching. He is a cornerstone of the Kinney Karate community and embodies the school\'s values of discipline, respect, and continuous improvement.',
           },
           {
-            name: 'Jackie Prats',
+            name: 'Jackie Pratts',
+            title: 'Master Instructor',
             rank: '6th Degree Black Belt',
             photo: '/instructors/Jackie.png',
-            bio: 'Jackie Prats holds a 6th degree black belt and brings energy and dedication to every class. Jackie helps students of all levels grow in technique, confidence, and character.',
+            bio: 'Jackie Pratts holds a 6th degree black belt and brings energy and dedication to every class. Jackie helps students of all levels grow in technique, confidence, and character.',
           },
           {
             name: 'Stavro Liginos',
+            title: 'Master Instructor',
             rank: '5th Degree Black Belt',
             photo: '/instructors/Stavro.png',
             bio: 'Stavro Liginos holds a 5th degree black belt and has been teaching at Kinney Karate for many years. His enthusiasm for the martial arts and his students makes his classes both challenging and rewarding.',
           },
           {
             name: 'Sonja Leone',
+            title: 'Master Instructor',
             rank: '4th Degree Black Belt',
             photo: '/instructors/Sonja.png',
             bio: 'Sonja Leone holds a 4th degree black belt. She brings energy and precision to her classes, helping students of all ages develop technique, confidence, and a love for the martial arts.',
           },
           {
             name: 'Kelly Bonyata',
+            title: 'Master Instructor',
             rank: '4th Degree Black Belt',
             photo: '/instructors/Kelly2.png',
             bio: 'Kelly Bonyata holds a 4th degree black belt. Her patient and encouraging teaching style is especially effective with younger students and beginners, helping them build a strong foundation in the martial arts.',
           },
           {
             name: 'Tatsiana Haverkamp',
+            title: 'Instructor',
             rank: '3rd Degree Black Belt',
             photo: '/instructors/Tats.png',
             bio: 'Tatsiana Haverkamp holds a 3rd degree black belt. Her commitment to the martial arts and her students makes her a valued member of the Kinney Karate teaching team.',
@@ -89,6 +97,7 @@ import Base from '../layouts/Base.astro';
               <img src={i.photo} alt={i.name} width="72" height="72" loading="lazy" onerror="this.style.display='none'" />
             </div>
             <h3>{i.name}</h3>
+            <p class="title-label">{i.title}</p>
             <p class="rank-label">{i.rank}</p>
             <p class="bio">{i.bio}</p>
           </div>
@@ -167,7 +176,8 @@ import Base from '../layouts/Base.astro';
 .instructor-avatar img {
   width:100%;height:100%;object-fit:cover;object-position:top center;display:block;
 }
-.instructor-card h3 { font-weight:700;font-size:16px;margin-bottom:4px; }
+.instructor-card h3 { font-weight:700;font-size:16px;margin-bottom:3px; }
+.title-label { font-size:13px;color:var(--text-soft);font-style:italic;margin-bottom:3px; }
 .rank-label { font-size:12px;color:var(--red);font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px; }
 .bio { font-size:13px;color:var(--text-soft);line-height:1.6; }
 
