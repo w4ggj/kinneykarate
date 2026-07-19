@@ -326,6 +326,7 @@
       "name": "Kinney Karate t-shirt",
       "kind": "simple",
       "category": "Apparel",
+      "image": "/tshirt.png",
       "required_for": "Optional",
       "fulfillment_type": "made_to_order",
       "note": "Various Kinney Karate designs available (design chosen at order).",
