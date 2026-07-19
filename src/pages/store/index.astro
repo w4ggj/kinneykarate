@@ -14,6 +14,8 @@ interface Product {
   image: string; min_price_cents: number | null; max_price_cents: number | null;
 }
 
+Astro.response.headers.set('Cache-Control', 'no-store');
+
 let products: Product[] = [];
 let error = '';
 
