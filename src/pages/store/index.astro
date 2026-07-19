@@ -69,8 +69,6 @@ const categories = [...new Set(products.map(p => p.category))];
 {!error && (
   <section class="pad">
     <div class="container">
-      <!-- DEBUG: remove after confirming mesh bag shows -->
-      <p style="font-size:11px;color:red">DB rows: {products.length} — slugs: {products.map(p=>p.slug).join(', ')}</p>
       <!-- Pickup-only notice -->
       <div class="pickup-note">
         <strong>Pickup in class only</strong> — we don't ship. You'll choose your instructor and location at checkout, and receive your order at your next class.
