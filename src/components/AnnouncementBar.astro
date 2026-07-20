@@ -1,27 +1,7 @@
 ---
-// Announcement bar — reads from D1 settings via the platform env.
-// Falls back to nothing if unavailable (static pre-render or missing binding).
-let text = '';
-let on = false;
-
-try {
-  const env = (Astro.locals as any).runtime?.env;
-  if (env?.DB) {
-    const row = await env.DB.prepare('SELECT announcement_text, announcement_on FROM settings WHERE id = 1').first();
-    if (row && row.announcement_on) {
-      on = true;
-      text = row.announcement_text ?? '';
-    }
-  }
-} catch {
-  // silently ignore — bar stays hidden
-}
+// Announcement bar — loads client-side so it works on prerendered pages too.
 ---
-{on && text && (
-  <div class="annobar" role="banner">
-    <p set:html={text} />
-  </div>
-)}
+<div id="annobar" class="annobar" role="banner" style="display:none"></div>
 
 <style>
 .annobar {
@@ -35,3 +15,15 @@ try {
 }
 .annobar a { text-decoration: underline; }
 </style>
+
+<script>
+fetch('/api/announcement')
+  .then(r => r.json())
+  .then(d => {
+    if (d.on && d.text) {
+      const bar = document.getElementById('annobar');
+      if (bar) { bar.innerHTML = d.text; bar.style.display = ''; }
+    }
+  })
+  .catch(() => {});
+</script>
