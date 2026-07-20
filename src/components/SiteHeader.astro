@@ -36,6 +36,7 @@ const aboutActive = ['/instructors', '/contact', '/memorial', '/our-story', '/ab
           ))}
         </div>
       </div>
+      <a href="https://camp.kinneykarate.com" id="nav-camp-link" class="nav-camp-link" style="display:none">Karate Camp</a>
       <a href="/store" class="btn">Shop Now</a>
       <a href="/store/checkout" id="nav-cart" class="nav-cart" aria-label="Cart">
         🛒 <span id="nav-cart-count" class="cart-badge">0</span>
@@ -144,6 +145,13 @@ const aboutActive = ['/instructors', '/contact', '/memorial', '/our-story', '/ab
   .dropdown-menu a { padding: 8px 0; font-size: 13px; border-bottom: 1px solid var(--line-ink) !important; }
 }
 
+.nav-camp-link {
+  font-size: 13px; font-weight: 600; color: var(--belt-yellow);
+  text-decoration: none; transition: color .12s;
+  border: 1px solid var(--belt-yellow); border-radius: var(--r);
+  padding: 5px 12px;
+}
+.nav-camp-link:hover { color: #fff; border-color: #fff; }
 .nav-cart {
   display: flex; align-items: center; gap: 6px;
   font-size: 15px; font-weight: 600; color: var(--text-invert-soft);
@@ -216,4 +224,10 @@ function syncCartBadge() {
 syncCartBadge();
 // Re-sync when cart is updated on this page (product pages dispatch storage event)
 window.addEventListener('kk-cart-updated', syncCartBadge);
+
+// Karate Camp nav link — show only when admin has enabled it
+fetch('https://camp.kinneykarate.com/api/public/nav')
+  .then(r => r.json())
+  .then(d => { if (d.showCampNavLink) document.getElementById('nav-camp-link').style.display = ''; })
+  .catch(() => {});
 </script>
