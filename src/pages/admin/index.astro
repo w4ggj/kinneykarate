@@ -100,10 +100,41 @@ const authed = cookie?.value === 'authenticated';
     transition: .12s; margin-bottom: 2px;
   }
   .admin-nav a:hover, .admin-nav a.active { background: var(--ink-2); color: #fff; }
-  .admin-main { flex: 1; padding: 32px; overflow-x: hidden; }
+  .admin-main { flex: 1; padding: 32px; overflow-x: hidden; min-width: 0; }
   .admin-main h1 { font-family: var(--font-condensed); text-transform: uppercase; font-size: 28px; font-weight: 700; margin-bottom: 24px; }
 
+  @media (max-width: 820px) {
+    .admin-layout { flex-direction: column; }
+    .admin-nav {
+      width: 100%; padding: 0;
+      overflow-x: auto; -webkit-overflow-scrolling: touch;
+      display: flex; flex-direction: row; align-items: stretch;
+      scrollbar-width: none;
+    }
+    .admin-nav::-webkit-scrollbar { display: none; }
+    .admin-nav .nav-section {
+      display: flex; flex-direction: row; align-items: stretch;
+      padding: 0; margin: 0; flex-shrink: 0;
+      border-right: 1px solid rgba(255,255,255,.08);
+    }
+    .admin-nav .nav-section:last-child { border-right: none; }
+    .admin-nav .nav-label { display: none; }
+    .admin-nav a {
+      display: flex; align-items: center;
+      padding: 12px 14px; border-radius: 0; margin: 0;
+      font-size: 13px; white-space: nowrap;
+      border-bottom: 3px solid transparent;
+    }
+    .admin-nav a:hover, .admin-nav a.active {
+      background: transparent; color: #fff;
+      border-bottom-color: var(--red);
+    }
+    .admin-main { padding: 16px; }
+    .admin-main h1 { font-size: 22px; margin-bottom: 16px; }
+  }
+
   /* Tables */
+  .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
   .data-table { width: 100%; border-collapse: collapse; font-size: 13.5px; background: #fff; border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; }
   .data-table th { background: var(--ink); color: #fff; padding: 10px 14px; text-align: left; font-weight: 600; font-size: 12px; letter-spacing: .04em; }
   .data-table td { padding: 10px 14px; border-bottom: 1px solid var(--line); }
@@ -128,14 +159,22 @@ const authed = cookie?.value === 'authenticated';
   .scan-panel { background: #fff; border: 1px solid var(--line); border-radius: var(--r-lg); padding: 24px; max-width: 480px; margin-bottom: 24px; }
   .scan-panel h2 { font-weight: 700; font-size: 18px; margin-bottom: 14px; }
   .scan-input { display: flex; gap: 8px; }
-  .scan-input input { flex: 1; border: 2px solid var(--ink); border-radius: var(--r); padding: 10px 14px; font-size: 15px; font-family: var(--font-mono); }
+  .scan-input input { flex: 1; border: 2px solid var(--ink); border-radius: var(--r); padding: 10px 14px; font-size: 15px; font-family: var(--font-mono); min-width: 0; }
   .scan-input input:focus { outline: none; border-color: var(--red); }
   .scan-result { margin-top: 14px; font-size: 14px; }
-  .scan-mode-btns { display: flex; gap: 8px; margin-bottom: 12px; }
+  .scan-mode-btns { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
   .mode-btn { padding: 8px 16px; border-radius: var(--r); font-weight: 600; font-size: 13px; border: 2px solid var(--line); background: #fff; cursor: pointer; }
   .mode-btn.active { border-color: var(--ink); background: var(--ink); color: #fff; }
 
-  .tabs { display: flex; gap: 4px; margin-bottom: 24px; }
+  @media (max-width: 600px) {
+    .scan-panel { max-width: 100%; padding: 16px; }
+    .scan-instructions { padding: 12px 14px; }
+    .scan-input { flex-wrap: wrap; }
+    .scan-input input { width: 100%; }
+    .scan-input .btn { width: 100%; }
+  }
+
+  .tabs { display: flex; gap: 4px; margin-bottom: 24px; flex-wrap: wrap; }
   .tab { padding: 8px 18px; border-radius: 6px; font-weight: 600; font-size: 13px; border: 1px solid var(--line); background: #fff; cursor: pointer; color: var(--text-soft); }
   .tab.active { background: var(--ink); color: #fff; border-color: var(--ink); }
 
@@ -259,7 +298,7 @@ async function renderInventory(el: HTMLElement) {
       </div>
       <div class="scan-result" id="scan-result"></div>
     </div>
-    <table class="data-table">
+    <div class="table-wrap"><table class="data-table">
       <thead><tr><th>Product</th><th>Size</th><th>Color</th><th>Barcode</th><th>On Hand</th><th>Status</th></tr></thead>
       <tbody>${rows.map((r: any) => {
         const low = r.on_hand <= r.low_stock_threshold;
@@ -275,7 +314,7 @@ async function renderInventory(el: HTMLElement) {
           <td>${badge}</td>
         </tr>`;
       }).join('')}</tbody>
-    </table>`;
+    </table></div>`;
 
   el.querySelectorAll('.mode-btn').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -344,7 +383,7 @@ async function renderMovements(el: HTMLElement) {
   const rows = await api('/admin/api/inventory/movements?limit=100');
   el.innerHTML = `
     <h1>Inventory Movements</h1>
-    <table class="data-table">
+    <div class="table-wrap"><table class="data-table">
       <thead><tr><th>Time</th><th>Product</th><th>Size</th><th>Δ Qty</th><th>Reason</th><th>Source</th><th>Staff</th><th>Order</th></tr></thead>
       <tbody>${rows.map((r: any) => `<tr>
         <td>${new Date(r.created_at).toLocaleString()}</td>
@@ -356,14 +395,14 @@ async function renderMovements(el: HTMLElement) {
         <td>${esc(r.staff||'—')}</td>
         <td class="mono" style="font-size:12px">${esc(r.order_id||'—')}</td>
       </tr>`).join('')}</tbody>
-    </table>`;
+    </table></div>`;
 }
 
 async function renderOrders(el: HTMLElement) {
   const rows = await api('/admin/api/orders?limit=100');
   el.innerHTML = `
     <h1>Orders</h1>
-    <table class="data-table">
+    <div class="table-wrap"><table class="data-table">
       <thead><tr><th>Date</th><th>Student</th><th>Location</th><th>Instructor</th><th>Total</th><th>Status</th><th>Actions</th></tr></thead>
       <tbody>${rows.map((o: any) => `<tr>
         <td>${new Date(o.created_at).toLocaleDateString()}</td>
@@ -378,7 +417,7 @@ async function renderOrders(el: HTMLElement) {
           </select>
         </td>
       </tr>`).join('')}</tbody>
-    </table>`;
+    </table></div>`;
 
   el.querySelectorAll('.status-select').forEach(sel => {
     sel.addEventListener('change', async (e) => {
@@ -395,7 +434,7 @@ async function renderQueue(el: HTMLElement) {
   const rows = await api('/admin/api/queue');
   el.innerHTML = `
     <h1>Made-to-Order Queue</h1>
-    <table class="data-table">
+    <div class="table-wrap"><table class="data-table">
       <thead><tr><th>Due By</th><th>Item</th><th>Sizes</th><th>Color</th><th>Student</th><th>Location</th><th>Instructor</th><th>Status</th></tr></thead>
       <tbody>${rows.map((i: any) => {
         const compStr = i.components?.map((c: any) => `${c.component_name}: ${c.chosen_size}`).join(', ') || (i.size || '—');
@@ -411,14 +450,14 @@ async function renderQueue(el: HTMLElement) {
           <td>${badge}</td>
         </tr>`;
       }).join('')}</tbody>
-    </table>`;
+    </table></div>`;
 }
 
 async function renderProducts(el: HTMLElement) {
   const rows = await api('/admin/api/products');
   el.innerHTML = `
     <h1>Products</h1>
-    <table class="data-table">
+    <div class="table-wrap"><table class="data-table">
       <thead><tr><th>Name</th><th>Category</th><th>Kind</th><th>Fulfillment</th><th>Special Order</th><th>Active</th></tr></thead>
       <tbody>${rows.map((p: any) => `<tr>
         <td><a href="/store/${esc(p.slug)}" target="_blank" style="color:var(--red)">${esc(p.name)}</a></td>
@@ -428,7 +467,7 @@ async function renderProducts(el: HTMLElement) {
         <td>${p.special_order ? 'Yes' : 'No'}</td>
         <td>${p.active ? '✓' : '—'}</td>
       </tr>`).join('')}</tbody>
-    </table>`;
+    </table></div>`;
 }
 
 const DIR_CATS = ['Automotive','Business Support & Supplies','Computers & Electronics','Construction & Contractors','Education','Entertainment','Food & Dining','Health & Medicine','Home & Garden','Legal & Financial','Manufacturing, Wholesale, Distribution','Merchants (Retail)','Miscellaneous','Personal Care & Services','Real Estate','Sports','Technology & Software','Travel & Transportation'];
@@ -438,7 +477,7 @@ async function renderDirectory(el: HTMLElement) {
 
   function tableHTML(rows: any[]) {
     if (!rows.length) return '<p style="color:var(--text-soft);font-style:italic">No listings yet.</p>';
-    return `<table class="data-table" style="table-layout:fixed;width:100%">
+    return `<div class="table-wrap"><table class="data-table" style="table-layout:fixed;width:100%">
       <colgroup>
         <col style="width:180px"><col style="width:150px"><col style="width:140px">
         <col style="width:90px"><col style="width:130px"><col>
@@ -479,7 +518,7 @@ async function renderDirectory(el: HTMLElement) {
         </td>
       </tr>`).join('')}
       </tbody>
-    </table>`;
+    </table></div>`;
   }
 
   function editModalHTML(r: any) {
