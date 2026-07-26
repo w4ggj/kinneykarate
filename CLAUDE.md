@@ -2,7 +2,7 @@
 
 ## What this is
 
-Astro + Cloudflare Pages rebuild of kinneykarate.com. See `KINNEY_KARATE_WEBSITE_BUILD_BRIEF.md` (in chat/zip) for full spec.
+Astro + Cloudflare Pages rebuild of kinneykarate.com.
 
 ## Stack
 
@@ -25,7 +25,7 @@ node db/seed.js | npx wrangler d1 execute kinneykarate-db --local --file -
 npm run dev
 ```
 
-## Key rules (from build brief)
+## Key rules
 
 - **Never commit `.dev.vars`** — real secrets go in via `wrangler secret put`
 - **No Stripe live keys** until Joe approves after test transaction
@@ -35,28 +35,22 @@ npm run dev
 - **Three separate Stripe accounts** — never cross-wire KK / Memorial Fund / BYW
 - Tuition is never paid on this site
 
-## Content TODOs (blocked on Joe)
-
-- `src/pages/about.astro` — instructor names, ranks, bios (marked TODO)
-- `src/pages/locations.astro` — confirm exact class times per location
-- `src/pages/news.astro` — migrate posts from WP (site returned 403 to scraper)
-- `public/_redirects` — add any WP slugs not listed
-- `wrangler.toml` — fill in D1 database_id and KV namespace id after `wrangler d1 create kinneykarate-db`
-- Turnstile site key in `src/pages/about.astro` (contact form)
-- Product images → R2 bucket (not yet in build)
-- Discord invite URL in `src/pages/students.astro`
-
-## Build milestones (§11 of brief)
+## Build milestones
 
 1. ✅ Scaffold — Astro + Pages, wrangler.toml, .dev.vars.example
 2. ✅ Data layer — D1 schema + migrations + catalog.seed.json
 3. ✅ Content site — all pages scaffolded, nav, footer, announcement bar
 4. ✅ Events — calendar Worker + KV cache + month/agenda view
-5. 🔴 **Phase 1 staging review** — Joe signs off on pages.dev URL
+5. ✅ Phase 1 staging review — Joe signed off
 6. ✅ Storefront — product grid, product pages, in-memory cart
 7. ✅ Checkout — Stripe Checkout session, Stripe Tax, surcharge, webhook
-8. 🔴 **Validate test transaction** end-to-end before live keys
+8. ✅ Content complete — instructor bios, class times, news posts, redirects, Turnstile, product images, Discord URL
 9. ✅ Admin console — products, inventory/scanning, queue, orders, settings
 10. ✅ Inventory + barcode scanning — check-in/take-out, movements ledger
 11. ✅ Cutover prep — `public/_redirects` 301 map
-12. 🔴 **Go-live by Joe** — attach kinneykarate.com as custom domain on Pages project
+12. 🔴 **Go-live by Joe** — attach kinneykarate.com as custom domain on Pages project, swap Stripe to live keys after test transaction
+
+## Pending
+
+- **Go-live** — Joe attaches kinneykarate.com as custom domain on the Cloudflare Pages project
+- **Stripe live keys** — Joe swaps in after validating a test transaction end-to-end
