@@ -23,8 +23,6 @@
       "package": "com.kinneykarate.pos",
       "permissions": ["NFC", "VIBRATE"]
     },
-    "plugins": [
-      "@stripe/stripe-terminal-react-native"
-    ]
+    "plugins": []
   }
 }
