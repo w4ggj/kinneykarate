@@ -1,0 +1,30 @@
+{
+  "expo": {
+    "name": "Kinney Karate POS",
+    "slug": "kinney-karate-pos",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "backgroundColor": "#1a3a5c"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.kinneykarate.pos",
+      "entitlements": {
+        "com.apple.developer.proximity-reader.payment.acceptance": true
+      },
+      "infoPlist": {
+        "NFCReaderUsageDescription": "Used to accept contactless payments"
+      }
+    },
+    "android": {
+      "package": "com.kinneykarate.pos",
+      "permissions": ["NFC", "VIBRATE"]
+    },
+    "plugins": [
+      "@stripe/stripe-terminal-react-native"
+    ]
+  }
+}

@@ -217,6 +217,10 @@ const authed = cookie?.value === 'authenticated';
       <a href="#" data-panel="settings">Settings</a>
     </div>
     <div class="nav-section">
+      <p class="nav-label">Mobile App</p>
+      <a href="#" data-panel="app-downloads">Download App</a>
+    </div>
+    <div class="nav-section">
       <p class="nav-label">Other Sites</p>
       <a href="https://www.balance-your-world.com/staff" target="_blank" rel="noopener">Balance Your World</a>
       <a href="https://camp.kinneykarate.com/admin" target="_blank" rel="noopener">KK Camp</a>
@@ -234,7 +238,7 @@ const authed = cookie?.value === 'authenticated';
 </div>
 
 <script>
-type Panel = 'inventory'|'movements'|'orders'|'queue'|'pos'|'products'|'directory'|'settings';
+type Panel = 'inventory'|'movements'|'orders'|'queue'|'pos'|'products'|'directory'|'settings'|'app-downloads';
 let currentPanel: Panel = 'inventory';
 
 const navLinks = document.querySelectorAll<HTMLAnchorElement>('[data-panel]');
@@ -271,6 +275,7 @@ async function loadPanel(panel: Panel) {
   else if (panel === 'products') await renderProducts(el);
   else if (panel === 'directory') await renderDirectory(el);
   else if (panel === 'settings') await renderSettings(el);
+  else if (panel === 'app-downloads') renderAppDownloads(el);
 }
 
 async function renderInventory(el: HTMLElement) {
@@ -868,6 +873,53 @@ async function renderSettings(el: HTMLElement) {
     msg.textContent = 'Saved!';
     setTimeout(() => { msg.textContent = ''; }, 2000);
   });
+}
+
+function renderAppDownloads(el: HTMLElement) {
+  el.innerHTML = `
+    <h1>Mobile App</h1>
+    <p style="margin-bottom:28px;font-size:14px;color:var(--text-soft)">Install the Kinney Karate POS app on instructor phones for in-person Tap to Pay.</p>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:20px;max-width:700px">
+
+      <div style="background:#fff;border:1px solid var(--line);border-radius:var(--r-lg);padding:24px">
+        <div style="font-size:28px;margin-bottom:10px">🤖</div>
+        <h2 style="font-size:17px;font-weight:700;margin-bottom:6px">Android</h2>
+        <p style="font-size:13px;color:var(--text-soft);margin-bottom:16px;line-height:1.6">
+          Download and install the APK directly. When prompted, allow installation from unknown sources.
+        </p>
+        <a href="https://kinneykarate.com/downloads/kinney-karate-pos.apk"
+           style="display:inline-block;background:var(--ink);color:#fff;padding:10px 20px;border-radius:var(--r);font-size:13px;font-weight:700;text-decoration:none">
+          Download APK
+        </a>
+        <p style="font-size:11px;color:var(--text-soft);margin-top:10px">
+          Settings → Security → Install unknown apps → enable for your browser
+        </p>
+      </div>
+
+      <div style="background:#fff;border:1px solid var(--line);border-radius:var(--r-lg);padding:24px">
+        <div style="font-size:28px;margin-bottom:10px"></div>
+        <h2 style="font-size:17px;font-weight:700;margin-bottom:6px">iPhone</h2>
+        <p style="font-size:13px;color:var(--text-soft);margin-bottom:16px;line-height:1.6">
+          Install via TestFlight. Tap the link below on your iPhone to open TestFlight and install.
+        </p>
+        <a href="https://testflight.apple.com/join/XXXXXXXX"
+           style="display:inline-block;background:var(--ink);color:#fff;padding:10px 20px;border-radius:var(--r);font-size:13px;font-weight:700;text-decoration:none">
+          Open in TestFlight
+        </a>
+        <p style="font-size:11px;color:var(--text-soft);margin-top:10px">
+          Requires TestFlight app — free from the App Store
+        </p>
+      </div>
+
+    </div>
+
+    <div style="margin-top:28px;background:#f0f4ff;border:1px solid #c7d4f0;border-radius:var(--r-lg);padding:18px 20px;max-width:700px;font-size:13px;line-height:1.7">
+      <strong>First-time setup on iPhone:</strong> iOS 16+ required. Tap to Pay uses your phone's NFC — no hardware needed.
+      Open the app, sign in with your admin email and password, and the card reader will be ready automatically.
+      <br><br>
+      <strong>Android:</strong> NFC must be enabled. Android 9+ required. Same login credentials as the admin console.
+    </div>`;
 }
 
 // Initial load
