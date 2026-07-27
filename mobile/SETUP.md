@@ -31,17 +31,14 @@ eas build:configure
 
 This links the project to your EAS account and may update `app.json` with an `extra.eas.projectId`.
 
-## 4. Stripe Tap to Pay on iPhone entitlement
+## 4. Stripe Tap to Pay on iPhone — US accounts
 
-Tap to Pay on iPhone requires approval from Stripe before it can be used in production.
+For US-based Stripe accounts, no separate Stripe approval is needed. Tap to Pay is available as long as:
+- Your Stripe account is in the US
+- You have the Apple entitlement (see step 5)
+- You are on iOS 16+ (iPhone XS or later)
 
-1. Log in to the Stripe Dashboard → Settings → Terminal
-2. Click **Request Tap to Pay on iPhone**
-3. Fill out the form (business info, use case)
-4. Stripe typically approves within a few business days
-5. Once approved, the Stripe Terminal SDK will allow `localMobile` discovery on physical iPhones running iOS 16+
-
-**Note:** During development you can test with `simulated: true` in `discoverReaders` (set in `POSScreen.tsx`) — this uses a virtual reader and doesn't require NFC hardware or Stripe approval.
+**Note:** During development you can test with `simulated: true` in `discoverReaders` (set in `POSScreen.tsx`) — this uses a virtual reader and doesn't require NFC hardware.
 
 ## 5. Apple Developer portal — proximity reader entitlement
 
@@ -90,10 +87,12 @@ Use the same admin email/password used for the Kinney Karate admin console at ki
 The app uses **Tap to Pay on iPhone** (no external hardware required). On first launch:
 
 1. Sign in with admin credentials
-2. The app calls `discoverReaders({ discoveryMethod: 'localMobile' })` automatically
-3. A system prompt may appear asking to allow payment acceptance — tap Allow
+2. The **"How to Tap"** instructional screen appears (Apple requirement) — read and tap **Set Up Tap to Pay**
+3. Apple's system prompt appears asking to allow payment acceptance — tap **Allow**
 4. The status dot in the header turns green when the reader is ready
-5. Tap any product card to start a payment — the system NFC sheet appears
+5. Tap any product card to start a payment — ask the customer to hold their card or phone near the top of your iPhone
+
+**Apple review requirement:** The "How to Tap" modal is shown on every fresh launch (iOS only). This satisfies Apple's mandatory instructional overlay requirement (`ProximityReaderDiscovery`). Do not remove it — the app will be rejected without it.
 
 ## Environment / API
 

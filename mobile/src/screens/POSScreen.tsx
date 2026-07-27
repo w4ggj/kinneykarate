@@ -9,6 +9,7 @@ import {
   Modal,
   Alert,
   FlatList,
+  Platform,
 } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useStripeTerminal, Reader } from '@stripe/stripe-terminal-react-native';
@@ -20,7 +21,7 @@ type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'POS'>;
 };
 
-type ReaderStatus = 'connecting' | 'ready' | 'error';
+type ReaderStatus = 'idle' | 'connecting' | 'ready' | 'error';
 
 interface LastResult {
   success: boolean;
@@ -44,12 +45,14 @@ function formatPrice(cents: number): string {
 
 export default function POSScreen({ navigation }: Props) {
   const [products, setProducts] = useState<Product[]>([]);
-  const [readerStatus, setReaderStatus] = useState<ReaderStatus>('connecting');
+  const [readerStatus, setReaderStatus] = useState<ReaderStatus>('idle');
+  const [readerError, setReaderError] = useState<string | null>(null);
   const [charging, setCharging] = useState(false);
   const [lastResult, setLastResult] = useState<LastResult | null>(null);
   const [variantModal, setVariantModal] = useState<{ product: Product } | null>(null);
+  // "How to Tap" setup modal — shown before first discovery on iOS
+  const [setupModal, setSetupModal] = useState(Platform.OS === 'ios');
   const resultTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const connectAttempted = useRef(false);
 
   const {
     initialize,
@@ -66,11 +69,16 @@ export default function POSScreen({ navigation }: Props) {
           .then(({ reader: connected, error }) => {
             if (error) {
               setReaderStatus('error');
+              setReaderError(error.message ?? 'Connection failed.');
             } else if (connected) {
               setReaderStatus('ready');
+              setReaderError(null);
             }
           })
-          .catch(() => setReaderStatus('error'));
+          .catch((e: any) => {
+            setReaderStatus('error');
+            setReaderError(e?.message ?? 'Connection failed.');
+          });
       }
     }, [connectLocalMobileReader]),
   });
@@ -82,31 +90,47 @@ export default function POSScreen({ navigation }: Props) {
       .catch(() => setProducts([]));
   }, []);
 
-  // Initialize terminal
-  useEffect(() => {
-    if (connectAttempted.current) return;
-    connectAttempted.current = true;
-
-    (async () => {
-      try {
-        const { error: initErr } = await initialize();
-        if (initErr) { setReaderStatus('error'); return; }
-
-        const { error: discoverErr } = await discoverReaders({
-          discoveryMethod: 'localMobile',
-          simulated: false,
-        });
-        if (discoverErr) { setReaderStatus('error'); }
-      } catch {
-        setReaderStatus('error');
-      }
-    })();
-  }, [initialize, discoverReaders]);
-
   // If reader connects externally, update status
   useEffect(() => {
-    if (connectedReader) setReaderStatus('ready');
+    if (connectedReader) {
+      setReaderStatus('ready');
+      setReaderError(null);
+    }
   }, [connectedReader]);
+
+  async function startDiscovery() {
+    setReaderStatus('connecting');
+    setReaderError(null);
+    try {
+      const { error: initErr } = await initialize();
+      if (initErr) {
+        setReaderStatus('error');
+        setReaderError(initErr.message ?? 'Terminal init failed.');
+        return;
+      }
+
+      // On iOS, discoverReaders with localMobile triggers Apple's ProximityReaderDiscovery
+      // overlay ("How to Tap") — this is the required Apple UX step.
+      const { error: discoverErr } = await discoverReaders({
+        discoveryMethod: 'localMobile',
+        simulated: false,
+      });
+
+      if (discoverErr) {
+        setReaderStatus('error');
+        // Surface entitlement issues clearly so the instructor knows what's wrong.
+        const msg = discoverErr.message ?? '';
+        if (msg.toLowerCase().includes('entitlement') || msg.toLowerCase().includes('not supported')) {
+          setReaderError('Tap to Pay is not enabled on this device. Make sure the Apple entitlement is approved and you are on iOS 16 or later.');
+        } else {
+          setReaderError(msg || 'Discovery failed.');
+        }
+      }
+    } catch (e: any) {
+      setReaderStatus('error');
+      setReaderError(e?.message ?? 'Unexpected error.');
+    }
+  }
 
   function showResult(success: boolean, message: string) {
     if (resultTimer.current) clearTimeout(resultTimer.current);
@@ -129,7 +153,7 @@ export default function POSScreen({ navigation }: Props) {
       });
 
       if (collectErr) {
-        if (collectErr.code !== 'Canceled') {
+        if ((collectErr as any).code !== 'Canceled') {
           showResult(false, collectErr.message ?? 'Payment cancelled.');
         }
         return;
@@ -197,13 +221,22 @@ export default function POSScreen({ navigation }: Props) {
       </View>
 
       {/* Status banner */}
-      {readerStatus !== 'ready' && (
-        <View style={[styles.banner, readerStatus === 'error' && styles.bannerError]}>
-          <Text style={styles.bannerText}>
-            {readerStatus === 'connecting'
-              ? 'Connecting to reader…'
-              : 'Reader error — restart app'}
-          </Text>
+      {readerStatus === 'connecting' && (
+        <View style={styles.banner}>
+          <Text style={styles.bannerText}>Connecting to reader…</Text>
+        </View>
+      )}
+      {readerStatus === 'error' && (
+        <View style={[styles.banner, styles.bannerError]}>
+          <Text style={styles.bannerText}>{readerError ?? 'Reader error'}</Text>
+          <TouchableOpacity onPress={startDiscovery} style={styles.retryBtn}>
+            <Text style={styles.retryBtnText}>Retry</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+      {readerStatus === 'idle' && (
+        <View style={[styles.banner, styles.bannerIdle]}>
+          <Text style={styles.bannerText}>Reader not started</Text>
         </View>
       )}
 
@@ -250,17 +283,56 @@ export default function POSScreen({ navigation }: Props) {
         )}
       </ScrollView>
 
+      {/* "How to Tap" setup modal — Apple requires this instructional step before Tap to Pay */}
+      <Modal visible={setupModal} transparent animationType="fade">
+        <View style={styles.overlayBg}>
+          <View style={styles.setupCard}>
+            <Text style={styles.setupTitle}>Tap to Pay on iPhone</Text>
+            <Text style={styles.setupBody}>
+              This app uses your iPhone as a contactless card reader.{'\n\n'}
+              When a customer is ready to pay, hold their phone or card near the top of your iPhone.
+              The payment goes directly to Kinney Karate — nothing is stored on your device.
+            </Text>
+            <View style={styles.setupHowRow}>
+              <View style={styles.setupStep}>
+                <Text style={styles.setupStepNum}>1</Text>
+                <Text style={styles.setupStepText}>Tap an item to charge</Text>
+              </View>
+              <View style={styles.setupStep}>
+                <Text style={styles.setupStepNum}>2</Text>
+                <Text style={styles.setupStepText}>Customer holds card or phone near top of your iPhone</Text>
+              </View>
+              <View style={styles.setupStep}>
+                <Text style={styles.setupStepNum}>3</Text>
+                <Text style={styles.setupStepText}>Payment confirmed</Text>
+              </View>
+            </View>
+            <Text style={styles.setupNote}>
+              You'll see an Apple system prompt next — this enables Tap to Pay on this device.
+            </Text>
+            <TouchableOpacity
+              style={styles.setupBtn}
+              onPress={() => {
+                setSetupModal(false);
+                startDiscovery();
+              }}
+            >
+              <Text style={styles.setupBtnText}>Set Up Tap to Pay</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
       {/* Charging overlay */}
       <Modal visible={charging} transparent animationType="fade">
         <View style={styles.overlayBg}>
           <View style={styles.overlayCard}>
             <ActivityIndicator size="large" color="#1a3a5c" />
-            <Text style={styles.overlayText}>Hold near card reader…</Text>
+            <Text style={styles.overlayText}>Hold near top of iPhone…</Text>
+            <Text style={styles.overlaySubText}>Ask the customer to tap their card or phone</Text>
             <TouchableOpacity
               style={styles.cancelBtn}
-              onPress={() => {
-                cancelCollectPaymentMethod();
-              }}
+              onPress={() => { cancelCollectPaymentMethod(); }}
             >
               <Text style={styles.cancelBtnText}>Cancel</Text>
             </TouchableOpacity>
@@ -339,9 +411,22 @@ const styles = StyleSheet.create({
     backgroundColor: '#f39c12',
     paddingVertical: 8,
     paddingHorizontal: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
   },
   bannerError: { backgroundColor: '#e74c3c' },
-  bannerText: { color: '#fff', fontWeight: '600', textAlign: 'center', fontSize: 14 },
+  bannerIdle: { backgroundColor: '#888' },
+  bannerText: { color: '#fff', fontWeight: '600', fontSize: 14, flex: 1, textAlign: 'center' },
+  retryBtn: {
+    paddingHorizontal: 14,
+    paddingVertical: 5,
+    borderRadius: 6,
+    borderWidth: 1.5,
+    borderColor: '#fff',
+  },
+  retryBtnText: { color: '#fff', fontWeight: '700', fontSize: 13 },
 
   // Grid
   grid: { padding: 16, paddingBottom: 100 },
@@ -393,7 +478,56 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 340,
   },
-  overlayText: { fontSize: 18, fontWeight: '600', color: '#1a3a5c', marginTop: 20, marginBottom: 24, textAlign: 'center' },
+  overlayText: { fontSize: 18, fontWeight: '600', color: '#1a3a5c', marginTop: 20, marginBottom: 6, textAlign: 'center' },
+  overlaySubText: { fontSize: 14, color: '#666', marginBottom: 24, textAlign: 'center' },
+
+  // Setup modal
+  setupCard: {
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    padding: 28,
+    width: '100%',
+    maxWidth: 380,
+  },
+  setupTitle: { fontSize: 22, fontWeight: '800', color: '#1a3a5c', textAlign: 'center', marginBottom: 12 },
+  setupBody: { fontSize: 15, color: '#444', lineHeight: 22, textAlign: 'center', marginBottom: 20 },
+  setupHowRow: { gap: 12, marginBottom: 20 },
+  setupStep: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 14,
+    backgroundColor: '#f5f7fa',
+    borderRadius: 10,
+    padding: 14,
+  },
+  setupStepNum: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#1a3a5c',
+    color: '#fff',
+    fontWeight: '800',
+    fontSize: 14,
+    textAlign: 'center',
+    lineHeight: 28,
+    flexShrink: 0,
+  },
+  setupStepText: { fontSize: 14, color: '#333', flex: 1, lineHeight: 20 },
+  setupNote: {
+    fontSize: 13,
+    color: '#888',
+    textAlign: 'center',
+    fontStyle: 'italic',
+    marginBottom: 24,
+    lineHeight: 18,
+  },
+  setupBtn: {
+    backgroundColor: '#1a3a5c',
+    borderRadius: 12,
+    paddingVertical: 15,
+    alignItems: 'center',
+  },
+  setupBtnText: { color: '#fff', fontSize: 17, fontWeight: '700' },
 
   // Variant modal
   variantCard: {
