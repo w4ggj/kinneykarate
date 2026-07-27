@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "main": "node_modules/expo/AppEntry.js",
   "scripts": {
+    "postinstall": "node scripts/patch-stripe-plugin.js",
     "start": "expo start",
     "android": "expo run:android",
     "ios": "expo run:ios",
