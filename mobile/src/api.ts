@@ -84,20 +84,6 @@ export interface Product {
   variants: ProductVariant[];
 }
 
-export async function createCheckoutSession(
-  amount_cents: number,
-  name: string,
-): Promise<{ url: string }> {
-  const headers = await authHeaders();
-  const res = await fetch(`${API_BASE}/admin/api/pos-checkout`, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify({ name, price_cents: amount_cents }),
-  });
-  const data = await res.json() as any;
-  if (!res.ok) throw new Error(data.error ?? 'Failed to create checkout');
-  return { url: data.url as string };
-}
 
 export async function getProducts(): Promise<Product[]> {
   const token = await getToken();
