@@ -24,7 +24,7 @@
       "permissions": ["NFC", "VIBRATE"],
       "minSdkVersion": 26
     },
-    "plugins": [],
+    "plugins": ["./plugins/withAndroidMinSdk"],
     "extra": {
       "eas": {
         "projectId": "27e9d6da-5a35-4609-8431-7d742f810110"
