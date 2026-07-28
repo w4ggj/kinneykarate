@@ -21,7 +21,8 @@
     },
     "android": {
       "package": "com.kinneykarate.pos",
-      "permissions": ["NFC", "VIBRATE"]
+      "permissions": ["NFC", "VIBRATE"],
+      "minSdkVersion": 26
     },
     "plugins": [],
     "extra": {
