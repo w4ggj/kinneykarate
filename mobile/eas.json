@@ -3,7 +3,7 @@
   "build": {
     "preview": {
       "cache": { "disabled": true },
-      "android": { "buildType": "apk" },
+      "android": { "buildType": "apk", "image": "latest" },
       "ios": { "distribution": "internal" }
     },
     "production": {
