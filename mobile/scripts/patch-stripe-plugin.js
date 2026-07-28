@@ -34,7 +34,36 @@ if (fs.existsSync(moduleConfigPath)) {
   console.log('[patch-stripe-plugin] expo-module.config.json not found, skipping');
 }
 
-// 2. Also replace withStripeTerminal.js with a no-op
+// 2. Remove minSdkVersion declaration from Stripe Terminal's AndroidManifest.xml
+// so the Gradle manifest merger doesn't block builds when app minSdkVersion < 26
+const manifestPath = path.join(
+  pkgRoot,
+  'android',
+  'src',
+  'main',
+  'AndroidManifest.xml'
+);
+if (fs.existsSync(manifestPath)) {
+  try {
+    let content = fs.readFileSync(manifestPath, 'utf8');
+    const before = content;
+    // Remove self-closing <uses-sdk ... /> and block <uses-sdk>...</uses-sdk>
+    content = content.replace(/<uses-sdk[^>]*\/>/g, '');
+    content = content.replace(/<uses-sdk[^>]*>[\s\S]*?<\/uses-sdk>/g, '');
+    if (content !== before) {
+      fs.writeFileSync(manifestPath, content);
+      console.log('[patch-stripe-plugin] Removed <uses-sdk> from Stripe Terminal AndroidManifest.xml');
+    } else {
+      console.log('[patch-stripe-plugin] No <uses-sdk> found in Stripe Terminal AndroidManifest.xml');
+    }
+  } catch (e) {
+    console.error('[patch-stripe-plugin] Failed to patch AndroidManifest.xml:', e.message);
+  }
+} else {
+  console.log('[patch-stripe-plugin] Stripe Terminal AndroidManifest.xml not found, skipping');
+}
+
+// 3. Also replace withStripeTerminal.js with a no-op
 const pluginPath = path.join(
   pkgRoot,
   'lib',
