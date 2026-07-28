@@ -2,6 +2,7 @@
   "cli": { "version": ">= 10.0.0" },
   "build": {
     "preview": {
+      "cache": { "disabled": true },
       "android": { "buildType": "apk" },
       "ios": { "distribution": "internal" }
     },
