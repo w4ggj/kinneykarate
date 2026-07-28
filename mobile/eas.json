@@ -3,7 +3,8 @@
   "build": {
     "preview": {
       "cache": { "disabled": true },
-      "android": { "buildType": "apk", "image": "latest" },
+      "env": { "JAVA_HOME": "/usr/lib/jvm/java-17-openjdk-amd64" },
+      "android": { "buildType": "apk", "image": "ubuntu-22.04-jdk-17-ndk-r23c" },
       "ios": { "distribution": "internal" }
     },
     "production": {
