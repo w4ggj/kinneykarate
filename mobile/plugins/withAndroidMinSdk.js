@@ -1,10 +1,18 @@
-const { withAppBuildGradle } = require('@expo/config-plugins');
+const { withProjectBuildGradle, withAppBuildGradle } = require('@expo/config-plugins');
 
-module.exports = (config) =>
-  withAppBuildGradle(config, (config) => {
-    config.modResults.contents = config.modResults.contents.replace(
-      /minSdkVersion\s*=?\s*\d+/,
-      'minSdkVersion = 26'
-    );
+function patchMinSdk(contents) {
+  // Patch ext block: minSdkVersion = 24  or  minSdkVersion 24
+  return contents.replace(/minSdkVersion\s*=?\s*\d+/g, 'minSdkVersion = 26');
+}
+
+module.exports = (config) => {
+  config = withProjectBuildGradle(config, (config) => {
+    config.modResults.contents = patchMinSdk(config.modResults.contents);
     return config;
   });
+  config = withAppBuildGradle(config, (config) => {
+    config.modResults.contents = patchMinSdk(config.modResults.contents);
+    return config;
+  });
+  return config;
+};
