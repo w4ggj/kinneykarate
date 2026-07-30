@@ -84,6 +84,7 @@ export interface Product {
   variants: ProductVariant[];
 }
 
+
 export async function getProducts(): Promise<Product[]> {
   const token = await getToken();
   if (!token) throw new Error('Not authenticated');

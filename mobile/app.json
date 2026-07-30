@@ -21,10 +21,14 @@
     },
     "android": {
       "package": "com.kinneykarate.pos",
-      "permissions": ["NFC", "VIBRATE"]
+      "permissions": ["NFC", "VIBRATE"],
+      "minSdkVersion": 26
     },
-    "plugins": [
-      "@stripe/stripe-terminal-react-native"
-    ]
+    "plugins": ["./plugins/withAndroidMinSdk"],
+    "extra": {
+      "eas": {
+        "projectId": "27e9d6da-5a35-4609-8431-7d742f810110"
+      }
+    }
   }
 }
