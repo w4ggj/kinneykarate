@@ -1,0 +1,286 @@
+---
+export const prerender = false;
+import InstructorBase from '../../layouts/InstructorBase.astro';
+
+const cookie = Astro.cookies.get('kk_instructor_session');
+if (cookie?.value !== 'authenticated') {
+  return Astro.redirect('/instructors/');
+}
+
+const env = (Astro.locals as any).runtime?.env;
+let resources: any[] = [];
+
+if (env?.DB) {
+  const result = await env.DB.prepare(
+    'SELECT * FROM instructor_resources ORDER BY category, sort_order, created_at DESC'
+  ).all();
+  resources = result.results ?? [];
+}
+---
+<InstructorBase title="Manage Resources" authed={true}>
+  <div class="page-header">
+    <h1 class="page-title cond">Manage Resources</h1>
+    <p class="page-sub">Add videos, documents, images, and links for the instructor library.</p>
+  </div>
+
+  <!-- Add resource form -->
+  <div class="card" id="add-form-wrap">
+    <h2 class="section-title">Add Resource</h2>
+    <form id="add-form" class="add-form">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Type</label>
+          <select name="type" id="type-select" required>
+            <option value="video">Video (YouTube)</option>
+            <option value="document">Document (PDF / file)</option>
+            <option value="manual">Manual (PDF / file)</option>
+            <option value="image">Image</option>
+            <option value="link">Link</option>
+          </select>
+        </div>
+        <div class="form-group" style="flex:2">
+          <label>Title</label>
+          <input type="text" name="title" required placeholder="Resource title" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Category <span class="hint">(e.g. General, Curriculum, Forms, Weapons)</span></label>
+        <input type="text" name="category" placeholder="General" />
+      </div>
+      <div class="form-group">
+        <label>Description <span class="hint">(optional)</span></label>
+        <textarea name="description" rows="2" placeholder="Brief description…"></textarea>
+      </div>
+
+      <!-- URL field: shown for video / link -->
+      <div class="form-group" id="url-group">
+        <label id="url-label">YouTube URL</label>
+        <input type="url" name="url" id="url-input" placeholder="https://www.youtube.com/watch?v=…" />
+      </div>
+
+      <!-- File upload: shown for document / manual / image -->
+      <div class="form-group" id="file-group" style="display:none">
+        <label>Upload file <span class="hint">(PDF, image, or other document)</span></label>
+        <input type="file" name="file" id="file-input" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png,.gif,.zip" />
+      </div>
+
+      <div id="form-error" class="form-error" style="display:none"></div>
+      <div id="form-success" class="form-success" style="display:none"></div>
+
+      <button type="submit" class="btn" id="submit-btn">Add Resource</button>
+    </form>
+  </div>
+
+  <!-- Existing resources -->
+  <div style="margin-top:40px">
+    <h2 class="section-title">Current Resources ({resources.length})</h2>
+    {resources.length === 0 ? (
+      <p class="empty">No resources yet.</p>
+    ) : (
+      <div class="resource-table-wrap">
+        <table class="resource-table">
+          <thead>
+            <tr>
+              <th>Title</th>
+              <th>Type</th>
+              <th>Category</th>
+              <th>Status</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="resource-tbody">
+            {resources.map((r: any) => (
+              <tr id={`row-${r.id}`}>
+                <td>
+                  <span class="res-title">{r.title}</span>
+                  {r.description && <span class="res-desc">{r.description}</span>}
+                  {r.filename && <span class="res-filename">{r.filename}</span>}
+                </td>
+                <td><span class={`badge badge--${r.type}`}>{r.type}</span></td>
+                <td>{r.category}</td>
+                <td><span class={r.active ? 'status-on' : 'status-off'}>{r.active ? 'Active' : 'Hidden'}</span></td>
+                <td class="actions">
+                  {r.active ? (
+                    <button class="act-btn" data-action="hide" data-id={r.id}>Hide</button>
+                  ) : (
+                    <button class="act-btn act-btn--green" data-action="show" data-id={r.id}>Show</button>
+                  )}
+                  <button class="act-btn act-btn--red" data-action="delete" data-id={r.id}>Delete</button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    )}
+  </div>
+</InstructorBase>
+
+<script>
+const typeSelect = document.getElementById('type-select') as HTMLSelectElement;
+const urlGroup = document.getElementById('url-group') as HTMLElement;
+const fileGroup = document.getElementById('file-group') as HTMLElement;
+const urlLabel = document.getElementById('url-label') as HTMLElement;
+const urlInput = document.getElementById('url-input') as HTMLInputElement;
+
+function updateFields() {
+  const t = typeSelect.value;
+  const isFile = t === 'document' || t === 'manual' || t === 'image';
+  urlGroup.style.display = isFile ? 'none' : '';
+  fileGroup.style.display = isFile ? '' : 'none';
+  if (t === 'link') { urlLabel.textContent = 'URL'; urlInput.placeholder = 'https://…'; }
+  else { urlLabel.textContent = 'YouTube URL'; urlInput.placeholder = 'https://www.youtube.com/watch?v=…'; }
+  urlInput.required = !isFile;
+}
+typeSelect.addEventListener('change', updateFields);
+
+const form = document.getElementById('add-form') as HTMLFormElement;
+const errEl = document.getElementById('form-error') as HTMLElement;
+const sucEl = document.getElementById('form-success') as HTMLElement;
+const submitBtn = document.getElementById('submit-btn') as HTMLButtonElement;
+
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  errEl.style.display = 'none';
+  sucEl.style.display = 'none';
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Saving…';
+
+  const fd = new FormData(form);
+  try {
+    const res = await fetch('/instructors/api/resources', { method: 'POST', body: fd });
+    const data = await res.json() as any;
+    if (!res.ok) throw new Error(data.error ?? 'Failed to save');
+    sucEl.textContent = 'Resource added!';
+    sucEl.style.display = 'block';
+    form.reset();
+    updateFields();
+    // Reload the table row
+    setTimeout(() => location.reload(), 800);
+  } catch (err: any) {
+    errEl.textContent = err.message;
+    errEl.style.display = 'block';
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Add Resource';
+  }
+});
+
+// Action buttons (hide / show / delete)
+document.getElementById('resource-tbody')?.addEventListener('click', async (e) => {
+  const btn = (e.target as HTMLElement).closest('[data-action]') as HTMLButtonElement | null;
+  if (!btn) return;
+  const action = btn.dataset.action!;
+  const id = btn.dataset.id!;
+  if (action === 'delete' && !confirm('Delete this resource?')) return;
+
+  btn.disabled = true;
+  try {
+    const res = await fetch(`/instructors/api/resources/${id}`, {
+      method: action === 'delete' ? 'DELETE' : 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: action !== 'delete' ? JSON.stringify({ active: action === 'show' ? 1 : 0 }) : undefined,
+    });
+    if (!res.ok) throw new Error(await res.text());
+    if (action === 'delete') {
+      document.getElementById(`row-${id}`)?.remove();
+    } else {
+      location.reload();
+    }
+  } catch (err: any) {
+    alert(err.message);
+    btn.disabled = false;
+  }
+});
+</script>
+
+<style>
+  .page-header { margin-bottom: 32px; }
+  .page-title { font-size: 2rem; margin-bottom: 6px; }
+  .page-sub { color: var(--text-soft); font-size: .95rem; }
+
+  .card {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: var(--r-lg);
+    padding: 28px;
+  }
+  .section-title {
+    font-family: var(--font-condensed);
+    font-size: 1.1rem;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    margin-bottom: 20px;
+    color: var(--text);
+  }
+  .add-form { display: flex; flex-direction: column; gap: 16px; }
+  .form-row { display: flex; gap: 14px; flex-wrap: wrap; }
+  .form-group { display: flex; flex-direction: column; gap: 5px; flex: 1; min-width: 180px; }
+  label { font-size: .8rem; font-weight: 600; color: var(--text-soft); }
+  .hint { font-weight: 400; font-size: .75rem; }
+  input, select, textarea {
+    padding: 9px 12px;
+    border: 1px solid var(--line);
+    border-radius: var(--r);
+    font-family: var(--font-body);
+    font-size: .9rem;
+    background: #fff;
+  }
+  input:focus, select:focus, textarea:focus { outline: none; border-color: var(--red); }
+  textarea { resize: vertical; }
+  .form-error { background: #fef2f2; border: 1px solid #fca5a5; color: var(--danger); border-radius: var(--r); padding: 10px 14px; font-size: .875rem; }
+  .form-success { background: #f0fdf4; border: 1px solid #86efac; color: var(--ok); border-radius: var(--r); padding: 10px 14px; font-size: .875rem; }
+
+  .empty { color: var(--text-soft); font-size: .95rem; }
+  .resource-table-wrap { overflow-x: auto; }
+  .resource-table {
+    width: 100%; border-collapse: collapse; font-size: .875rem;
+  }
+  .resource-table th {
+    text-align: left; font-size: .75rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .08em; color: var(--text-soft); padding: 10px 12px;
+    border-bottom: 1px solid var(--line);
+  }
+  .resource-table td { padding: 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  .resource-table tr:last-child td { border-bottom: none; }
+  .res-title { display: block; font-weight: 600; margin-bottom: 2px; }
+  .res-desc { display: block; color: var(--text-soft); font-size: .8rem; }
+  .res-filename { display: block; color: var(--text-soft); font-size: .75rem; font-family: var(--font-mono); }
+
+  .badge {
+    display: inline-block; font-size: .7rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .06em; padding: 2px 8px; border-radius: 20px;
+    background: var(--line); color: var(--text-soft);
+  }
+  .badge--video { background: #fee2e2; color: var(--danger); }
+  .badge--manual { background: #dcfce7; color: var(--ok); }
+  .badge--document { background: #dbeafe; color: #1d4ed8; }
+  .badge--image { background: #fef9c3; color: #854d0e; }
+
+  .status-on { color: var(--ok); font-weight: 600; font-size: .8rem; }
+  .status-off { color: var(--text-soft); font-size: .8rem; }
+
+  .actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  @media (max-width: 600px) {
+    .page-title { font-size: 1.5rem; }
+    .form-row { flex-direction: column; }
+    .form-group { min-width: 0; }
+    .card { padding: 20px 16px; }
+    /* Turn table into stacked cards on mobile */
+    .resource-table thead { display: none; }
+    .resource-table, .resource-table tbody, .resource-table tr, .resource-table td { display: block; width: 100%; }
+    .resource-table tr { border: 1px solid var(--line); border-radius: var(--r); margin-bottom: 12px; padding: 12px; }
+    .resource-table td { padding: 4px 0; border: none; }
+  }
+  .act-btn {
+    font-size: .75rem; font-weight: 600; padding: 4px 10px;
+    border: 1px solid var(--line); border-radius: var(--r);
+    background: none; cursor: pointer; color: var(--text-soft);
+    transition: background .12s;
+  }
+  .act-btn:hover { background: var(--line); }
+  .act-btn--green { color: var(--ok); border-color: var(--ok); }
+  .act-btn--green:hover { background: #dcfce7; }
+  .act-btn--red { color: var(--danger); border-color: var(--danger); }
+  .act-btn--red:hover { background: #fee2e2; }
+</style>

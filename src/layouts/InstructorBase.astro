@@ -1,0 +1,86 @@
+---
+import '../styles/global.css';
+
+interface Props {
+  title: string;
+  authed?: boolean;
+}
+const { title, authed = false } = Astro.props;
+---
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{title} | Kinney Karate Instructors</title>
+  <link rel="icon" type="image/png" href="/kklogo.png" />
+  <meta name="robots" content="noindex, nofollow" />
+</head>
+<body class="portal-body">
+  {authed && (
+    <header class="portal-header">
+      <div class="portal-header-inner">
+        <div class="portal-brand">
+          <img src="/kklogo.png" alt="Kinney Karate" width="36" height="36" />
+          <span>Instructor Portal</span>
+        </div>
+        <nav class="portal-nav">
+          <a href="/instructors/dashboard">Library</a>
+          <a href="/instructors/admin">Manage</a>
+          <a href="/instructors/logout" class="portal-nav-logout">Sign out</a>
+        </nav>
+      </div>
+    </header>
+  )}
+  <main class="portal-main">
+    <slot />
+  </main>
+  <style>
+    .portal-body {
+      background: var(--paper-2);
+      color: var(--text);
+      font-family: var(--font-body);
+      min-height: 100vh;
+    }
+    .portal-header {
+      background: var(--ink);
+      color: var(--text-invert);
+      padding: 0 20px;
+    }
+    .portal-header-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 56px;
+    }
+    .portal-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-family: var(--font-condensed);
+      font-weight: 700;
+      font-size: 1.05rem;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      color: var(--text-invert);
+    }
+    .portal-nav {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      font-size: 0.875rem;
+      font-weight: 600;
+    }
+    .portal-nav a { color: var(--text-invert-soft); transition: color .15s; }
+    .portal-nav a:hover { color: var(--text-invert); }
+    .portal-nav-logout { color: var(--text-invert-soft) !important; }
+    .portal-main { max-width: 1100px; margin: 0 auto; padding: 28px 16px 64px; }
+    @media (max-width: 480px) {
+      .portal-header-inner { height: auto; padding: 12px 0; flex-direction: column; gap: 10px; }
+      .portal-nav { gap: 16px; font-size: 0.8rem; }
+    }
+  </style>
+</body>
+</html>

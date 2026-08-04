@@ -1,0 +1,49 @@
+export const prerender = false;
+import type { APIContext } from 'astro';
+
+function authed(cookies: APIContext['cookies']) {
+  return cookies.get('kk_instructor_session')?.value === 'authenticated';
+}
+function json(data: unknown, status = 200) {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: { 'content-type': 'application/json' },
+  });
+}
+
+export async function POST({ request, cookies, locals }: APIContext) {
+  if (!authed(cookies)) return json({ error: 'Unauthorized' }, 401);
+
+  const env = (locals as any).runtime?.env;
+  if (!env?.DB) return json({ error: 'DB not available' }, 503);
+
+  const fd = await request.formData();
+  const type = fd.get('type')?.toString() ?? '';
+  const title = fd.get('title')?.toString().trim() ?? '';
+  const category = fd.get('category')?.toString().trim() || 'General';
+  const description = fd.get('description')?.toString().trim() ?? '';
+  const url = fd.get('url')?.toString().trim() || null;
+  const file = fd.get('file') as File | null;
+
+  if (!type || !title) return json({ error: 'Type and title are required' }, 400);
+
+  let r2Key: string | null = null;
+  let filename: string | null = null;
+
+  if (file && file.size > 0) {
+    if (!env.IMAGES) return json({ error: 'File storage not configured' }, 503);
+    filename = file.name;
+    r2Key = `instructor/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
+    await env.IMAGES.put(r2Key, file.stream(), {
+      httpMetadata: { contentType: file.type || 'application/octet-stream' },
+    });
+  }
+
+  const row = await env.DB.prepare(
+    `INSERT INTO instructor_resources (title, description, type, category, url, r2_key, filename)
+     VALUES (?, ?, ?, ?, ?, ?, ?)
+     RETURNING id`
+  ).bind(title, description, type, category, url, r2Key, filename).first();
+
+  return json({ ok: true, id: (row as any)?.id });
+}

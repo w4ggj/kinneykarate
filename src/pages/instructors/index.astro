@@ -1,0 +1,99 @@
+---
+export const prerender = false;
+import InstructorBase from '../../layouts/InstructorBase.astro';
+
+const cookie = Astro.cookies.get('kk_instructor_session');
+if (cookie?.value === 'authenticated') {
+  return Astro.redirect('/instructors/dashboard');
+}
+
+let error = '';
+if (Astro.request.method === 'POST') {
+  const env = (Astro.locals as any).runtime?.env;
+  const data = await Astro.request.formData();
+  const code = data.get('code')?.toString().trim() ?? '';
+  const expected = env?.INSTRUCTOR_PORTAL_CODE ?? '';
+  if (!expected) {
+    error = 'Portal not configured. Add INSTRUCTOR_PORTAL_CODE in Cloudflare.';
+  } else if (code === expected) {
+    Astro.cookies.set('kk_instructor_session', 'authenticated', {
+      path: '/instructors',
+      httpOnly: true,
+      secure: true,
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24 * 30, // 30 days
+    });
+    return Astro.redirect('/instructors/dashboard');
+  } else {
+    error = 'Incorrect access code. Try again.';
+  }
+}
+---
+<InstructorBase title="Instructor Login">
+  <div class="login-wrap">
+    <div class="login-box">
+      <img src="/kklogo.png" alt="Kinney Karate" width="56" height="56" />
+      <h1>Instructor Portal</h1>
+      <p class="subtitle">Kinney Karate — Staff &amp; Instructors</p>
+      {error && <div class="error">{error}</div>}
+      <form method="POST">
+        <label for="code">Access code</label>
+        <input type="password" id="code" name="code" required autofocus autocomplete="off"
+               placeholder="Enter your access code" />
+        <button type="submit" class="btn block">Enter Portal</button>
+      </form>
+    </div>
+  </div>
+</InstructorBase>
+
+<style>
+  .login-wrap {
+    min-height: calc(100vh - 0px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+  }
+  .login-box {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: var(--r-lg);
+    padding: 40px 36px;
+    width: 100%;
+    max-width: 380px;
+    text-align: center;
+    box-shadow: 0 4px 24px rgba(0,0,0,.07);
+  }
+  .login-box img { margin: 0 auto 16px; }
+  h1 {
+    font-family: var(--font-condensed);
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    font-size: 1.5rem;
+    margin-bottom: 4px;
+  }
+  .subtitle { color: var(--text-soft); font-size: .875rem; margin-bottom: 28px; }
+  label { display: block; text-align: left; font-size: .8rem; font-weight: 600; margin-bottom: 5px; color: var(--text-soft); }
+  input {
+    display: block;
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--line);
+    border-radius: var(--r);
+    font-family: var(--font-body);
+    font-size: .95rem;
+    background: #fff;
+    margin-bottom: 16px;
+  }
+  input:focus { outline: none; border-color: var(--red); }
+  .error {
+    background: #fef2f2;
+    border: 1px solid #fca5a5;
+    color: var(--danger);
+    border-radius: var(--r);
+    padding: 10px 14px;
+    font-size: .875rem;
+    margin-bottom: 16px;
+    text-align: left;
+  }
+</style>
