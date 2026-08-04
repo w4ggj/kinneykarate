@@ -23,6 +23,7 @@ export async function POST({ request, cookies, locals }: APIContext) {
   const category = fd.get('category')?.toString().trim() || 'General';
   const description = fd.get('description')?.toString().trim() ?? '';
   const url = fd.get('url')?.toString().trim() || null;
+  const content = fd.get('content')?.toString().trim() || null;
   const file = fd.get('file') as File | null;
 
   if (!type || !title) return json({ error: 'Type and title are required' }, 400);
@@ -40,10 +41,10 @@ export async function POST({ request, cookies, locals }: APIContext) {
   }
 
   const row = await env.DB.prepare(
-    `INSERT INTO instructor_resources (title, description, type, category, url, r2_key, filename)
-     VALUES (?, ?, ?, ?, ?, ?, ?)
+    `INSERT INTO instructor_resources (title, description, type, category, url, r2_key, filename, content)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
      RETURNING id`
-  ).bind(title, description, type, category, url, r2Key, filename).first();
+  ).bind(title, description, type, category, url, r2Key, filename, content).first();
 
   return json({ ok: true, id: (row as any)?.id });
 }

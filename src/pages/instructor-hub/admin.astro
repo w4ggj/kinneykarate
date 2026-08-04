@@ -36,6 +36,7 @@ if (env?.DB) {
             <option value="manual">Manual (PDF / file)</option>
             <option value="image">Image</option>
             <option value="link">Link</option>
+          <option value="text">Text (display on page)</option>
           </select>
         </div>
         <div class="form-group" style="flex:2">
@@ -64,6 +65,12 @@ if (env?.DB) {
       <div class="form-group" id="url-group">
         <label id="url-label">YouTube URL</label>
         <input type="url" name="url" id="url-input" placeholder="https://www.youtube.com/watch?v=…" />
+      </div>
+
+      <!-- Text content: shown for text type -->
+      <div class="form-group" id="content-group" style="display:none">
+        <label>Text content</label>
+        <textarea name="content" id="content-input" rows="6" placeholder="Enter text to display on the page…"></textarea>
       </div>
 
       <!-- File upload: shown for document / manual / image -->
@@ -108,6 +115,9 @@ if (env?.DB) {
                 <td>{r.category}</td>
                 <td><span class={r.active ? 'status-on' : 'status-off'}>{r.active ? 'Active' : 'Hidden'}</span></td>
                 <td class="actions">
+                  {r.type === 'text' && (
+                    <button class="act-btn act-btn--blue" data-action="edit" data-id={r.id} data-title={r.title} data-content={r.content ?? ''}>Edit</button>
+                  )}
                   {r.active ? (
                     <button class="act-btn" data-action="hide" data-id={r.id}>Hide</button>
                   ) : (
@@ -128,17 +138,22 @@ if (env?.DB) {
 const typeSelect = document.getElementById('type-select') as HTMLSelectElement;
 const urlGroup = document.getElementById('url-group') as HTMLElement;
 const fileGroup = document.getElementById('file-group') as HTMLElement;
+const contentGroup = document.getElementById('content-group') as HTMLElement;
 const urlLabel = document.getElementById('url-label') as HTMLElement;
 const urlInput = document.getElementById('url-input') as HTMLInputElement;
+const contentInput = document.getElementById('content-input') as HTMLTextAreaElement;
 
 function updateFields() {
   const t = typeSelect.value;
   const isFile = t === 'document' || t === 'manual' || t === 'image';
-  urlGroup.style.display = isFile ? 'none' : '';
+  const isText = t === 'text';
+  urlGroup.style.display = (isFile || isText) ? 'none' : '';
   fileGroup.style.display = isFile ? '' : 'none';
+  contentGroup.style.display = isText ? '' : 'none';
   if (t === 'link') { urlLabel.textContent = 'URL'; urlInput.placeholder = 'https://…'; }
   else { urlLabel.textContent = 'YouTube URL'; urlInput.placeholder = 'https://www.youtube.com/watch?v=…'; }
-  urlInput.required = !isFile;
+  urlInput.required = !isFile && !isText;
+  contentInput.required = isText;
 }
 typeSelect.addEventListener('change', updateFields);
 
@@ -174,12 +189,51 @@ form.addEventListener('submit', async (e) => {
   }
 });
 
-// Action buttons (hide / show / delete)
+// Action buttons (edit / hide / show / delete)
 document.getElementById('resource-tbody')?.addEventListener('click', async (e) => {
   const btn = (e.target as HTMLElement).closest('[data-action]') as HTMLButtonElement | null;
   if (!btn) return;
   const action = btn.dataset.action!;
   const id = btn.dataset.id!;
+
+  if (action === 'edit') {
+    const row = document.getElementById(`row-${id}`)!;
+    // If already editing, skip
+    if (row.querySelector('.inline-edit-form')) return;
+    const titleCell = row.querySelector('td:first-child')!;
+    const origTitle = btn.dataset.title ?? '';
+    const origContent = btn.dataset.content ?? '';
+    titleCell.innerHTML = `
+      <form class="inline-edit-form">
+        <input class="inline-edit-title" type="text" value="${origTitle.replace(/"/g, '&quot;')}" required />
+        <textarea class="inline-edit-content" rows="5">${origContent}</textarea>
+        <div style="display:flex;gap:8px;margin-top:8px">
+          <button type="submit" class="act-btn act-btn--green">Save</button>
+          <button type="button" class="act-btn cancel-edit">Cancel</button>
+        </div>
+      </form>`;
+    titleCell.querySelector('.cancel-edit')!.addEventListener('click', () => location.reload());
+    titleCell.querySelector('.inline-edit-form')!.addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      const newTitle = (titleCell.querySelector('.inline-edit-title') as HTMLInputElement).value.trim();
+      const newContent = (titleCell.querySelector('.inline-edit-content') as HTMLTextAreaElement).value.trim();
+      try {
+        const res = await fetch(`/instructor-hub/api/resources/${id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title: newTitle, content: newContent }),
+        });
+        if (!res.ok) throw new Error(await res.text());
+        btn.dataset.title = newTitle;
+        btn.dataset.content = newContent;
+        location.reload();
+      } catch (err: any) {
+        alert(err.message);
+      }
+    });
+    return;
+  }
+
   if (action === 'delete' && !confirm('Delete this resource?')) return;
 
   btn.disabled = true;
@@ -291,4 +345,10 @@ document.getElementById('resource-tbody')?.addEventListener('click', async (e) =
   .act-btn--green:hover { background: #dcfce7; }
   .act-btn--red { color: var(--danger); border-color: var(--danger); }
   .act-btn--red:hover { background: #fee2e2; }
+  .act-btn--blue { color: #1d4ed8; border-color: #1d4ed8; }
+  .act-btn--blue:hover { background: #dbeafe; }
+
+  .inline-edit-form { display: flex; flex-direction: column; gap: 6px; }
+  .inline-edit-title { width: 100%; padding: 6px 10px; border: 1px solid var(--line); border-radius: var(--r); font-size: .875rem; font-family: var(--font-body); }
+  .inline-edit-content { width: 100%; padding: 8px 10px; border: 1px solid var(--line); border-radius: var(--r); font-size: .875rem; font-family: var(--font-body); resize: vertical; }
 </style>
