@@ -75,15 +75,31 @@ const typeLabel: Record<string, string> = {
         ))}
       </div>
 
+      <!-- Video overlay -->
+      <div id="video-overlay" class="video-overlay" aria-modal="true" role="dialog" style="display:none">
+        <div class="video-backdrop"></div>
+        <div class="video-modal">
+          <div class="video-modal-header">
+            <span id="video-modal-title" class="video-modal-title"></span>
+            <button id="video-close" class="video-close" aria-label="Close">✕</button>
+          </div>
+          <div class="video-wrap">
+            <iframe id="video-iframe" src="" allowfullscreen allow="autoplay; encrypted-media" frameborder="0"></iframe>
+          </div>
+        </div>
+      </div>
+
       <!-- Resource grid — all cards rendered, JS shows/hides by category -->
       <div class="resource-grid" id="resource-grid">
         {resources.map((r: any) => (
           <a
-            href={r.url || `/instructor-hub/file/${r.id}`}
+            href={r.type === 'video' ? '#' : (r.url || `/instructor-hub/file/${r.id}`)}
             class={`resource-card resource-card--${r.type}`}
             data-category={r.category || 'General'}
-            target={r.url ? '_blank' : undefined}
-            rel={r.url ? 'noopener noreferrer' : undefined}
+            data-video-url={r.type === 'video' ? r.url : undefined}
+            data-video-title={r.type === 'video' ? r.title : undefined}
+            target={r.url && r.type !== 'video' ? '_blank' : undefined}
+            rel={r.url && r.type !== 'video' ? 'noopener noreferrer' : undefined}
           >
             <div class="resource-icon">{typeIcon[r.type] ?? '📁'}</div>
             <div class="resource-body">
@@ -110,6 +126,7 @@ const typeLabel: Record<string, string> = {
 </InstructorBase>
 
 <script>
+// Tabs
 const tabs = document.querySelectorAll<HTMLButtonElement>('.tab-btn');
 const cards = document.querySelectorAll<HTMLElement>('.resource-card');
 const emptyMsg = document.getElementById('empty-tab')!;
@@ -128,8 +145,53 @@ function switchTab(tab: string) {
   });
   emptyMsg.style.display = visible === 0 ? '' : 'none';
 }
-
 tabs.forEach(btn => btn.addEventListener('click', () => switchTab(btn.dataset.tab!)));
+
+// Video overlay
+const overlay = document.getElementById('video-overlay')!;
+const iframe = document.getElementById('video-iframe') as HTMLIFrameElement;
+const titleEl = document.getElementById('video-modal-title')!;
+const closeBtn = document.getElementById('video-close')!;
+
+function extractYouTubeId(url: string): string | null {
+  const patterns = [
+    /[?&]v=([^&#]+)/,
+    /youtu\.be\/([^?&#]+)/,
+    /youtube\.com\/embed\/([^?&#]+)/,
+    /youtube\.com\/shorts\/([^?&#]+)/,
+  ];
+  for (const p of patterns) {
+    const m = url.match(p);
+    if (m) return m[1];
+  }
+  return null;
+}
+
+function openVideo(url: string, title: string) {
+  const id = extractYouTubeId(url);
+  if (!id) { window.open(url, '_blank'); return; }
+  iframe.src = `https://www.youtube.com/embed/${id}?autoplay=1&rel=0`;
+  titleEl.textContent = title;
+  overlay.style.display = '';
+  document.body.style.overflow = 'hidden';
+}
+
+function closeVideo() {
+  overlay.style.display = 'none';
+  iframe.src = '';
+  document.body.style.overflow = '';
+}
+
+closeBtn.addEventListener('click', closeVideo);
+overlay.querySelector('.video-backdrop')!.addEventListener('click', closeVideo);
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeVideo(); });
+
+document.getElementById('resource-grid')!.addEventListener('click', e => {
+  const card = (e.target as HTMLElement).closest<HTMLElement>('[data-video-url]');
+  if (!card) return;
+  e.preventDefault();
+  openVideo(card.dataset.videoUrl!, card.dataset.videoTitle ?? '');
+});
 </script>
 
 <style>
@@ -216,5 +278,53 @@ tabs.forEach(btn => btn.addEventListener('click', () => switchTab(btn.dataset.ta
     .resource-grid { grid-template-columns: 1fr; }
     .page-title { font-size: 1.5rem; }
     .tab-btn { padding: 10px 14px; font-size: .8rem; }
+  }
+
+  /* Video overlay */
+  .video-overlay {
+    position: fixed; inset: 0; z-index: 1000;
+    display: flex; align-items: center; justify-content: center;
+    padding: 16px;
+  }
+  .video-backdrop {
+    position: absolute; inset: 0;
+    background: rgba(0,0,0,.82);
+  }
+  .video-modal {
+    position: relative; z-index: 1;
+    width: 100%; max-width: 860px;
+    background: var(--ink);
+    border-radius: var(--r-lg);
+    overflow: hidden;
+    box-shadow: 0 24px 60px rgba(0,0,0,.6);
+  }
+  .video-modal-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 16px;
+    background: var(--ink-2);
+  }
+  .video-modal-title {
+    font-family: var(--font-condensed);
+    font-weight: 700; font-size: .95rem;
+    text-transform: uppercase; letter-spacing: .04em;
+    color: var(--text-invert);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .video-close {
+    background: none; border: none; color: var(--text-invert-soft);
+    font-size: 1.1rem; cursor: pointer; line-height: 1; padding: 4px 6px;
+    border-radius: 4px; flex-shrink: 0; transition: color .15s;
+  }
+  .video-close:hover { color: var(--text-invert); }
+  .video-wrap {
+    position: relative; padding-bottom: 56.25%; /* 16:9 */
+    height: 0;
+  }
+  .video-wrap iframe {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+  }
+  @media (max-width: 480px) {
+    .video-overlay { padding: 0; align-items: flex-end; }
+    .video-modal { border-radius: var(--r-lg) var(--r-lg) 0 0; max-width: 100%; }
   }
 </style>
