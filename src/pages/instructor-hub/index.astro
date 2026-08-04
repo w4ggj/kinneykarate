@@ -4,7 +4,7 @@ import InstructorBase from '../../layouts/InstructorBase.astro';
 
 const cookie = Astro.cookies.get('kk_instructor_session');
 if (cookie?.value === 'authenticated') {
-  return Astro.redirect('/instructors/dashboard');
+  return Astro.redirect('/instructor-hub/dashboard');
 }
 
 let error = '';
@@ -17,13 +17,13 @@ if (Astro.request.method === 'POST') {
     error = 'Portal not configured. Add INSTRUCTOR_PORTAL_CODE in Cloudflare.';
   } else if (code === expected) {
     Astro.cookies.set('kk_instructor_session', 'authenticated', {
-      path: '/instructors',
+      path: '/instructor-hub',
       httpOnly: true,
       secure: true,
       sameSite: 'lax',
       maxAge: 60 * 60 * 24 * 30, // 30 days
     });
-    return Astro.redirect('/instructors/dashboard');
+    return Astro.redirect('/instructor-hub/dashboard');
   } else {
     error = 'Incorrect access code. Try again.';
   }
