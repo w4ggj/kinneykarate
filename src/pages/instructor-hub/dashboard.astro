@@ -96,9 +96,19 @@ const typeLabel: Record<string, string> = {
         </div>
       </div>
 
+      <!-- Text entries — displayed as prose blocks, JS shows/hides by category -->
+      <div class="text-entries" id="text-entries">
+        {resources.filter((r: any) => r.type === 'text').map((r: any) => (
+          <div class="text-entry" data-category={r.category || 'General'}>
+            <div class="text-entry-title">{r.title}</div>
+            {r.content && <div class="text-entry-body">{r.content}</div>}
+          </div>
+        ))}
+      </div>
+
       <!-- Resource grid — all cards rendered, JS shows/hides by category -->
       <div class="resource-grid" id="resource-grid">
-        {resources.map((r: any) => {
+        {resources.filter((r: any) => r.type !== 'text').map((r: any) => {
           const isPdf = r.r2_key && (r.filename?.toLowerCase().endsWith('.pdf') || r.type === 'manual' || r.type === 'document');
           const isVideo = r.type === 'video';
           return (
@@ -138,6 +148,7 @@ const typeLabel: Record<string, string> = {
 // Tabs
 const tabs = document.querySelectorAll<HTMLButtonElement>('.tab-btn');
 const cards = document.querySelectorAll<HTMLElement>('.resource-card');
+const textEntries = document.querySelectorAll<HTMLElement>('.text-entry');
 const emptyMsg = document.getElementById('empty-tab')!;
 
 function switchTab(tab: string) {
@@ -147,6 +158,11 @@ function switchTab(tab: string) {
     btn.setAttribute('aria-selected', active ? 'true' : 'false');
   });
   let visible = 0;
+  textEntries.forEach(entry => {
+    const show = tab === 'All' || entry.dataset.category === tab;
+    entry.style.display = show ? '' : 'none';
+    if (show) visible++;
+  });
   cards.forEach(card => {
     const show = tab === 'All' || card.dataset.category === tab;
     card.style.display = show ? '' : 'none';
@@ -269,6 +285,26 @@ document.getElementById('resource-grid')!.addEventListener('click', e => {
   }
   .tab-btn:hover { color: var(--text); }
   .tab-btn--active { color: var(--red); border-bottom-color: var(--red); }
+
+  /* Text entries */
+  .text-entries { display: flex; flex-direction: column; gap: 16px; margin-bottom: 28px; }
+  .text-entries:empty { display: none; }
+  .text-entry {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-left: 4px solid var(--red);
+    border-radius: var(--r);
+    padding: 16px 20px;
+  }
+  .text-entry-title {
+    font-weight: 700; font-size: .95rem; margin-bottom: 8px;
+    font-family: var(--font-condensed); text-transform: uppercase;
+    letter-spacing: .04em; color: var(--text);
+  }
+  .text-entry-body {
+    font-size: .9rem; color: var(--text); line-height: 1.7;
+    white-space: pre-wrap;
+  }
 
   /* Resource grid */
   .resource-grid {

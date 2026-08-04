@@ -17,10 +17,16 @@ export async function PATCH({ params, request, cookies, locals }: APIContext) {
   if (!env?.DB) return json({ error: 'DB not available' }, 503);
 
   const body = await request.json() as any;
-  const active = body.active ?? 1;
 
-  await env.DB.prepare('UPDATE instructor_resources SET active = ? WHERE id = ?')
-    .bind(active, params.id).run();
+  if ('content' in body || 'title' in body) {
+    // Text entry edit
+    await env.DB.prepare('UPDATE instructor_resources SET title = ?, content = ? WHERE id = ?')
+      .bind(body.title, body.content, params.id).run();
+  } else {
+    const active = body.active ?? 1;
+    await env.DB.prepare('UPDATE instructor_resources SET active = ? WHERE id = ?')
+      .bind(active, params.id).run();
+  }
 
   return json({ ok: true });
 }
