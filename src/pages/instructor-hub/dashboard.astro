@@ -23,7 +23,7 @@ if (env?.DB) {
 }
 
 // Fixed base tabs always shown; extra tabs added for any other categories in use
-const baseCats = ['Videos', 'Instructor Manual', 'Forms', 'Curriculum', 'Weapons', 'General'];
+const baseCats = ['Instructor Manual', 'Terminology/Pronunciation', 'Curriculum', 'Forms', 'Weapons', 'Videos', 'General'];
 const extraCats = [...new Set(resources.map((r: any) => r.category || 'General'))]
   .filter(c => !baseCats.includes(c)).sort();
 const allTabs = ['All', ...baseCats, ...extraCats];
