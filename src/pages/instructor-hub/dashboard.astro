@@ -101,7 +101,7 @@ const typeLabel: Record<string, string> = {
         {resources.filter((r: any) => r.type === 'text').map((r: any) => (
           <div class="text-entry" data-category={r.category || 'General'}>
             <div class="text-entry-title">{r.title}</div>
-            {r.content && <div class="text-entry-body">{r.content}</div>}
+            {r.content && <div class="text-entry-body" set:html={r.content} />}
           </div>
         ))}
       </div>
@@ -303,8 +303,13 @@ document.getElementById('resource-grid')!.addEventListener('click', e => {
   }
   .text-entry-body {
     font-size: .9rem; color: var(--text); line-height: 1.7;
-    white-space: pre-wrap;
   }
+  .text-entry-body h3 { font-size: 1rem; font-weight: 700; margin: 10px 0 4px; }
+  .text-entry-body ul, .text-entry-body ol { padding-left: 20px; margin: 4px 0; }
+  .text-entry-body p { margin: 4px 0; }
+  .text-entry-body strong { font-weight: 700; }
+  .text-entry-body em { font-style: italic; }
+  .text-entry-body u { text-decoration: underline; }
 
   /* Resource grid */
   .resource-grid {
