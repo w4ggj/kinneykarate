@@ -4,7 +4,7 @@ import InstructorBase from '../../layouts/InstructorBase.astro';
 
 const cookie = Astro.cookies.get('kk_instructor_session');
 if (cookie?.value !== 'authenticated') {
-  return Astro.redirect('/instructors/');
+  return Astro.redirect('/instructor-hub/');
 }
 
 const env = (Astro.locals as any).runtime?.env;
@@ -61,7 +61,7 @@ const typeLabel: Record<string, string> = {
   {resources.length === 0 && !dbError && (
     <div class="empty-state">
       <p>No resources yet.</p>
-      <a href="/instructors/admin" class="btn">Add your first resource →</a>
+      <a href="/instructor-hub/admin" class="btn">Add your first resource →</a>
     </div>
   )}
 
@@ -71,7 +71,7 @@ const typeLabel: Record<string, string> = {
       <div class="resource-grid">
         {grouped[cat].map((r: any) => (
           <a
-            href={r.url || `/instructors/file/${r.id}`}
+            href={r.url || `/instructor-hub/file/${r.id}`}
             class={`resource-card resource-card--${r.type}`}
             target={r.url ? '_blank' : undefined}
             rel={r.url ? 'noopener noreferrer' : undefined}
