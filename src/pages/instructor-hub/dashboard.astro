@@ -14,7 +14,7 @@ let dbError = '';
 if (env?.DB) {
   try {
     const result = await env.DB.prepare(
-      'SELECT * FROM instructor_resources WHERE active = 1 ORDER BY category, sort_order, created_at DESC'
+      'SELECT * FROM instructor_resources WHERE active = 1 ORDER BY sort_order, created_at DESC'
     ).all();
     resources = result.results ?? [];
   } catch (e: any) {
@@ -22,16 +22,14 @@ if (env?.DB) {
   }
 }
 
-// Group by category
-const grouped: Record<string, any[]> = {};
-for (const r of resources) {
-  const cat = r.category || 'General';
-  if (!grouped[cat]) grouped[cat] = [];
-  grouped[cat].push(r);
-}
-const categories = Object.keys(grouped).sort((a, b) =>
-  a === 'General' ? -1 : b === 'General' ? 1 : a.localeCompare(b)
-);
+// Build ordered tab list: All + unique categories sorted, Videos and Instructor Manual first
+const rawCats = [...new Set(resources.map((r: any) => r.category || 'General'))];
+const prioritized = ['Videos', 'Instructor Manual'];
+const cats = [
+  ...prioritized.filter(c => rawCats.includes(c)),
+  ...rawCats.filter(c => !prioritized.includes(c)).sort(),
+];
+const allTabs = cats.length > 0 ? ['All', ...cats] : ['All'];
 
 const typeIcon: Record<string, string> = {
   video: '▶',
@@ -58,21 +56,32 @@ const typeLabel: Record<string, string> = {
 
   {dbError && <div class="db-error">Database error: {dbError}</div>}
 
-  {resources.length === 0 && !dbError && (
+  {resources.length === 0 && !dbError ? (
     <div class="empty-state">
       <p>No resources yet.</p>
       <a href="/instructor-hub/admin" class="btn">Add your first resource →</a>
     </div>
-  )}
+  ) : (
+    <>
+      <!-- Tab bar -->
+      <div class="tab-bar" role="tablist">
+        {allTabs.map((tab, i) => (
+          <button
+            class={`tab-btn${i === 0 ? ' tab-btn--active' : ''}`}
+            role="tab"
+            data-tab={tab}
+            aria-selected={i === 0 ? 'true' : 'false'}
+          >{tab}</button>
+        ))}
+      </div>
 
-  {categories.map(cat => (
-    <section class="category-section">
-      <h2 class="category-title kick">{cat}</h2>
-      <div class="resource-grid">
-        {grouped[cat].map((r: any) => (
+      <!-- Resource grid — all cards rendered, JS shows/hides by category -->
+      <div class="resource-grid" id="resource-grid">
+        {resources.map((r: any) => (
           <a
             href={r.url || `/instructor-hub/file/${r.id}`}
             class={`resource-card resource-card--${r.type}`}
+            data-category={r.category || 'General'}
             target={r.url ? '_blank' : undefined}
             rel={r.url ? 'noopener noreferrer' : undefined}
           >
@@ -92,12 +101,39 @@ const typeLabel: Record<string, string> = {
           </a>
         ))}
       </div>
-    </section>
-  ))}
+
+      <div class="empty-tab" id="empty-tab" style="display:none">
+        <p>Nothing in this category yet.</p>
+      </div>
+    </>
+  )}
 </InstructorBase>
 
+<script>
+const tabs = document.querySelectorAll<HTMLButtonElement>('.tab-btn');
+const cards = document.querySelectorAll<HTMLElement>('.resource-card');
+const emptyMsg = document.getElementById('empty-tab')!;
+
+function switchTab(tab: string) {
+  tabs.forEach(btn => {
+    const active = btn.dataset.tab === tab;
+    btn.classList.toggle('tab-btn--active', active);
+    btn.setAttribute('aria-selected', active ? 'true' : 'false');
+  });
+  let visible = 0;
+  cards.forEach(card => {
+    const show = tab === 'All' || card.dataset.category === tab;
+    card.style.display = show ? '' : 'none';
+    if (show) visible++;
+  });
+  emptyMsg.style.display = visible === 0 ? '' : 'none';
+}
+
+tabs.forEach(btn => btn.addEventListener('click', () => switchTab(btn.dataset.tab!)));
+</script>
+
 <style>
-  .page-header { margin-bottom: 36px; }
+  .page-header { margin-bottom: 28px; }
   .page-title { font-size: 2rem; margin-bottom: 6px; }
   .page-sub { color: var(--text-soft); font-size: .95rem; }
 
@@ -109,18 +145,42 @@ const typeLabel: Record<string, string> = {
     text-align: center; padding: 80px 20px; color: var(--text-soft);
   }
   .empty-state p { margin-bottom: 16px; font-size: 1.05rem; }
+  .empty-tab { text-align: center; padding: 60px 20px; color: var(--text-soft); font-size: .95rem; }
 
-  .category-section { margin-bottom: 48px; }
-  .category-title { font-size: .8rem; margin-bottom: 16px; }
+  /* Tab bar */
+  .tab-bar {
+    display: flex;
+    gap: 4px;
+    border-bottom: 2px solid var(--line);
+    margin-bottom: 28px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .tab-bar::-webkit-scrollbar { display: none; }
+  .tab-btn {
+    flex-shrink: 0;
+    background: none;
+    border: none;
+    border-bottom: 3px solid transparent;
+    margin-bottom: -2px;
+    padding: 10px 18px;
+    font-family: var(--font-body);
+    font-size: .875rem;
+    font-weight: 600;
+    color: var(--text-soft);
+    cursor: pointer;
+    transition: color .15s, border-color .15s;
+    border-radius: var(--r) var(--r) 0 0;
+  }
+  .tab-btn:hover { color: var(--text); }
+  .tab-btn--active { color: var(--red); border-bottom-color: var(--red); }
 
+  /* Resource grid */
   .resource-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
     gap: 14px;
-  }
-  @media (max-width: 480px) {
-    .resource-grid { grid-template-columns: 1fr; }
-    .page-title { font-size: 1.5rem; }
   }
   .resource-card {
     display: flex;
@@ -150,5 +210,11 @@ const typeLabel: Record<string, string> = {
   .resource-play {
     font-size: .75rem; font-weight: 700; color: var(--red); white-space: nowrap;
     align-self: center; flex-shrink: 0;
+  }
+
+  @media (max-width: 480px) {
+    .resource-grid { grid-template-columns: 1fr; }
+    .page-title { font-size: 1.5rem; }
+    .tab-btn { padding: 10px 14px; font-size: .8rem; }
   }
 </style>

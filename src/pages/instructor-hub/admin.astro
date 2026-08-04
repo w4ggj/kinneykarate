@@ -44,8 +44,15 @@ if (env?.DB) {
         </div>
       </div>
       <div class="form-group">
-        <label>Category <span class="hint">(e.g. General, Curriculum, Forms, Weapons)</span></label>
-        <input type="text" name="category" placeholder="General" />
+        <label>Category</label>
+        <select name="category">
+          <option value="Videos">Videos</option>
+          <option value="Instructor Manual">Instructor Manual</option>
+          <option value="Forms">Forms</option>
+          <option value="Curriculum">Curriculum</option>
+          <option value="Weapons">Weapons</option>
+          <option value="General">General</option>
+        </select>
       </div>
       <div class="form-group">
         <label>Description <span class="hint">(optional)</span></label>
