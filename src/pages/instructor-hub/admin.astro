@@ -70,7 +70,19 @@ if (env?.DB) {
       <!-- Text content: shown for text type -->
       <div class="form-group" id="content-group" style="display:none">
         <label>Text content</label>
-        <textarea name="content" id="content-input" rows="6" placeholder="Enter text to display on the page…"></textarea>
+        <div class="rte-toolbar" id="rte-toolbar">
+          <button type="button" data-cmd="bold" title="Bold"><b>B</b></button>
+          <button type="button" data-cmd="italic" title="Italic"><i>I</i></button>
+          <button type="button" data-cmd="underline" title="Underline"><u>U</u></button>
+          <span class="rte-sep"></span>
+          <button type="button" data-cmd="insertUnorderedList" title="Bullet list">• List</button>
+          <button type="button" data-cmd="insertOrderedList" title="Numbered list">1. List</button>
+          <span class="rte-sep"></span>
+          <button type="button" data-cmd="formatBlock" data-val="h3" title="Heading">H</button>
+          <button type="button" data-cmd="formatBlock" data-val="p" title="Normal text">¶</button>
+        </div>
+        <div id="rte-editor" class="rte-editor" contenteditable="true" data-placeholder="Enter text to display on the page…"></div>
+        <input type="hidden" name="content" id="content-input" />
       </div>
 
       <!-- File upload: shown for document / manual / image -->
@@ -141,7 +153,19 @@ const fileGroup = document.getElementById('file-group') as HTMLElement;
 const contentGroup = document.getElementById('content-group') as HTMLElement;
 const urlLabel = document.getElementById('url-label') as HTMLElement;
 const urlInput = document.getElementById('url-input') as HTMLInputElement;
-const contentInput = document.getElementById('content-input') as HTMLTextAreaElement;
+const contentHidden = document.getElementById('content-input') as HTMLInputElement;
+const rteEditor = document.getElementById('rte-editor') as HTMLDivElement;
+
+// Rich text toolbar
+document.getElementById('rte-toolbar')!.addEventListener('mousedown', (e) => {
+  const btn = (e.target as HTMLElement).closest<HTMLElement>('[data-cmd]');
+  if (!btn) return;
+  e.preventDefault();
+  const cmd = btn.dataset.cmd!;
+  const val = btn.dataset.val ?? null;
+  document.execCommand(cmd, false, val);
+  rteEditor.focus();
+});
 
 function updateFields() {
   const t = typeSelect.value;
@@ -153,7 +177,6 @@ function updateFields() {
   if (t === 'link') { urlLabel.textContent = 'URL'; urlInput.placeholder = 'https://…'; }
   else { urlLabel.textContent = 'YouTube URL'; urlInput.placeholder = 'https://www.youtube.com/watch?v=…'; }
   urlInput.required = !isFile && !isText;
-  contentInput.required = isText;
 }
 typeSelect.addEventListener('change', updateFields);
 
@@ -169,6 +192,9 @@ form.addEventListener('submit', async (e) => {
   submitBtn.disabled = true;
   submitBtn.textContent = 'Saving…';
 
+  // Sync rich text editor content to hidden input
+  contentHidden.value = rteEditor.innerHTML === '<br>' ? '' : rteEditor.innerHTML;
+
   const fd = new FormData(form);
   try {
     const res = await fetch('/instructor-hub/api/resources', { method: 'POST', body: fd });
@@ -177,6 +203,7 @@ form.addEventListener('submit', async (e) => {
     sucEl.textContent = 'Resource added!';
     sucEl.style.display = 'block';
     form.reset();
+    rteEditor.innerHTML = '';
     updateFields();
     // Reload the table row
     setTimeout(() => location.reload(), 800);
@@ -206,17 +233,37 @@ document.getElementById('resource-tbody')?.addEventListener('click', async (e) =
     titleCell.innerHTML = `
       <form class="inline-edit-form">
         <input class="inline-edit-title" type="text" value="${origTitle.replace(/"/g, '&quot;')}" required />
-        <textarea class="inline-edit-content" rows="5">${origContent}</textarea>
+        <div class="rte-toolbar inline-rte-toolbar">
+          <button type="button" data-cmd="bold"><b>B</b></button>
+          <button type="button" data-cmd="italic"><i>I</i></button>
+          <button type="button" data-cmd="underline"><u>U</u></button>
+          <span class="rte-sep"></span>
+          <button type="button" data-cmd="insertUnorderedList">• List</button>
+          <button type="button" data-cmd="insertOrderedList">1. List</button>
+          <span class="rte-sep"></span>
+          <button type="button" data-cmd="formatBlock" data-val="h3">H</button>
+          <button type="button" data-cmd="formatBlock" data-val="p">¶</button>
+        </div>
+        <div class="rte-editor inline-edit-content" contenteditable="true"></div>
         <div style="display:flex;gap:8px;margin-top:8px">
           <button type="submit" class="act-btn act-btn--green">Save</button>
           <button type="button" class="act-btn cancel-edit">Cancel</button>
         </div>
       </form>`;
+    const inlineRte = titleCell.querySelector('.inline-edit-content') as HTMLDivElement;
+    inlineRte.innerHTML = origContent;
+    titleCell.querySelector('.inline-rte-toolbar')!.addEventListener('mousedown', (ev) => {
+      const tbBtn = (ev.target as HTMLElement).closest<HTMLElement>('[data-cmd]');
+      if (!tbBtn) return;
+      ev.preventDefault();
+      document.execCommand(tbBtn.dataset.cmd!, false, tbBtn.dataset.val ?? null);
+      inlineRte.focus();
+    });
     titleCell.querySelector('.cancel-edit')!.addEventListener('click', () => location.reload());
     titleCell.querySelector('.inline-edit-form')!.addEventListener('submit', async (ev) => {
       ev.preventDefault();
       const newTitle = (titleCell.querySelector('.inline-edit-title') as HTMLInputElement).value.trim();
-      const newContent = (titleCell.querySelector('.inline-edit-content') as HTMLTextAreaElement).value.trim();
+      const newContent = inlineRte.innerHTML === '<br>' ? '' : inlineRte.innerHTML;
       try {
         const res = await fetch(`/instructor-hub/api/resources/${id}`, {
           method: 'PATCH',
@@ -224,8 +271,6 @@ document.getElementById('resource-tbody')?.addEventListener('click', async (e) =
           body: JSON.stringify({ title: newTitle, content: newContent }),
         });
         if (!res.ok) throw new Error(await res.text());
-        btn.dataset.title = newTitle;
-        btn.dataset.content = newContent;
         location.reload();
       } catch (err: any) {
         alert(err.message);
@@ -350,5 +395,32 @@ document.getElementById('resource-tbody')?.addEventListener('click', async (e) =
 
   .inline-edit-form { display: flex; flex-direction: column; gap: 6px; }
   .inline-edit-title { width: 100%; padding: 6px 10px; border: 1px solid var(--line); border-radius: var(--r); font-size: .875rem; font-family: var(--font-body); }
-  .inline-edit-content { width: 100%; padding: 8px 10px; border: 1px solid var(--line); border-radius: var(--r); font-size: .875rem; font-family: var(--font-body); resize: vertical; }
+
+  /* Rich text editor */
+  .rte-toolbar {
+    display: flex; gap: 2px; flex-wrap: wrap; align-items: center;
+    background: var(--paper-2); border: 1px solid var(--line);
+    border-bottom: none; border-radius: var(--r) var(--r) 0 0;
+    padding: 4px 6px;
+  }
+  .rte-toolbar button {
+    background: none; border: 1px solid transparent; border-radius: 3px;
+    padding: 3px 8px; font-size: .8rem; cursor: pointer; color: var(--text);
+    font-family: var(--font-body); line-height: 1.4;
+  }
+  .rte-toolbar button:hover { background: var(--line); border-color: var(--line); }
+  .rte-sep { width: 1px; background: var(--line); height: 16px; margin: 0 4px; }
+  .rte-editor {
+    min-height: 120px; padding: 10px 12px;
+    border: 1px solid var(--line); border-radius: 0 0 var(--r) var(--r);
+    font-size: .9rem; font-family: var(--font-body); line-height: 1.6;
+    background: #fff; outline: none; color: #111;
+  }
+  .rte-editor:focus { border-color: var(--red); }
+  .rte-editor[data-placeholder]:empty::before {
+    content: attr(data-placeholder); color: #aaa; pointer-events: none;
+  }
+  .rte-editor h3 { font-size: 1rem; font-weight: 700; margin: 8px 0 4px; }
+  .rte-editor ul, .rte-editor ol { padding-left: 20px; margin: 4px 0; }
+  .rte-editor p { margin: 4px 0; }
 </style>
