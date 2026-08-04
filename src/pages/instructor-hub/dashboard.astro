@@ -81,17 +81,37 @@ const typeLabel: Record<string, string> = {
         </div>
       </div>
 
+      <!-- PDF viewer overlay -->
+      <div id="pdf-overlay" class="pdf-overlay" aria-modal="true" role="dialog" style="display:none">
+        <div class="pdf-backdrop"></div>
+        <div class="pdf-modal">
+          <div class="pdf-modal-header">
+            <span id="pdf-modal-title" class="video-modal-title"></span>
+            <div style="display:flex;gap:8px;align-items:center">
+              <a id="pdf-download-link" href="#" class="pdf-download-btn" download>Download</a>
+              <button id="pdf-close" class="video-close" aria-label="Close">✕</button>
+            </div>
+          </div>
+          <iframe id="pdf-iframe" src="" class="pdf-iframe" title="PDF Viewer"></iframe>
+        </div>
+      </div>
+
       <!-- Resource grid — all cards rendered, JS shows/hides by category -->
       <div class="resource-grid" id="resource-grid">
-        {resources.map((r: any) => (
+        {resources.map((r: any) => {
+          const isPdf = r.r2_key && (r.filename?.toLowerCase().endsWith('.pdf') || r.type === 'manual' || r.type === 'document');
+          const isVideo = r.type === 'video';
+          return (
           <a
-            href={r.type === 'video' ? '#' : (r.url || `/instructor-hub/file/${r.id}`)}
+            href={isVideo ? '#' : (isPdf ? '#' : (r.url || `/instructor-hub/file/${r.id}`))}
             class={`resource-card resource-card--${r.type}`}
             data-category={r.category || 'General'}
-            data-video-url={r.type === 'video' ? r.url : undefined}
-            data-video-title={r.type === 'video' ? r.title : undefined}
-            target={r.url && r.type !== 'video' ? '_blank' : undefined}
-            rel={r.url && r.type !== 'video' ? 'noopener noreferrer' : undefined}
+            data-video-url={isVideo ? r.url : undefined}
+            data-video-title={isVideo ? r.title : undefined}
+            data-pdf-id={isPdf ? r.id : undefined}
+            data-pdf-title={isPdf ? r.title : undefined}
+            target={r.url && !isVideo && !isPdf ? '_blank' : undefined}
+            rel={r.url && !isVideo && !isPdf ? 'noopener noreferrer' : undefined}
           >
             <div class="resource-icon">{typeIcon[r.type] ?? '📁'}</div>
             <div class="resource-body">
@@ -100,14 +120,11 @@ const typeLabel: Record<string, string> = {
               {r.description && <div class="resource-desc">{r.description}</div>}
               {r.filename && <div class="resource-filename">{r.filename}</div>}
             </div>
-            {r.type === 'video' && (
-              <div class="resource-play">Watch →</div>
-            )}
-            {(r.type === 'document' || r.type === 'manual') && r.r2_key && (
-              <div class="resource-play">Download →</div>
-            )}
+            {isVideo && <div class="resource-play">Watch →</div>}
+            {isPdf && <div class="resource-play">View →</div>}
           </a>
-        ))}
+          );
+        })}
       </div>
 
       <div class="empty-tab" id="empty-tab" style={resources.length === 0 ? '' : 'display:none'}>
@@ -176,13 +193,36 @@ function closeVideo() {
 
 closeBtn.addEventListener('click', closeVideo);
 overlay.querySelector('.video-backdrop')!.addEventListener('click', closeVideo);
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closeVideo(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeVideo(); closePdf(); } });
+
+// PDF overlay
+const pdfOverlay = document.getElementById('pdf-overlay')!;
+const pdfIframe = document.getElementById('pdf-iframe') as HTMLIFrameElement;
+const pdfTitle = document.getElementById('pdf-modal-title')!;
+const pdfClose = document.getElementById('pdf-close')!;
+const pdfDownload = document.getElementById('pdf-download-link') as HTMLAnchorElement;
+
+function openPdf(id: string, title: string) {
+  const src = `/instructor-hub/file/${id}`;
+  pdfIframe.src = src;
+  pdfDownload.href = src;
+  pdfTitle.textContent = title;
+  pdfOverlay.style.display = '';
+  document.body.style.overflow = 'hidden';
+}
+function closePdf() {
+  pdfOverlay.style.display = 'none';
+  pdfIframe.src = '';
+  document.body.style.overflow = '';
+}
+pdfClose.addEventListener('click', closePdf);
+pdfOverlay.querySelector('.pdf-backdrop')!.addEventListener('click', closePdf);
 
 document.getElementById('resource-grid')!.addEventListener('click', e => {
-  const card = (e.target as HTMLElement).closest<HTMLElement>('[data-video-url]');
-  if (!card) return;
-  e.preventDefault();
-  openVideo(card.dataset.videoUrl!, card.dataset.videoTitle ?? '');
+  const pdfCard = (e.target as HTMLElement).closest<HTMLElement>('[data-pdf-id]');
+  if (pdfCard) { e.preventDefault(); openPdf(pdfCard.dataset.pdfId!, pdfCard.dataset.pdfTitle ?? ''); return; }
+  const videoCard = (e.target as HTMLElement).closest<HTMLElement>('[data-video-url]');
+  if (videoCard) { e.preventDefault(); openVideo(videoCard.dataset.videoUrl!, videoCard.dataset.videoTitle ?? ''); }
 });
 </script>
 
@@ -318,5 +358,48 @@ document.getElementById('resource-grid')!.addEventListener('click', e => {
   @media (max-width: 480px) {
     .video-overlay { padding: 0; align-items: flex-end; }
     .video-modal { border-radius: var(--r-lg) var(--r-lg) 0 0; max-width: 100%; }
+  }
+
+  /* PDF overlay */
+  .pdf-overlay {
+    position: fixed; inset: 0; z-index: 1000;
+    display: flex; align-items: center; justify-content: center;
+    padding: 16px;
+  }
+  .pdf-backdrop {
+    position: absolute; inset: 0;
+    background: rgba(0,0,0,.82);
+  }
+  .pdf-modal {
+    position: relative; z-index: 1;
+    width: 100%; max-width: 960px; height: 90vh;
+    background: var(--ink);
+    border-radius: var(--r-lg);
+    overflow: hidden;
+    display: flex; flex-direction: column;
+    box-shadow: 0 24px 60px rgba(0,0,0,.6);
+  }
+  .pdf-modal-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 16px;
+    background: var(--ink-2);
+    flex-shrink: 0;
+  }
+  .pdf-download-btn {
+    font-size: .75rem; font-weight: 700;
+    color: var(--text-invert-soft);
+    border: 1px solid rgba(255,255,255,.2);
+    border-radius: var(--r);
+    padding: 4px 10px;
+    text-decoration: none;
+    transition: color .15s;
+  }
+  .pdf-download-btn:hover { color: var(--text-invert); }
+  .pdf-iframe {
+    flex: 1; width: 100%; border: none; background: #fff;
+  }
+  @media (max-width: 480px) {
+    .pdf-overlay { padding: 0; align-items: flex-end; }
+    .pdf-modal { border-radius: var(--r-lg) var(--r-lg) 0 0; height: 92vh; max-width: 100%; }
   }
 </style>
