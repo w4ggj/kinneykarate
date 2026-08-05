@@ -1097,12 +1097,15 @@ async function renderInstructorLibrary(el: HTMLElement) {
     const allTabs = [...IL_CATS,...extraCats];
 
     el.innerHTML = `
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:10px">
         <div style="display:flex;align-items:center;gap:16px">
           <button class="btn btn-sm" id="il-to-welcome">← Home</button>
           <h1 style="margin:0">Instructor Library</h1>
         </div>
-        <button class="btn btn-sm" id="il-to-manage">Manage Resources</button>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-sm" id="il-print-btn" title="Print or save current section as PDF">🖨 Print / Save PDF</button>
+          <button class="btn btn-sm" id="il-to-manage">Manage Resources</button>
+        </div>
       </div>
       ${tabBarHTML(allTabs)}
       <div id="il-text-entries">
@@ -1157,6 +1160,49 @@ async function renderInstructorLibrary(el: HTMLElement) {
     wireTabBar(el);
     document.getElementById('il-to-welcome')!.addEventListener('click', showWelcome);
     document.getElementById('il-to-manage')!.addEventListener('click', showManage);
+    document.getElementById('il-print-btn')!.addEventListener('click', () => {
+      const activeTab = el.querySelector<HTMLButtonElement>('.il-tab.il-tab-on')?.dataset.tab ?? '';
+      const entries = el.querySelectorAll<HTMLElement>('.il-text-entry,.il-card');
+      let bodyHTML = '';
+      entries.forEach(item => {
+        if (item.dataset.category !== activeTab) return;
+        if (item.classList.contains('il-text-entry')) {
+          const title = item.querySelector<HTMLElement>('div[style*="font-weight:700"]')?.textContent ?? '';
+          const content = item.querySelector<HTMLElement>('div[style*="line-height"]')?.innerHTML ?? '';
+          bodyHTML += `<section class="entry"><h2>${title}</h2>${content}</section>`;
+        } else {
+          const titleEl = item.querySelector<HTMLElement>('[style*="font-weight:600"]');
+          const descEl = item.querySelector<HTMLElement>('[style*="text-soft"]');
+          if (titleEl) bodyHTML += `<section class="entry"><h2>${titleEl.textContent}</h2>${descEl ? `<p>${descEl.textContent}</p>` : ''}</section>`;
+        }
+      });
+      if (!bodyHTML) { alert('No content in this section to print.'); return; }
+      const win = window.open('', '_blank');
+      if (!win) return;
+      win.document.write(`<!DOCTYPE html><html><head><title>Kinney Karate — ${activeTab}</title>
+        <style>
+          body{font-family:Georgia,serif;max-width:800px;margin:40px auto;padding:0 30px;color:#111;line-height:1.7}
+          h1{font-size:1.6rem;border-bottom:2px solid #c00;padding-bottom:10px;margin-bottom:6px}
+          .subtitle{font-size:.85rem;color:#666;margin-bottom:32px}
+          section.entry{margin-bottom:32px;page-break-inside:avoid}
+          h2{font-size:1.05rem;text-transform:uppercase;letter-spacing:.05em;border-left:4px solid #c00;padding-left:10px;margin-bottom:8px}
+          h3{font-size:.95rem;margin-bottom:6px;margin-top:14px}
+          ul,ol{padding-left:20px;margin:6px 0}
+          li{margin-bottom:3px}
+          p{margin:6px 0}
+          table{border-collapse:collapse;width:100%;font-size:.85rem}
+          th,td{border:1px solid #ccc;padding:6px 10px;text-align:left}
+          th{background:#f0f0f0;font-weight:700}
+          @media print{body{margin:20px;padding:0}}
+        </style>
+      </head><body>
+        <h1>Kinney Karate Instructor Library</h1>
+        <p class="subtitle">${activeTab} &mdash; Printed ${new Date().toLocaleDateString()}</p>
+        ${bodyHTML}
+        <script>window.onload=()=>window.print()<\/script>
+      </body></html>`);
+      win.document.close();
+    });
     // Apply first tab filter on initial render
     el.querySelector<HTMLButtonElement>('.il-tab')?.click();
     const isMobile = () => window.innerWidth <= 820;
