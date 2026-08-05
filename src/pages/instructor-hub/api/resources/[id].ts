@@ -18,8 +18,10 @@ export async function PATCH({ params, request, cookies, locals }: APIContext) {
 
   const body = await request.json() as any;
 
-  if ('content' in body || 'title' in body) {
-    // Text entry edit
+  if ('toc' in body) {
+    await env.DB.prepare('UPDATE instructor_resources SET toc = ? WHERE id = ?')
+      .bind(body.toc || null, params.id).run();
+  } else if ('content' in body || 'title' in body) {
     await env.DB.prepare('UPDATE instructor_resources SET title = ?, content = ? WHERE id = ?')
       .bind(body.title, body.content, params.id).run();
   } else {
