@@ -2,7 +2,17 @@ export const prerender = false;
 import type { APIContext } from 'astro';
 
 function authed(cookies: APIContext['cookies']) {
-  return cookies.get('kk_instructor_session')?.value === 'authenticated';
+  return cookies.get('kk_admin_session')?.value === 'authenticated';
+}
+
+export async function GET({ cookies, locals }: APIContext) {
+  if (!authed(cookies)) return json({ error: 'Unauthorized' }, 401);
+  const env = (locals as any).runtime?.env;
+  if (!env?.DB) return json({ error: 'DB not available' }, 503);
+  const result = await env.DB.prepare(
+    'SELECT * FROM instructor_resources ORDER BY category, sort_order, created_at DESC'
+  ).all();
+  return json(result.results ?? []);
 }
 function json(data: unknown, status = 200) {
   return new Response(JSON.stringify(data), {
