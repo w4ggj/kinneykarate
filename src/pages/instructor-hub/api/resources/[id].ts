@@ -2,7 +2,7 @@ export const prerender = false;
 import type { APIContext } from 'astro';
 
 function authed(cookies: APIContext['cookies']) {
-  return cookies.get('kk_instructor_session')?.value === 'authenticated';
+  return cookies.get('kk_admin_session')?.value === 'authenticated';
 }
 function json(data: unknown, status = 200) {
   return new Response(JSON.stringify(data), {

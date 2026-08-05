@@ -2,7 +2,7 @@ export const prerender = false;
 import type { APIContext } from 'astro';
 
 export async function GET({ params, cookies, locals }: APIContext) {
-  if (cookies.get('kk_instructor_session')?.value !== 'authenticated') {
+  if (cookies.get('kk_admin_session')?.value !== 'authenticated') {
     return new Response('Unauthorized', { status: 401 });
   }
 
@@ -22,9 +22,10 @@ export async function GET({ params, cookies, locals }: APIContext) {
   if (!obj) return new Response('File not found', { status: 404 });
 
   const contentType = obj.httpMetadata?.contentType ?? 'application/octet-stream';
-  const disposition = row.filename
-    ? `attachment; filename="${row.filename}"`
-    : 'attachment';
+  const isPdf = contentType === 'application/pdf' || row.filename?.toLowerCase().endsWith('.pdf');
+  const disposition = isPdf
+    ? `inline; filename="${row.filename ?? 'file.pdf'}"`
+    : `attachment; filename="${row.filename ?? 'file'}"`;
 
   return new Response(obj.body as BodyInit, {
     headers: {

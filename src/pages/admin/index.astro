@@ -213,6 +213,10 @@ const authed = cookie?.value === 'authenticated';
       <a href="#" data-panel="directory">Business Directory</a>
     </div>
     <div class="nav-section">
+      <p class="nav-label">Instructors</p>
+      <a href="#" data-panel="instructor-library">Instructor Library</a>
+    </div>
+    <div class="nav-section">
       <p class="nav-label">Site</p>
       <a href="#" data-panel="settings">Settings</a>
     </div>
@@ -238,7 +242,7 @@ const authed = cookie?.value === 'authenticated';
 </div>
 
 <script>
-type Panel = 'inventory'|'movements'|'orders'|'queue'|'pos'|'products'|'directory'|'settings'|'app-downloads';
+type Panel = 'inventory'|'movements'|'orders'|'queue'|'pos'|'products'|'directory'|'settings'|'app-downloads'|'instructor-library';
 let currentPanel: Panel = 'inventory';
 
 const navLinks = document.querySelectorAll<HTMLAnchorElement>('[data-panel]');
@@ -276,6 +280,7 @@ async function loadPanel(panel: Panel) {
   else if (panel === 'directory') await renderDirectory(el);
   else if (panel === 'settings') await renderSettings(el);
   else if (panel === 'app-downloads') renderAppDownloads(el);
+  else if (panel === 'instructor-library') await renderInstructorLibrary(el);
 }
 
 async function renderInventory(el: HTMLElement) {
@@ -920,6 +925,373 @@ function renderAppDownloads(el: HTMLElement) {
       <br><br>
       <strong>Android:</strong> NFC must be enabled. Android 9+ required. Same login credentials as the admin console.
     </div>`;
+}
+
+// ── INSTRUCTOR LIBRARY ────────────────────────────────────────────────────────
+
+const IL_CATS = ['Instructor Manual','Terminology/Pronunciation','Curriculum','Forms','Weapons','Videos','General'];
+const IL_TYPE_ICONS: Record<string,string> = {video:'▶',document:'📄',image:'🖼',link:'🔗',manual:'📖'};
+const IL_TYPE_LABELS: Record<string,string> = {video:'Video',document:'Document',image:'Image',link:'Link',manual:'Manual'};
+
+async function renderInstructorLibrary(el: HTMLElement) {
+  el.innerHTML = '<p id="loading">Loading…</p>';
+  let ilView: 'library'|'manage' = 'library';
+
+  function closeILOverlays() {
+    document.getElementById('il-video-overlay')?.remove();
+    document.getElementById('il-pdf-overlay')?.remove();
+    document.body.style.overflow = '';
+  }
+
+  function extractYTId(url: string) {
+    for (const p of [/[?&]v=([^&#]+)/,/youtu\.be\/([^?&#]+)/,/youtube\.com\/embed\/([^?&#]+)/,/youtube\.com\/shorts\/([^?&#]+)/]) {
+      const m = url.match(p); if (m) return m[1];
+    }
+    return null;
+  }
+
+  function openILVideo(url: string, title: string) {
+    const id = extractYTId(url);
+    if (!id) { window.open(url,'_blank'); return; }
+    const ov = document.createElement('div');
+    ov.id = 'il-video-overlay';
+    ov.style.cssText = 'position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;padding:16px';
+    ov.innerHTML = `<div id="il-vb" style="position:absolute;inset:0;background:rgba(0,0,0,.82)"></div>
+      <div style="position:relative;z-index:1;width:100%;max-width:860px;background:var(--ink);border-radius:var(--r-lg);overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,.6)">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--ink-2)">
+          <span style="font-weight:700;font-size:.95rem;text-transform:uppercase;letter-spacing:.04em;color:var(--text-invert);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(title)}</span>
+          <button id="il-vc" style="background:none;border:none;color:var(--text-invert-soft);font-size:1.1rem;cursor:pointer;padding:4px 6px">✕</button>
+        </div>
+        <div style="position:relative;padding-bottom:56.25%;height:0">
+          <iframe src="https://www.youtube.com/embed/${id}?autoplay=1&rel=0" style="position:absolute;inset:0;width:100%;height:100%" allowfullscreen allow="autoplay;encrypted-media" frameborder="0"></iframe>
+        </div>
+      </div>`;
+    document.body.appendChild(ov);
+    document.body.style.overflow = 'hidden';
+    const close = () => { ov.remove(); document.body.style.overflow = ''; };
+    document.getElementById('il-vc')!.addEventListener('click', close);
+    document.getElementById('il-vb')!.addEventListener('click', close);
+  }
+
+  function openILPdf(id: string, title: string) {
+    const ov = document.createElement('div');
+    ov.id = 'il-pdf-overlay';
+    ov.style.cssText = 'position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;padding:16px';
+    ov.innerHTML = `<div id="il-pb" style="position:absolute;inset:0;background:rgba(0,0,0,.82)"></div>
+      <div style="position:relative;z-index:1;width:100%;max-width:960px;height:90vh;background:var(--ink);border-radius:var(--r-lg);overflow:hidden;display:flex;flex-direction:column;box-shadow:0 24px 60px rgba(0,0,0,.6)">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--ink-2);flex-shrink:0">
+          <span style="font-weight:700;font-size:.95rem;text-transform:uppercase;letter-spacing:.04em;color:var(--text-invert);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(title)}</span>
+          <div style="display:flex;gap:8px;align-items:center">
+            <a href="/instructor-hub/file/${id}" download style="font-size:.75rem;font-weight:700;color:var(--text-invert-soft);border:1px solid rgba(255,255,255,.2);border-radius:var(--r);padding:4px 10px;text-decoration:none">Download</a>
+            <button id="il-pc" style="background:none;border:none;color:var(--text-invert-soft);font-size:1.1rem;cursor:pointer;padding:4px 6px">✕</button>
+          </div>
+        </div>
+        <iframe src="/instructor-hub/file/${id}" style="flex:1;width:100%;border:none;background:#fff" title="PDF Viewer"></iframe>
+      </div>`;
+    document.body.appendChild(ov);
+    document.body.style.overflow = 'hidden';
+    const close = () => { ov.remove(); document.body.style.overflow = ''; };
+    document.getElementById('il-pc')!.addEventListener('click', close);
+    document.getElementById('il-pb')!.addEventListener('click', close);
+  }
+
+  function tabBarHTML(allTabs: string[]) {
+    return `<div id="il-tabs" style="display:flex;gap:4px;border-bottom:2px solid var(--line);margin-bottom:24px;overflow-x:auto;scrollbar-width:none">
+      ${allTabs.map((t,i) => `<button class="il-tab${i===0?' il-tab-on':''}" data-tab="${esc(t)}" style="flex-shrink:0;background:none;border:none;border-bottom:3px solid ${i===0?'var(--red)':'transparent'};margin-bottom:-2px;padding:10px 18px;font-size:.875rem;font-weight:600;color:${i===0?'var(--red)':'var(--text-soft)'};cursor:pointer">${esc(t)}</button>`).join('')}
+    </div>`;
+  }
+
+  function wireTabBar(container: HTMLElement) {
+    container.querySelectorAll<HTMLButtonElement>('.il-tab').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const tab = btn.dataset.tab!;
+        container.querySelectorAll<HTMLButtonElement>('.il-tab').forEach(b => {
+          b.classList.remove('il-tab-on');
+          b.style.color = 'var(--text-soft)'; b.style.borderBottomColor = 'transparent';
+        });
+        btn.classList.add('il-tab-on');
+        btn.style.color = 'var(--red)'; btn.style.borderBottomColor = 'var(--red)';
+        let vis = 0;
+        container.querySelectorAll<HTMLElement>('.il-text-entry,.il-card').forEach(item => {
+          const show = tab === 'All' || item.dataset.category === tab;
+          item.style.display = show ? '' : 'none';
+          if (show) vis++;
+        });
+        const empty = container.querySelector<HTMLElement>('#il-empty');
+        if (empty) empty.style.display = vis === 0 ? '' : 'none';
+      });
+    });
+  }
+
+  async function showLibrary() {
+    closeILOverlays();
+    const resources: any[] = await api('/instructor-hub/api/resources').catch(() => []);
+    const active = resources.filter(r => r.active);
+    const extraCats = [...new Set(active.map(r => r.category||'General'))].filter(c => !IL_CATS.includes(c)).sort();
+    const allTabs = ['All',...IL_CATS,...extraCats];
+
+    el.innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px">
+        <h1 style="margin:0">Instructor Library</h1>
+        <button class="btn btn-sm" id="il-to-manage">Manage Resources</button>
+      </div>
+      ${tabBarHTML(allTabs)}
+      <div id="il-text-entries">
+        ${active.filter(r=>r.type==='text').map(r=>`
+          <div class="il-text-entry" data-category="${esc(r.category||'General')}" style="background:var(--paper);border:1px solid var(--line);border-left:4px solid var(--red);border-radius:var(--r);padding:16px 20px;margin-bottom:16px">
+            <div style="font-weight:700;font-size:.95rem;margin-bottom:8px;text-transform:uppercase;letter-spacing:.04em">${esc(r.title)}</div>
+            <div style="font-size:.9rem;line-height:1.7">${r.content||''}</div>
+          </div>`).join('')}
+      </div>
+      <div id="il-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px">
+        ${active.filter(r=>r.type!=='text').map(r=>{
+          const isPdf = r.r2_key && (r.filename?.toLowerCase().endsWith('.pdf') || r.type==='manual' || r.type==='document');
+          const isVideo = r.type==='video';
+          return `<a href="${isVideo||isPdf?'#':(r.url||`/instructor-hub/file/${r.id}`)}"
+            class="il-card" data-category="${esc(r.category||'General')}"
+            ${isVideo?`data-video-url="${esc(r.url)}" data-video-title="${esc(r.title)}"`:''}
+            ${isPdf?`data-pdf-id="${r.id}" data-pdf-title="${esc(r.title)}"`:''}
+            ${r.url&&!isVideo&&!isPdf?'target="_blank" rel="noopener noreferrer"':''}
+            style="display:flex;gap:14px;align-items:flex-start;background:var(--paper);border:1px solid var(--line);border-radius:var(--r);padding:16px;text-decoration:none;color:var(--text);cursor:pointer">
+            <div style="font-size:1.5rem;flex-shrink:0;padding-top:2px">${IL_TYPE_ICONS[r.type]??'📁'}</div>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text-soft);margin-bottom:4px">${esc(IL_TYPE_LABELS[r.type]??r.type)}</div>
+              <div style="font-weight:600;font-size:.95rem;margin-bottom:4px;line-height:1.3">${esc(r.title)}</div>
+              ${r.description?`<div style="font-size:.8rem;color:var(--text-soft);line-height:1.4">${esc(r.description)}</div>`:''}
+              ${r.filename?`<div style="font-size:.75rem;color:var(--text-soft);font-family:monospace">${esc(r.filename)}</div>`:''}
+            </div>
+            ${isVideo||isPdf?`<div style="font-size:.75rem;font-weight:700;color:var(--red);white-space:nowrap;align-self:center">${isVideo?'Watch →':'View →'}</div>`:''}
+          </a>`;
+        }).join('')}
+      </div>
+      <div id="il-empty" style="text-align:center;padding:60px 20px;color:var(--text-soft);${active.length?'display:none':''}">No resources yet.</div>`;
+
+    wireTabBar(el);
+    document.getElementById('il-to-manage')!.addEventListener('click', showManage);
+    el.querySelector('#il-grid')!.addEventListener('click', e => {
+      const vc = (e.target as HTMLElement).closest<HTMLElement>('[data-video-url]');
+      if (vc) { e.preventDefault(); openILVideo(vc.dataset.videoUrl!, vc.dataset.videoTitle??''); return; }
+      const pc = (e.target as HTMLElement).closest<HTMLElement>('[data-pdf-id]');
+      if (pc) { e.preventDefault(); openILPdf(pc.dataset.pdfId!, pc.dataset.pdfTitle??''); }
+    });
+  }
+
+  function rteToolbarHTML(idPrefix: string) {
+    return `<div class="il-rte-toolbar" style="display:flex;gap:2px;flex-wrap:wrap;align-items:center;background:var(--paper-2);border:1px solid var(--line);border-bottom:none;border-radius:4px 4px 0 0;padding:4px 6px">
+      <button type="button" data-cmd="bold" style="background:none;border:1px solid transparent;border-radius:3px;padding:3px 8px;font-size:.8rem;cursor:pointer"><b>B</b></button>
+      <button type="button" data-cmd="italic" style="background:none;border:1px solid transparent;border-radius:3px;padding:3px 8px;font-size:.8rem;cursor:pointer"><i>I</i></button>
+      <button type="button" data-cmd="underline" style="background:none;border:1px solid transparent;border-radius:3px;padding:3px 8px;font-size:.8rem;cursor:pointer"><u>U</u></button>
+      <span style="width:1px;background:var(--line);height:16px;margin:0 4px"></span>
+      <button type="button" data-cmd="insertUnorderedList" style="background:none;border:1px solid transparent;border-radius:3px;padding:3px 8px;font-size:.8rem;cursor:pointer">• List</button>
+      <button type="button" data-cmd="insertOrderedList" style="background:none;border:1px solid transparent;border-radius:3px;padding:3px 8px;font-size:.8rem;cursor:pointer">1. List</button>
+      <span style="width:1px;background:var(--line);height:16px;margin:0 4px"></span>
+      <button type="button" data-cmd="formatBlock" data-val="h3" style="background:none;border:1px solid transparent;border-radius:3px;padding:3px 8px;font-size:.8rem;cursor:pointer;font-weight:700">H</button>
+      <button type="button" data-cmd="formatBlock" data-val="p" style="background:none;border:1px solid transparent;border-radius:3px;padding:3px 8px;font-size:.8rem;cursor:pointer">¶</button>
+    </div>
+    <div id="${idPrefix}" contenteditable="true" style="min-height:120px;padding:10px 12px;border:1px solid var(--line);border-radius:0 0 4px 4px;font-size:.9rem;line-height:1.6;background:#fff;outline:none;color:#111"></div>`;
+  }
+
+  function wireRte(container: HTMLElement, toolbarSelector: string, editorId: string) {
+    container.querySelector(toolbarSelector)?.addEventListener('mousedown', (e) => {
+      const btn = (e.target as HTMLElement).closest<HTMLElement>('[data-cmd]');
+      if (!btn) return;
+      e.preventDefault();
+      document.execCommand(btn.dataset.cmd!, false, btn.dataset.val ?? null);
+      (container.querySelector(`#${editorId}`) as HTMLElement)?.focus();
+    });
+  }
+
+  async function showManage() {
+    closeILOverlays();
+    const resources: any[] = await api('/instructor-hub/api/resources').catch(() => []);
+
+    el.innerHTML = `
+      <div style="display:flex;align-items:center;gap:16px;margin-bottom:24px">
+        <h1 style="margin:0">Instructor Library</h1>
+        <button class="btn btn-sm" id="il-to-library">← View Library</button>
+      </div>
+
+      <!-- Add form -->
+      <div style="background:var(--paper);border:1px solid var(--line);border-radius:var(--r-lg);padding:24px;margin-bottom:32px">
+        <h2 style="font-size:1rem;text-transform:uppercase;letter-spacing:.06em;margin-bottom:16px">Add Resource</h2>
+        <form id="il-add-form" style="display:flex;flex-direction:column;gap:14px">
+          <div style="display:flex;gap:14px;flex-wrap:wrap">
+            <div style="display:flex;flex-direction:column;gap:5px;min-width:160px">
+              <label style="font-size:.8rem;font-weight:600;color:var(--text-soft)">Type</label>
+              <select id="il-type" name="type" style="padding:9px 12px;border:1px solid var(--line);border-radius:var(--r);font-size:.9rem;background:#fff">
+                <option value="video">Video (YouTube)</option>
+                <option value="document">Document (PDF)</option>
+                <option value="manual">Manual (PDF)</option>
+                <option value="image">Image</option>
+                <option value="link">Link</option>
+                <option value="text">Text (display on page)</option>
+              </select>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:5px;flex:2;min-width:180px">
+              <label style="font-size:.8rem;font-weight:600;color:var(--text-soft)">Title</label>
+              <input type="text" name="title" required placeholder="Resource title" style="padding:9px 12px;border:1px solid var(--line);border-radius:var(--r);font-size:.9rem" />
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:5px">
+            <label style="font-size:.8rem;font-weight:600;color:var(--text-soft)">Category</label>
+            <select name="category" style="padding:9px 12px;border:1px solid var(--line);border-radius:var(--r);font-size:.9rem;background:#fff;max-width:320px">
+              ${IL_CATS.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('')}
+            </select>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:5px">
+            <label style="font-size:.8rem;font-weight:600;color:var(--text-soft)">Description <span style="font-weight:400;font-size:.75rem">(optional)</span></label>
+            <textarea name="description" rows="2" placeholder="Brief description…" style="padding:9px 12px;border:1px solid var(--line);border-radius:var(--r);font-size:.9rem;resize:vertical"></textarea>
+          </div>
+          <div id="il-url-group" style="display:flex;flex-direction:column;gap:5px">
+            <label id="il-url-label" style="font-size:.8rem;font-weight:600;color:var(--text-soft)">YouTube URL</label>
+            <input type="url" name="url" id="il-url-input" placeholder="https://www.youtube.com/watch?v=…" style="padding:9px 12px;border:1px solid var(--line);border-radius:var(--r);font-size:.9rem" />
+          </div>
+          <div id="il-file-group" style="display:none;flex-direction:column;gap:5px">
+            <label style="font-size:.8rem;font-weight:600;color:var(--text-soft)">Upload file</label>
+            <input type="file" name="file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.zip" />
+          </div>
+          <div id="il-content-group" style="display:none;flex-direction:column;gap:5px">
+            <label style="font-size:.8rem;font-weight:600;color:var(--text-soft)">Text content</label>
+            ${rteToolbarHTML('il-rte-editor')}
+            <input type="hidden" name="content" id="il-content-hidden" />
+          </div>
+          <div id="il-form-error" style="display:none;background:#fef2f2;border:1px solid #fca5a5;color:var(--danger);border-radius:var(--r);padding:10px 14px;font-size:.875rem"></div>
+          <div id="il-form-ok" style="display:none;background:#f0fdf4;border:1px solid #86efac;color:var(--ok);border-radius:var(--r);padding:10px 14px;font-size:.875rem"></div>
+          <button type="submit" id="il-submit" class="btn" style="align-self:flex-start">Add Resource</button>
+        </form>
+      </div>
+
+      <!-- Resource table -->
+      <h2 style="font-size:1rem;text-transform:uppercase;letter-spacing:.06em;margin-bottom:16px">Current Resources (${resources.length})</h2>
+      ${resources.length===0 ? '<p style="color:var(--text-soft)">No resources yet.</p>' : `
+      <div class="table-wrap"><table class="data-table">
+        <thead><tr><th>Title</th><th>Type</th><th>Category</th><th>Status</th><th></th></tr></thead>
+        <tbody id="il-tbody">
+          ${resources.map(r=>`<tr id="il-row-${r.id}">
+            <td>
+              <span style="display:block;font-weight:600;margin-bottom:2px">${esc(r.title)}</span>
+              ${r.description?`<span style="display:block;color:var(--text-soft);font-size:.8rem">${esc(r.description)}</span>`:''}
+              ${r.filename?`<span style="display:block;color:var(--text-soft);font-size:.75rem;font-family:monospace">${esc(r.filename)}</span>`:''}
+            </td>
+            <td><span class="badge badge--${r.type}">${esc(r.type)}</span></td>
+            <td style="font-size:.875rem">${esc(r.category)}</td>
+            <td><span style="font-size:.8rem;font-weight:600;color:${r.active?'var(--ok)':'var(--text-soft)'}">${r.active?'Active':'Hidden'}</span></td>
+            <td style="white-space:nowrap">
+              ${r.type==='text'?`<button class="act-btn il-edit-btn" data-id="${r.id}" data-title="${esc(r.title).replace(/"/g,'&quot;')}" data-content="${(r.content||'').replace(/"/g,'&quot;')}">Edit</button>`:''}
+              ${r.active?`<button class="act-btn il-tog-btn" data-id="${r.id}" data-active="1">Hide</button>`:`<button class="act-btn act-btn--green il-tog-btn" data-id="${r.id}" data-active="0">Show</button>`}
+              <button class="act-btn act-btn--red il-del-btn" data-id="${r.id}">Delete</button>
+            </td>
+          </tr>`).join('')}
+        </tbody>
+      </table></div>`}`;
+
+    document.getElementById('il-to-library')!.addEventListener('click', showLibrary);
+    wireRte(el, '.il-rte-toolbar', 'il-rte-editor');
+
+    // Type select show/hide
+    const typeEl = document.getElementById('il-type') as HTMLSelectElement;
+    const urlGroup = document.getElementById('il-url-group')!;
+    const fileGroup = document.getElementById('il-file-group')!;
+    const contentGroup = document.getElementById('il-content-group')!;
+    const urlLabel = document.getElementById('il-url-label')!;
+    const urlInput = document.getElementById('il-url-input') as HTMLInputElement;
+    function updateILFields() {
+      const t = typeEl.value;
+      const isFile = t==='document'||t==='manual'||t==='image';
+      const isText = t==='text';
+      urlGroup.style.display = (isFile||isText) ? 'none' : 'flex';
+      fileGroup.style.display = isFile ? 'flex' : 'none';
+      contentGroup.style.display = isText ? 'flex' : 'none';
+      urlLabel.textContent = t==='link' ? 'URL' : 'YouTube URL';
+      urlInput.placeholder = t==='link' ? 'https://…' : 'https://www.youtube.com/watch?v=…';
+      urlInput.required = !isFile && !isText;
+    }
+    typeEl.addEventListener('change', updateILFields);
+
+    // Form submit
+    const form = document.getElementById('il-add-form') as HTMLFormElement;
+    const errEl = document.getElementById('il-form-error')!;
+    const okEl = document.getElementById('il-form-ok')!;
+    const submitBtn = document.getElementById('il-submit') as HTMLButtonElement;
+    form.addEventListener('submit', async e => {
+      e.preventDefault();
+      errEl.style.display = 'none'; okEl.style.display = 'none';
+      submitBtn.disabled = true; submitBtn.textContent = 'Saving…';
+      const rteEl = document.getElementById('il-rte-editor') as HTMLElement;
+      (document.getElementById('il-content-hidden') as HTMLInputElement).value = rteEl?.innerHTML === '<br>' ? '' : (rteEl?.innerHTML ?? '');
+      try {
+        const res = await fetch('/instructor-hub/api/resources', { method: 'POST', body: new FormData(form) });
+        const data = await res.json() as any;
+        if (!res.ok) throw new Error(data.error ?? 'Failed');
+        okEl.textContent = 'Resource added!'; okEl.style.display = 'block';
+        form.reset(); if (rteEl) rteEl.innerHTML = ''; updateILFields();
+        setTimeout(() => showManage(), 800);
+      } catch(err: any) {
+        errEl.textContent = err.message; errEl.style.display = 'block';
+      } finally {
+        submitBtn.disabled = false; submitBtn.textContent = 'Add Resource';
+      }
+    });
+
+    // Table actions
+    document.getElementById('il-tbody')?.addEventListener('click', async e => {
+      const btn = (e.target as HTMLElement).closest('button') as HTMLButtonElement|null;
+      if (!btn) return;
+      const id = btn.dataset.id!;
+
+      if (btn.classList.contains('il-edit-btn')) {
+        const row = document.getElementById(`il-row-${id}`)!;
+        if (row.querySelector('.il-inline-form')) return;
+        const td = row.querySelector('td')!;
+        const origTitle = btn.dataset.title ?? '';
+        const origContent = btn.dataset.content ?? '';
+        td.innerHTML = `<form class="il-inline-form" style="display:flex;flex-direction:column;gap:6px">
+          <input class="il-ie-title" type="text" value="${origTitle.replace(/"/g,'&quot;')}" required style="width:100%;padding:6px 10px;border:1px solid var(--line);border-radius:var(--r);font-size:.875rem" />
+          ${rteToolbarHTML('il-ie-rte')}
+          <div style="display:flex;gap:8px;margin-top:4px">
+            <button type="submit" class="act-btn act-btn--green">Save</button>
+            <button type="button" class="il-cancel-edit act-btn">Cancel</button>
+          </div>
+        </form>`;
+        const rteEl = td.querySelector('#il-ie-rte') as HTMLElement;
+        rteEl.innerHTML = origContent;
+        wireRte(td as HTMLElement, '.il-rte-toolbar', 'il-ie-rte');
+        td.querySelector('.il-cancel-edit')!.addEventListener('click', () => showManage());
+        td.querySelector('.il-inline-form')!.addEventListener('submit', async ev => {
+          ev.preventDefault();
+          const newTitle = (td.querySelector('.il-ie-title') as HTMLInputElement).value.trim();
+          const newContent = rteEl.innerHTML === '<br>' ? '' : rteEl.innerHTML;
+          const res = await fetch(`/instructor-hub/api/resources/${id}`, {
+            method: 'PATCH', headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({ title: newTitle, content: newContent }),
+          });
+          if (!res.ok) { alert(await res.text()); return; }
+          showManage();
+        });
+        return;
+      }
+
+      if (btn.classList.contains('il-tog-btn')) {
+        const active = btn.dataset.active === '1' ? 0 : 1;
+        btn.disabled = true;
+        await fetch(`/instructor-hub/api/resources/${id}`, {
+          method: 'PATCH', headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ active }),
+        });
+        showManage();
+        return;
+      }
+
+      if (btn.classList.contains('il-del-btn')) {
+        if (!confirm('Delete this resource?')) return;
+        btn.disabled = true;
+        await fetch(`/instructor-hub/api/resources/${id}`, { method: 'DELETE' });
+        document.getElementById(`il-row-${id}`)?.remove();
+      }
+    });
+  }
+
+  await showLibrary();
 }
 
 // Initial load
