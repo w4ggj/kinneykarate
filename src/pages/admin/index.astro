@@ -1025,6 +1025,80 @@ async function renderInstructorLibrary(el: HTMLElement) {
     document.getElementById('il-vb')!.addEventListener('click', close);
   }
 
+  function openILDocViewer(id: string, title: string, toc: string) {
+    const tocLines = toc.split('\n').map(l => l.trim()).filter(Boolean);
+    const tocItems = tocLines.map(line => {
+      const parts = line.split('|');
+      return { label: parts[0].trim(), page: parts[1]?.trim() ?? '1' };
+    });
+    const ov = document.createElement('div');
+    ov.id = 'il-doc-overlay';
+    ov.style.cssText = 'position:fixed;inset:0;z-index:1000;display:flex;flex-direction:column;background:var(--bg)';
+    ov.innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:var(--ink);flex-shrink:0;gap:12px">
+        <button id="il-doc-back" style="background:none;border:1px solid rgba(255,255,255,.25);color:#fff;border-radius:var(--r);padding:5px 12px;font-size:.8rem;font-weight:700;cursor:pointer">← Back</button>
+        <span style="font-weight:700;font-size:.95rem;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;text-align:center">${esc(title)}</span>
+        <div style="display:flex;gap:8px;flex-shrink:0">
+          <a href="/instructor-hub/file/${id}" target="_blank" style="font-size:.75rem;font-weight:700;color:rgba(255,255,255,.7);border:1px solid rgba(255,255,255,.2);border-radius:var(--r);padding:5px 10px;text-decoration:none">Open ↗</a>
+          <a href="/instructor-hub/file/${id}" download style="font-size:.75rem;font-weight:700;color:rgba(255,255,255,.7);border:1px solid rgba(255,255,255,.2);border-radius:var(--r);padding:5px 10px;text-decoration:none">Download</a>
+        </div>
+      </div>
+      <div id="il-doc-toc-mobile" style="display:none;padding:10px 16px;background:var(--paper-2);border-bottom:1px solid var(--line);flex-shrink:0">
+        <select id="il-doc-toc-select" style="width:100%;padding:8px 12px;font-size:.875rem;border:1px solid var(--line);border-radius:var(--r);background:var(--paper);color:var(--text)">
+          ${tocItems.map(t=>`<option value="${esc(t.page)}">${esc(t.label)}</option>`).join('')}
+        </select>
+      </div>
+      <div style="display:flex;flex:1;overflow:hidden">
+        <div id="il-doc-toc-sidebar" style="width:260px;flex-shrink:0;overflow-y:auto;background:var(--paper);border-right:1px solid var(--line);padding:16px 0">
+          <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text-soft);padding:0 16px 10px">Contents</div>
+          ${tocItems.map((t,i)=>`<button class="il-doc-toc-btn" data-page="${esc(t.page)}"
+            style="display:flex;justify-content:space-between;align-items:baseline;width:100%;background:${i===0?'var(--red)':'none'};border:none;text-align:left;padding:8px 16px;font-size:.85rem;color:${i===0?'#fff':'var(--text)'};cursor:pointer;gap:8px;line-height:1.4">
+            <span style="flex:1">${esc(t.label)}</span>
+            <span style="flex-shrink:0;font-size:.75rem;opacity:.7;font-variant-numeric:tabular-nums">${esc(t.page)}</span>
+          </button>`).join('')}
+        </div>
+        <iframe id="il-doc-frame" src="/instructor-hub/file/${id}#page=1" style="flex:1;border:none;background:#525659" title="${esc(title)}"></iframe>
+      </div>`;
+    document.body.appendChild(ov);
+    document.body.style.overflow = 'hidden';
+
+    // responsive: hide sidebar, show select on mobile
+    const mq = window.matchMedia('(max-width:820px)');
+    const applyMq = (m: MediaQueryList | MediaQueryListEvent) => {
+      const sidebar = document.getElementById('il-doc-toc-sidebar')!;
+      const mob = document.getElementById('il-doc-toc-mobile')!;
+      sidebar.style.display = m.matches ? 'none' : '';
+      mob.style.display = m.matches ? '' : 'none';
+    };
+    applyMq(mq);
+    mq.addEventListener('change', applyMq);
+
+    const frame = document.getElementById('il-doc-frame') as HTMLIFrameElement;
+    const jumpTo = (page: string) => {
+      frame.src = `/instructor-hub/file/${id}#page=${page}`;
+    };
+
+    // sidebar buttons
+    ov.querySelectorAll<HTMLButtonElement>('.il-doc-toc-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        ov.querySelectorAll<HTMLButtonElement>('.il-doc-toc-btn').forEach(b => {
+          b.style.background = 'none'; b.style.color = 'var(--text)';
+        });
+        btn.style.background = 'var(--red)'; btn.style.color = '#fff';
+        jumpTo(btn.dataset.page!);
+      });
+    });
+
+    // mobile select
+    const sel = document.getElementById('il-doc-toc-select') as HTMLSelectElement;
+    if (sel) sel.addEventListener('change', () => jumpTo(sel.value));
+
+    document.getElementById('il-doc-back')!.addEventListener('click', () => {
+      ov.remove(); document.body.style.overflow = '';
+      mq.removeEventListener('change', applyMq);
+    });
+  }
+
   function openILPdf(id: string, title: string, page?: string) {
     const src = `/instructor-hub/file/${id}${page ? `#page=${page}` : ''}`;
     const ov = document.createElement('div');
@@ -1119,38 +1193,52 @@ async function renderInstructorLibrary(el: HTMLElement) {
         ${active.filter(r=>r.type!=='text').map(r=>{
           const isPdf = r.r2_key && (r.filename?.toLowerCase().endsWith('.pdf') || r.type==='manual' || r.type==='document');
           const isVideo = r.type==='video';
+          const isDocViewer = isPdf && r.toc;
           const tocLines: string[] = r.toc ? r.toc.split('\n').map((l:string)=>l.trim()).filter(Boolean) : [];
-          const tocHTML = tocLines.length ? `
+          const tocHTML = !isDocViewer && tocLines.length ? `
             <div class="il-toc" style="margin-top:10px;border-top:1px solid var(--line);padding-top:8px">
               <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-soft);margin-bottom:6px">Contents</div>
               ${tocLines.map(line=>{
                 const parts = line.split('|');
                 const label = parts[0].trim();
                 const page = parts[1]?.trim();
-                const href = isPdf ? `/instructor-hub/file/${r.id}${page?`#page=${page}`:''}` : '#';
-                return `<a href="${href}" class="il-toc-entry" data-pdf-id="${r.id}" data-pdf-title="${esc(r.title)}" data-pdf-page="${page??''}"
+                return `<a href="#" class="il-toc-entry" data-pdf-id="${r.id}" data-pdf-title="${esc(r.title)}" data-pdf-page="${page??''}"
                   style="display:flex;align-items:baseline;gap:4px;font-size:.8rem;padding:2px 0;color:var(--text);text-decoration:none">
                   <span style="flex:1;line-height:1.4">${esc(label)}</span>
                   ${page?`<span style="flex-shrink:0;font-size:.72rem;color:var(--text-soft);font-variant-numeric:tabular-nums">${esc(page)}</span>`:''}
                 </a>`;
               }).join('')}
             </div>` : '';
+          const docViewerTocPreview = isDocViewer ? `
+            <div style="border-top:1px solid var(--line);padding:10px 16px 14px">
+              <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-soft);margin-bottom:8px">Contents (${tocLines.length} sections)</div>
+              <div style="display:flex;flex-wrap:wrap;gap:6px">
+                ${tocLines.slice(0,5).map(line=>{
+                  const label = line.split('|')[0].trim();
+                  return `<span style="font-size:.75rem;background:var(--paper-2);border:1px solid var(--line);border-radius:12px;padding:2px 10px;color:var(--text-soft)">${esc(label)}</span>`;
+                }).join('')}
+                ${tocLines.length > 5 ? `<span style="font-size:.75rem;color:var(--text-soft);padding:2px 4px">+${tocLines.length-5} more</span>` : ''}
+              </div>
+              <button class="il-doc-open-btn btn btn-sm" data-doc-id="${r.id}" data-doc-title="${esc(r.title)}" data-doc-toc="${esc(r.toc)}"
+                style="margin-top:12px;width:100%">📖 Open Document Viewer</button>
+            </div>` : '';
           return `<div class="il-card" data-category="${esc(r.category||'General')}"
             style="background:var(--paper);border:1px solid var(--line);border-radius:var(--r);overflow:hidden">
-            <a href="${isVideo||isPdf?'#':(r.url||`/instructor-hub/file/${r.id}`)}"
+            <a href="${isVideo||(isPdf&&!isDocViewer)?'#':(r.url||`/instructor-hub/file/${r.id}`)}"
               class="il-card-header"
               ${isVideo?`data-video-url="${esc(r.url)}" data-video-title="${esc(r.title)}"`:''}
-              ${isPdf?`data-pdf-id="${r.id}" data-pdf-title="${esc(r.title)}"`:''}
+              ${isPdf&&!isDocViewer?`data-pdf-id="${r.id}" data-pdf-title="${esc(r.title)}"`:''}
               ${r.url&&!isVideo&&!isPdf?'target="_blank" rel="noopener noreferrer"':''}
-              style="display:flex;gap:14px;align-items:flex-start;padding:16px;text-decoration:none;color:var(--text);cursor:pointer">
+              style="display:flex;gap:14px;align-items:flex-start;padding:16px;text-decoration:none;color:var(--text);${isDocViewer?'cursor:default':'cursor:pointer'}">
               <div style="font-size:1.5rem;flex-shrink:0;padding-top:2px">${IL_TYPE_ICONS[r.type]??'📁'}</div>
               <div style="flex:1;min-width:0">
                 <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text-soft);margin-bottom:4px">${esc(IL_TYPE_LABELS[r.type]??r.type)}</div>
                 <div style="font-weight:600;font-size:.95rem;margin-bottom:4px;line-height:1.3">${esc(r.title)}</div>
                 ${r.description?`<div style="font-size:.8rem;color:var(--text-soft);line-height:1.4">${esc(r.description)}</div>`:''}
               </div>
-              ${isVideo||isPdf?`<div style="font-size:.75rem;font-weight:700;color:var(--red);white-space:nowrap;align-self:center">${isVideo?'Watch →':'View →'}</div>`:''}
+              ${isVideo||(isPdf&&!isDocViewer)?`<div style="font-size:.75rem;font-weight:700;color:var(--red);white-space:nowrap;align-self:center">${isVideo?'Watch →':'View →'}</div>`:''}
             </a>
+            ${docViewerTocPreview}
             ${tocHTML ? `<div style="padding:0 16px 16px">${tocHTML}</div>` : ''}
           </div>`;
         }).join('')}
@@ -1207,6 +1295,13 @@ async function renderInstructorLibrary(el: HTMLElement) {
     el.querySelector<HTMLButtonElement>('.il-tab')?.click();
     const isMobile = () => window.innerWidth <= 820;
     el.querySelector('#il-grid')!.addEventListener('click', e => {
+      // Document viewer open button
+      const docBtn = (e.target as HTMLElement).closest<HTMLElement>('.il-doc-open-btn');
+      if (docBtn) {
+        e.preventDefault();
+        openILDocViewer(docBtn.dataset.docId!, docBtn.dataset.docTitle ?? '', docBtn.dataset.docToc ?? '');
+        return;
+      }
       // TOC entry click
       const toc = (e.target as HTMLElement).closest<HTMLElement>('.il-toc-entry');
       if (toc) {
