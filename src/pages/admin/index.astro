@@ -64,7 +64,7 @@ const authed = cookie?.value === 'authenticated';
           btn.textContent = 'Sign In';
           return;
         }
-        document.cookie = 'kk_admin_session=authenticated; path=/admin; max-age=604800; SameSite=Lax';
+        document.cookie = 'kk_admin_session=authenticated; path=/; max-age=604800; SameSite=Lax';
         window.location.reload();
       } catch (e) {
         errEl.textContent = 'Network error: ' + e.message;
