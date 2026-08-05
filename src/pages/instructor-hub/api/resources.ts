@@ -1,5 +1,6 @@
 export const prerender = false;
 import type { APIContext } from 'astro';
+import { injectPdfBookmarks, parseToc } from '../../../lib/pdf-bookmarks';
 
 function authed(cookies: APIContext['cookies']) {
   return cookies.get('kk_admin_session')?.value === 'authenticated';
@@ -49,6 +50,12 @@ export async function POST({ request, cookies, locals }: APIContext) {
     await env.IMAGES.put(r2Key, file.stream(), {
       httpMetadata: { contentType: file.type || 'application/octet-stream' },
     });
+
+    // Inject PDF bookmarks immediately if a TOC was submitted with the upload
+    const isPdf = (file.type === 'application/pdf') || file.name.toLowerCase().endsWith('.pdf');
+    if (isPdf && toc && env.IMAGES) {
+      await injectPdfBookmarks(env.IMAGES, r2Key, parseToc(toc)).catch(() => {});
+    }
   }
 
   const row = await env.DB.prepare(

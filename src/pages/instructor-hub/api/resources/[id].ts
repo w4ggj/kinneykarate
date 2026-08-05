@@ -1,5 +1,6 @@
 export const prerender = false;
 import type { APIContext } from 'astro';
+import { injectPdfBookmarks, parseToc } from '../../../../lib/pdf-bookmarks';
 
 function authed(cookies: APIContext['cookies']) {
   return cookies.get('kk_admin_session')?.value === 'authenticated';
@@ -21,6 +22,17 @@ export async function PATCH({ params, request, cookies, locals }: APIContext) {
   if ('toc' in body) {
     await env.DB.prepare('UPDATE instructor_resources SET toc = ? WHERE id = ?')
       .bind(body.toc || null, params.id).run();
+
+    // Re-inject PDF bookmarks whenever the TOC changes
+    if (body.toc && env.IMAGES) {
+      const row: any = await env.DB.prepare(
+        'SELECT r2_key, filename FROM instructor_resources WHERE id = ?'
+      ).bind(params.id).first();
+      const isPdf = row?.filename?.toLowerCase().endsWith('.pdf');
+      if (row?.r2_key && isPdf) {
+        await injectPdfBookmarks(env.IMAGES, row.r2_key, parseToc(body.toc)).catch(() => {});
+      }
+    }
   } else if ('content' in body || 'title' in body) {
     await env.DB.prepare('UPDATE instructor_resources SET title = ?, content = ? WHERE id = ?')
       .bind(body.title, body.content, params.id).run();
