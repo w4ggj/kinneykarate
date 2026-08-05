@@ -935,7 +935,7 @@ const IL_TYPE_LABELS: Record<string,string> = {video:'Video',document:'Document'
 
 async function renderInstructorLibrary(el: HTMLElement) {
   el.innerHTML = '<p id="loading">Loading…</p>';
-  let ilView: 'library'|'manage' = 'library';
+  let ilView: 'welcome'|'library'|'manage' = 'welcome';
 
   function closeILOverlays() {
     document.getElementById('il-video-overlay')?.remove();
@@ -1013,7 +1013,7 @@ async function renderInstructorLibrary(el: HTMLElement) {
         btn.style.color = 'var(--red)'; btn.style.borderBottomColor = 'var(--red)';
         let vis = 0;
         container.querySelectorAll<HTMLElement>('.il-text-entry,.il-card').forEach(item => {
-          const show = tab === 'All' || item.dataset.category === tab;
+          const show = item.dataset.category === tab;
           item.style.display = show ? '' : 'none';
           if (show) vis++;
         });
@@ -1028,11 +1028,14 @@ async function renderInstructorLibrary(el: HTMLElement) {
     const resources: any[] = await api('/instructor-hub/api/resources').catch(() => []);
     const active = resources.filter(r => r.active);
     const extraCats = [...new Set(active.map(r => r.category||'General'))].filter(c => !IL_CATS.includes(c)).sort();
-    const allTabs = ['All',...IL_CATS,...extraCats];
+    const allTabs = [...IL_CATS,...extraCats];
 
     el.innerHTML = `
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px">
-        <h1 style="margin:0">Instructor Library</h1>
+        <div style="display:flex;align-items:center;gap:16px">
+          <button class="btn btn-sm" id="il-to-welcome">← Home</button>
+          <h1 style="margin:0">Instructor Library</h1>
+        </div>
         <button class="btn btn-sm" id="il-to-manage">Manage Resources</button>
       </div>
       ${tabBarHTML(allTabs)}
@@ -1067,7 +1070,10 @@ async function renderInstructorLibrary(el: HTMLElement) {
       <div id="il-empty" style="text-align:center;padding:60px 20px;color:var(--text-soft);${active.length?'display:none':''}">No resources yet.</div>`;
 
     wireTabBar(el);
+    document.getElementById('il-to-welcome')!.addEventListener('click', showWelcome);
     document.getElementById('il-to-manage')!.addEventListener('click', showManage);
+    // Apply first tab filter on initial render
+    el.querySelector<HTMLButtonElement>('.il-tab')?.click();
     el.querySelector('#il-grid')!.addEventListener('click', e => {
       const vc = (e.target as HTMLElement).closest<HTMLElement>('[data-video-url]');
       if (vc) { e.preventDefault(); openILVideo(vc.dataset.videoUrl!, vc.dataset.videoTitle??''); return; }
@@ -1291,7 +1297,50 @@ async function renderInstructorLibrary(el: HTMLElement) {
     });
   }
 
-  await showLibrary();
+  function showWelcome() {
+    el.innerHTML = `
+      <div style="max-width:700px;margin:0 auto;padding:40px 0">
+        <h1 style="margin:0 0 8px">Instructor Library</h1>
+        <p style="color:var(--text-soft);font-size:.95rem;margin:0 0 32px">Kinney Karate Instructor Resource Center</p>
+        <div style="background:var(--paper);border:1px solid var(--line);border-radius:var(--r-lg);padding:28px 32px;margin-bottom:20px">
+          <h2 style="font-size:1rem;text-transform:uppercase;letter-spacing:.06em;margin:0 0 12px">What is the Instructor Library?</h2>
+          <p style="font-size:.95rem;line-height:1.7;color:var(--text);margin:0 0 12px">
+            The Instructor Library is a private resource center for Kinney Karate instructors. It provides everything you need to teach effectively — from curriculum guides and forms to terminology references and training videos.
+          </p>
+          <p style="font-size:.95rem;line-height:1.7;color:var(--text);margin:0">
+            All materials here are for instructor use only and should not be shared outside the school.
+          </p>
+        </div>
+        <div style="background:var(--paper);border:1px solid var(--line);border-radius:var(--r-lg);padding:28px 32px;margin-bottom:28px">
+          <h2 style="font-size:1rem;text-transform:uppercase;letter-spacing:.06em;margin:0 0 16px">What you'll find here</h2>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px">
+            ${[
+              ['📖','Instructor Manual','Core teaching guidelines and school policies'],
+              ['🗣','Terminology','Korean terminology and pronunciation guides'],
+              ['🎓','Curriculum','Belt-level requirements and lesson plans'],
+              ['📋','Forms','Poomsae and pattern references'],
+              ['🥋','Weapons','Weapons curriculum and technique guides'],
+              ['▶','Videos','Unlisted training and reference videos'],
+            ].map(([icon,label,desc])=>`
+              <div style="display:flex;gap:12px;align-items:flex-start;padding:12px;background:var(--paper-2);border-radius:var(--r)">
+                <div style="font-size:1.3rem;flex-shrink:0">${icon}</div>
+                <div>
+                  <div style="font-weight:700;font-size:.85rem">${label}</div>
+                  <div style="font-size:.8rem;color:var(--text-soft);line-height:1.4;margin-top:2px">${desc}</div>
+                </div>
+              </div>`).join('')}
+          </div>
+        </div>
+        <div style="display:flex;gap:12px">
+          <button class="btn" id="il-enter-library" style="font-size:1rem;padding:12px 28px">Enter Library →</button>
+          <button class="btn btn-sm" id="il-to-manage" style="align-self:center">Manage Resources</button>
+        </div>
+      </div>`;
+    document.getElementById('il-enter-library')!.addEventListener('click', showLibrary);
+    document.getElementById('il-to-manage')!.addEventListener('click', showManage);
+  }
+
+  await showWelcome();
 }
 
 // Initial load
