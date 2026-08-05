@@ -103,34 +103,43 @@ const authed = cookie?.value === 'authenticated';
   .admin-main { flex: 1; padding: 32px; overflow-x: hidden; min-width: 0; }
   .admin-main h1 { font-family: var(--font-condensed); text-transform: uppercase; font-size: 28px; font-weight: 700; margin-bottom: 24px; }
 
+  /* Mobile nav dropdown */
+  .admin-nav-mobile { display: none; }
+  #admin-nav-select {
+    width: 100%; padding: 10px 14px; font-size: 15px; font-weight: 600;
+    background: var(--ink-2); color: #fff; border: none; border-radius: 0;
+    border-bottom: 3px solid var(--red); cursor: pointer; appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23fff' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 14px center;
+    padding-right: 36px;
+  }
+  #admin-nav-select option { background: #1a1a1a; color: #fff; }
+  #admin-nav-select optgroup { color: #aaa; font-size: 11px; font-weight: 700; text-transform: uppercase; }
+
   @media (max-width: 820px) {
     .admin-layout { flex-direction: column; }
-    .admin-nav {
-      width: 100%; padding: 0;
-      overflow-x: auto; -webkit-overflow-scrolling: touch;
-      display: flex; flex-direction: row; align-items: stretch;
-      scrollbar-width: none;
-    }
-    .admin-nav::-webkit-scrollbar { display: none; }
-    .admin-nav .nav-section {
-      display: flex; flex-direction: row; align-items: stretch;
-      padding: 0; margin: 0; flex-shrink: 0;
-      border-right: 1px solid rgba(255,255,255,.08);
-    }
-    .admin-nav .nav-section:last-child { border-right: none; }
-    .admin-nav .nav-label { display: none; }
-    .admin-nav a {
-      display: flex; align-items: center;
-      padding: 12px 14px; border-radius: 0; margin: 0;
-      font-size: 13px; white-space: nowrap;
-      border-bottom: 3px solid transparent;
-    }
-    .admin-nav a:hover, .admin-nav a.active {
-      background: transparent; color: #fff;
-      border-bottom-color: var(--red);
-    }
+    .admin-nav { display: none; }
+    .admin-nav-mobile { display: block; background: var(--ink); }
     .admin-main { padding: 16px; }
     .admin-main h1 { font-size: 22px; margin-bottom: 16px; }
+  }
+
+  /* Mobile instructor library tab dropdown */
+  .il-tab-mobile { display: none; }
+  @media (max-width: 820px) {
+    #il-tabs { display: none !important; }
+    .il-tab-mobile {
+      display: block; margin-bottom: 20px;
+    }
+    #il-tab-select {
+      width: 100%; padding: 10px 14px; font-size: 14px; font-weight: 600;
+      border: 2px solid var(--line); border-radius: var(--r); background: var(--paper);
+      color: var(--text); cursor: pointer; appearance: none; -webkit-appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23333' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 14px center;
+      padding-right: 36px;
+    }
   }
 
   /* Tables */
@@ -189,6 +198,36 @@ const authed = cookie?.value === 'authenticated';
 </style>
 
 <div class="admin-layout">
+  <div class="admin-nav-mobile">
+    <select id="admin-nav-select">
+      <optgroup label="Inventory">
+        <option value="inventory">Stock &amp; Scanning</option>
+        <option value="movements">Movements Log</option>
+      </optgroup>
+      <optgroup label="Orders">
+        <option value="orders">All Orders</option>
+        <option value="queue">Made-to-Order Queue</option>
+      </optgroup>
+      <optgroup label="Sales">
+        <option value="pos">Point of Sale</option>
+      </optgroup>
+      <optgroup label="Catalog">
+        <option value="products">Products</option>
+      </optgroup>
+      <optgroup label="Community">
+        <option value="directory">Business Directory</option>
+      </optgroup>
+      <optgroup label="Instructors">
+        <option value="instructor-library">Instructor Library</option>
+      </optgroup>
+      <optgroup label="Site">
+        <option value="settings">Settings</option>
+      </optgroup>
+      <optgroup label="Mobile App">
+        <option value="app-downloads">Download App</option>
+      </optgroup>
+    </select>
+  </div>
   <nav class="admin-nav">
     <div class="nav-section">
       <p class="nav-label">Inventory</p>
@@ -251,9 +290,22 @@ navLinks.forEach(a => {
     e.preventDefault();
     navLinks.forEach(n => n.classList.remove('active'));
     a.classList.add('active');
+    const sel = document.getElementById('admin-nav-select') as HTMLSelectElement;
+    if (sel) sel.value = a.dataset.panel!;
     loadPanel(a.dataset.panel as Panel);
   });
 });
+
+const mobileNavSelect = document.getElementById('admin-nav-select') as HTMLSelectElement;
+if (mobileNavSelect) {
+  mobileNavSelect.addEventListener('change', () => {
+    const panel = mobileNavSelect.value as Panel;
+    navLinks.forEach(n => {
+      n.classList.toggle('active', n.dataset.panel === panel);
+    });
+    loadPanel(panel);
+  });
+}
 
 async function api(path: string, opts?: RequestInit) {
   const res = await fetch(path, opts);
@@ -996,31 +1048,43 @@ async function renderInstructorLibrary(el: HTMLElement) {
   }
 
   function tabBarHTML(allTabs: string[]) {
-    return `<div id="il-tabs" style="display:flex;gap:4px;border-bottom:2px solid var(--line);margin-bottom:24px;overflow-x:auto;scrollbar-width:none">
+    return `
+    <div class="il-tab-mobile">
+      <select id="il-tab-select">
+        ${allTabs.map(t=>`<option value="${esc(t)}">${esc(t)}</option>`).join('')}
+      </select>
+    </div>
+    <div id="il-tabs" style="display:flex;gap:4px;border-bottom:2px solid var(--line);margin-bottom:24px;overflow-x:auto;scrollbar-width:none">
       ${allTabs.map((t,i) => `<button class="il-tab${i===0?' il-tab-on':''}" data-tab="${esc(t)}" style="flex-shrink:0;background:none;border:none;border-bottom:3px solid ${i===0?'var(--red)':'transparent'};margin-bottom:-2px;padding:10px 18px;font-size:.875rem;font-weight:600;color:${i===0?'var(--red)':'var(--text-soft)'};cursor:pointer">${esc(t)}</button>`).join('')}
     </div>`;
   }
 
   function wireTabBar(container: HTMLElement) {
-    container.querySelectorAll<HTMLButtonElement>('.il-tab').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const tab = btn.dataset.tab!;
-        container.querySelectorAll<HTMLButtonElement>('.il-tab').forEach(b => {
-          b.classList.remove('il-tab-on');
-          b.style.color = 'var(--text-soft)'; b.style.borderBottomColor = 'transparent';
-        });
-        btn.classList.add('il-tab-on');
-        btn.style.color = 'var(--red)'; btn.style.borderBottomColor = 'var(--red)';
-        let vis = 0;
-        container.querySelectorAll<HTMLElement>('.il-text-entry,.il-card').forEach(item => {
-          const show = item.dataset.category === tab;
-          item.style.display = show ? '' : 'none';
-          if (show) vis++;
-        });
-        const empty = container.querySelector<HTMLElement>('#il-empty');
-        if (empty) empty.style.display = vis === 0 ? '' : 'none';
+    function applyTab(tab: string) {
+      container.querySelectorAll<HTMLButtonElement>('.il-tab').forEach(b => {
+        const on = b.dataset.tab === tab;
+        b.classList.toggle('il-tab-on', on);
+        b.style.color = on ? 'var(--red)' : 'var(--text-soft)';
+        b.style.borderBottomColor = on ? 'var(--red)' : 'transparent';
       });
+      const sel = container.querySelector<HTMLSelectElement>('#il-tab-select');
+      if (sel) sel.value = tab;
+      let vis = 0;
+      container.querySelectorAll<HTMLElement>('.il-text-entry,.il-card').forEach(item => {
+        const show = item.dataset.category === tab;
+        item.style.display = show ? '' : 'none';
+        if (show) vis++;
+      });
+      const empty = container.querySelector<HTMLElement>('#il-empty');
+      if (empty) empty.style.display = vis === 0 ? '' : 'none';
+    }
+
+    container.querySelectorAll<HTMLButtonElement>('.il-tab').forEach(btn => {
+      btn.addEventListener('click', () => applyTab(btn.dataset.tab!));
     });
+
+    const tabSel = container.querySelector<HTMLSelectElement>('#il-tab-select');
+    if (tabSel) tabSel.addEventListener('change', () => applyTab(tabSel.value));
   }
 
   async function showLibrary() {
