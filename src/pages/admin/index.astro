@@ -1057,7 +1057,7 @@ async function renderInstructorLibrary(el: HTMLElement) {
             <span style="flex-shrink:0;font-size:.75rem;opacity:.7;font-variant-numeric:tabular-nums">${esc(t.page)}</span>
           </button>`).join('')}
         </div>
-        <iframe id="il-doc-frame" src="/instructor-hub/file/${id}#page=1" style="flex:1;border:none;background:#525659" title="${esc(title)}"></iframe>
+        <iframe id="il-doc-frame" src="/instructor-hub/file/${id}?p=1#page=1" style="flex:1;border:none;background:#525659" title="${esc(title)}"></iframe>
       </div>`;
     document.body.appendChild(ov);
     document.body.style.overflow = 'hidden';
@@ -1075,7 +1075,8 @@ async function renderInstructorLibrary(el: HTMLElement) {
 
     const frame = document.getElementById('il-doc-frame') as HTMLIFrameElement;
     const jumpTo = (page: string) => {
-      frame.src = `/instructor-hub/file/${id}#page=${page}`;
+      // Query param forces browser to treat it as a new URL (hash-only change doesn't reload iframe)
+      frame.src = `/instructor-hub/file/${id}?p=${page}#page=${page}`;
     };
 
     // sidebar buttons
