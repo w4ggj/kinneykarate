@@ -1201,9 +1201,8 @@ async function renderInstructorLibrary(el: HTMLElement) {
         ${active.filter(r=>r.type!=='text').map(r=>{
           const isPdf = r.r2_key && (r.filename?.toLowerCase().endsWith('.pdf') || r.type==='manual' || r.type==='document');
           const isVideo = r.type==='video';
-          const isDocViewer = isPdf && r.toc;
           const tocLines: string[] = r.toc ? r.toc.split('\n').map((l:string)=>l.trim()).filter(Boolean) : [];
-          const tocHTML = !isDocViewer && tocLines.length ? `
+          const tocHTML = isPdf && tocLines.length ? `
             <div class="il-toc" style="margin-top:10px;border-top:1px solid var(--line);padding-top:8px">
               <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-soft);margin-bottom:6px">Contents</div>
               ${tocLines.map(line=>{
@@ -1217,36 +1216,22 @@ async function renderInstructorLibrary(el: HTMLElement) {
                 </a>`;
               }).join('')}
             </div>` : '';
-          const docViewerTocPreview = isDocViewer ? `
-            <div style="border-top:1px solid var(--line);padding:10px 16px 14px">
-              <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-soft);margin-bottom:8px">Contents (${tocLines.length} sections)</div>
-              <div style="display:flex;flex-wrap:wrap;gap:6px">
-                ${tocLines.slice(0,5).map(line=>{
-                  const label = line.split('|')[0].trim();
-                  return `<span style="font-size:.75rem;background:var(--paper-2);border:1px solid var(--line);border-radius:12px;padding:2px 10px;color:var(--text-soft)">${esc(label)}</span>`;
-                }).join('')}
-                ${tocLines.length > 5 ? `<span style="font-size:.75rem;color:var(--text-soft);padding:2px 4px">+${tocLines.length-5} more</span>` : ''}
-              </div>
-              <button class="il-doc-open-btn btn btn-sm" data-doc-id="${r.id}" data-doc-title="${esc(r.title)}" data-doc-toc="${esc(r.toc)}"
-                style="margin-top:12px;width:100%">📖 Open Document Viewer</button>
-            </div>` : '';
           return `<div class="il-card" data-category="${esc(r.category||'General')}"
             style="background:var(--paper);border:1px solid var(--line);border-radius:var(--r);overflow:hidden">
-            <a href="${isVideo||(isPdf&&!isDocViewer)?'#':(r.url||`/instructor-hub/file/${r.id}`)}"
+            <a href="${isVideo||isPdf?'#':(r.url||`/instructor-hub/file/${r.id}`)}"
               class="il-card-header"
               ${isVideo?`data-video-url="${esc(r.url)}" data-video-title="${esc(r.title)}"`:''}
-              ${isPdf&&!isDocViewer?`data-pdf-id="${r.id}" data-pdf-title="${esc(r.title)}"`:''}
+              ${isPdf?`data-pdf-id="${r.id}" data-pdf-title="${esc(r.title)}"`:''}
               ${r.url&&!isVideo&&!isPdf?'target="_blank" rel="noopener noreferrer"':''}
-              style="display:flex;gap:14px;align-items:flex-start;padding:16px;text-decoration:none;color:var(--text);${isDocViewer?'cursor:default':'cursor:pointer'}">
+              style="display:flex;gap:14px;align-items:flex-start;padding:16px;text-decoration:none;color:var(--text);cursor:pointer">
               <div style="font-size:1.5rem;flex-shrink:0;padding-top:2px">${IL_TYPE_ICONS[r.type]??'📁'}</div>
               <div style="flex:1;min-width:0">
                 <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text-soft);margin-bottom:4px">${esc(IL_TYPE_LABELS[r.type]??r.type)}</div>
                 <div style="font-weight:600;font-size:.95rem;margin-bottom:4px;line-height:1.3">${esc(r.title)}</div>
                 ${r.description?`<div style="font-size:.8rem;color:var(--text-soft);line-height:1.4">${esc(r.description)}</div>`:''}
               </div>
-              ${isVideo||(isPdf&&!isDocViewer)?`<div style="font-size:.75rem;font-weight:700;color:var(--red);white-space:nowrap;align-self:center">${isVideo?'Watch →':'View →'}</div>`:''}
+              ${isVideo||isPdf?`<div style="font-size:.75rem;font-weight:700;color:var(--red);white-space:nowrap;align-self:center">${isVideo?'Watch →':'View →'}</div>`:''}
             </a>
-            ${docViewerTocPreview}
             ${tocHTML ? `<div style="padding:0 16px 16px">${tocHTML}</div>` : ''}
           </div>`;
         }).join('')}
