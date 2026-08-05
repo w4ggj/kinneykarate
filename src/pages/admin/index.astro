@@ -1044,15 +1044,14 @@ async function renderInstructorLibrary(el: HTMLElement) {
           <span style="font-weight:700;font-size:.9rem;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1">${esc(title)}</span>
         </div>
         <div style="flex:1;overflow-y:auto;padding:16px">
-          <p style="font-size:.85rem;color:var(--text-soft);margin:0 0 16px">Tap a section to open the PDF at that page.</p>
+          <p style="font-size:.85rem;color:var(--text-soft);margin:0 0 16px">Tap a section to open the document, then scroll to the page shown.</p>
           <div style="display:flex;flex-direction:column;gap:2px">
             ${tocItems.map(t=>`
-              <a href="/instructor-hub/file/${id}?p=${esc(t.page)}#page=${esc(t.page)}" target="_blank" rel="noopener"
+              <a href="/instructor-hub/file/${id}" target="_blank" rel="noopener"
                 style="display:flex;justify-content:space-between;align-items:center;padding:14px 16px;background:var(--paper);border:1px solid var(--line);border-radius:var(--r);text-decoration:none;color:var(--text);gap:12px">
                 <span style="font-size:.95rem;font-weight:500;flex:1;line-height:1.3">${esc(t.label)}</span>
-                <span style="display:flex;align-items:center;gap:6px;flex-shrink:0">
-                  <span style="font-size:.8rem;color:var(--text-soft);font-variant-numeric:tabular-nums">p.${esc(t.page)}</span>
-                  <span style="font-size:.8rem;color:var(--red);font-weight:700">Open ↗</span>
+                <span style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+                  <span style="font-size:.9rem;font-weight:700;color:var(--ink);background:var(--paper-2);border:1px solid var(--line);border-radius:4px;padding:2px 7px;font-variant-numeric:tabular-nums">p.${esc(t.page)}</span>
                 </span>
               </a>`).join('')}
           </div>
