@@ -52,7 +52,7 @@ async function handleCheckout(session: any, env: any) {
 
     for (const email of [
       { to: order.contact_email, subject: `Order confirmed — Kinney Karate #${order.id.slice(0,8).toUpperCase()}`, text: `Hi ${order.student_name},\n\nYour order is confirmed:\n\n${itemLines}\n\nPickup: ${order.location} with ${order.instructor_name}\nTotal: $${(order.total_cents/100).toFixed(2)}\n\n— Kinney Karate` },
-      { to: 'orders@kinneykarate.com', subject: `New order — ${order.student_name} → ${order.instructor_name} @ ${order.location}`, text: `Student: ${order.student_name}\nEmail: ${order.contact_email}\nLocation: ${order.location}\nInstructor: ${order.instructor_name}\n\nItems:\n${itemLines}\n\nTotal: $${(order.total_cents/100).toFixed(2)}\nOrder ID: ${order.id}` },
+      { to: 'balance.ma.gaming@gmail.com', subject: `New order — ${order.student_name} → ${order.instructor_name} @ ${order.location}`, text: `Student: ${order.student_name}\nEmail: ${order.contact_email}\nLocation: ${order.location}\nInstructor: ${order.instructor_name}\n\nItems:\n${itemLines}\n\nTotal: $${(order.total_cents/100).toFixed(2)}\nOrder ID: ${order.id}` },
     ]) {
       await fetch('https://api.resend.com/emails', {
         method: 'POST',
