@@ -956,6 +956,26 @@ async function renderSettings(el: HTMLElement) {
       </div>
       <button class="btn" style="margin-top:16px" id="save-settings">Save Settings</button>
       <span id="save-msg" style="margin-left:12px;font-size:13px;color:var(--ok)"></span>
+    </div>
+
+    <div style="background:#fff;border:1px solid var(--line);border-radius:var(--r-lg);padding:28px;max-width:540px;margin-top:28px">
+      <h2 style="font-size:17px;font-weight:700;margin-bottom:4px">Instructors</h2>
+      <p style="font-size:13px;color:var(--text-soft);margin-bottom:16px">These names appear in the checkout dropdown. Each instructor receives an email notification when a student places an order with them.</p>
+      <table class="data-table" style="margin-bottom:16px">
+        <thead><tr><th>Name</th><th>Email</th><th></th></tr></thead>
+        <tbody id="instructor-list"></tbody>
+      </table>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end">
+        <div style="display:flex;flex-direction:column;gap:4px;flex:1;min-width:140px">
+          <label style="font-size:12px;font-weight:600">Name</label>
+          <input id="new-instructor-name" type="text" placeholder="Instructor name" style="border:1px solid var(--line);border-radius:var(--r);padding:8px 10px;font-size:13px" />
+        </div>
+        <div style="display:flex;flex-direction:column;gap:4px;flex:1;min-width:180px">
+          <label style="font-size:12px;font-weight:600">Email</label>
+          <input id="new-instructor-email" type="email" placeholder="instructor@email.com" style="border:1px solid var(--line);border-radius:var(--r);padding:8px 10px;font-size:13px" />
+        </div>
+        <button id="add-instructor-btn" class="btn" style="white-space:nowrap">Add Instructor</button>
+      </div>
     </div>`;
 
   document.getElementById('save-settings')?.addEventListener('click', async () => {
@@ -970,6 +990,37 @@ async function renderSettings(el: HTMLElement) {
     });
     msg.textContent = 'Saved!';
     setTimeout(() => { msg.textContent = ''; }, 2000);
+  });
+
+  // ── Instructor management ──────────────────────────────────────────────────
+  async function loadInstructors() {
+    const list = await api('/admin/api/instructors');
+    const tbody = document.getElementById('instructor-list')!;
+    tbody.innerHTML = list.length
+      ? list.map((i: any) => `<tr>
+          <td>${esc(i.name)}</td>
+          <td>${esc(i.email)}</td>
+          <td><button class="btn btn-sm" style="font-size:12px;padding:4px 10px;background:var(--danger);color:#fff;border:none;border-radius:var(--r);cursor:pointer" data-del="${i.id}">Remove</button></td>
+        </tr>`).join('')
+      : '<tr><td colspan="3" style="color:var(--text-soft);font-size:13px">No instructors added yet.</td></tr>';
+
+    tbody.querySelectorAll('[data-del]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        await api('/admin/api/instructors', { method: 'DELETE', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ id: Number((btn as HTMLElement).dataset.del) }) });
+        await loadInstructors();
+      });
+    });
+  }
+  await loadInstructors();
+
+  document.getElementById('add-instructor-btn')?.addEventListener('click', async () => {
+    const name = (document.getElementById('new-instructor-name') as HTMLInputElement).value.trim();
+    const email = (document.getElementById('new-instructor-email') as HTMLInputElement).value.trim();
+    if (!name || !email) return;
+    await api('/admin/api/instructors', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ name, email }) });
+    (document.getElementById('new-instructor-name') as HTMLInputElement).value = '';
+    (document.getElementById('new-instructor-email') as HTMLInputElement).value = '';
+    await loadInstructors();
   });
 }
 
