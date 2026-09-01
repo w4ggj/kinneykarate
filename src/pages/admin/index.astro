@@ -471,21 +471,52 @@ async function renderOrders(el: HTMLElement) {
   el.innerHTML = `
     <h1>Orders</h1>
     <div class="table-wrap"><table class="data-table">
-      <thead><tr><th>Date</th><th>Student</th><th>Location</th><th>Instructor</th><th>Total</th><th>Status</th><th>Actions</th></tr></thead>
-      <tbody>${rows.map((o: any) => `<tr>
-        <td>${new Date(o.created_at).toLocaleDateString()}</td>
-        <td>${esc(o.student_name)}</td>
-        <td>${esc(o.location)}</td>
-        <td>${esc(o.instructor_name)}</td>
-        <td>${fmt(o.total_cents)}</td>
-        <td><span class="badge ${o.status}">${o.status}</span></td>
-        <td>
-          <select data-order-id="${esc(o.id)}" class="status-select" style="font-size:12px;padding:4px 8px;border:1px solid var(--line);border-radius:4px">
-            ${['paid','in_production','ready','picked_up','canceled'].map(s => `<option${s===o.status?' selected':''}>${s}</option>`).join('')}
-          </select>
-        </td>
-      </tr>`).join('')}</tbody>
+      <thead><tr><th></th><th>Date</th><th>Student</th><th>Location</th><th>Instructor</th><th>Total</th><th>Status</th><th>Actions</th></tr></thead>
+      <tbody>${rows.map((o: any) => {
+        const itemRows = o.items?.length
+          ? o.items.map((i: any) => {
+              const detail = [i.size, i.color].filter(Boolean).join(', ');
+              return `<div style="display:flex;justify-content:space-between;padding:2px 0;font-size:12px">
+                <span>${esc(i.name_snapshot)}${detail ? ` <span style="color:var(--muted)">(${esc(detail)})</span>` : ''}${i.qty > 1 ? ` ×${i.qty}` : ''}</span>
+                <span style="margin-left:16px;white-space:nowrap">${fmt(i.unit_price_cents * i.qty)}</span>
+              </div>`;
+            }).join('')
+          : '<span style="font-size:12px;color:var(--muted)">No items</span>';
+        return `<tr class="order-row" data-order-id="${esc(o.id)}" style="cursor:pointer">
+          <td style="text-align:center;font-size:16px;user-select:none" class="expand-toggle">▶</td>
+          <td>${new Date(o.created_at).toLocaleDateString()}</td>
+          <td>${esc(o.student_name)}</td>
+          <td>${esc(o.location)}</td>
+          <td>${esc(o.instructor_name)}</td>
+          <td>${fmt(o.total_cents)}</td>
+          <td><span class="badge ${o.status}">${o.status}</span></td>
+          <td>
+            <select data-order-id="${esc(o.id)}" class="status-select" style="font-size:12px;padding:4px 8px;border:1px solid var(--line);border-radius:4px">
+              ${['paid','in_production','ready','picked_up','canceled'].map(s => `<option${s===o.status?' selected':''}>${s}</option>`).join('')}
+            </select>
+          </td>
+        </tr>
+        <tr class="order-items-row" data-for="${esc(o.id)}" style="display:none">
+          <td></td>
+          <td colspan="7" style="padding:8px 12px 12px;background:var(--surface-2,#f8f8f8)">
+            ${itemRows}
+          </td>
+        </tr>`;
+      }).join('')}</tbody>
     </table></div>`;
+
+  el.querySelectorAll('.order-row').forEach(row => {
+    row.addEventListener('click', (e) => {
+      if ((e.target as HTMLElement).closest('.status-select')) return;
+      const id = (row as HTMLElement).dataset.orderId;
+      const detailRow = el.querySelector(`.order-items-row[data-for="${id}"]`) as HTMLElement;
+      const toggle = row.querySelector('.expand-toggle') as HTMLElement;
+      if (!detailRow) return;
+      const open = detailRow.style.display !== 'none';
+      detailRow.style.display = open ? 'none' : '';
+      toggle.textContent = open ? '▶' : '▼';
+    });
+  });
 
   el.querySelectorAll('.status-select').forEach(sel => {
     sel.addEventListener('change', async (e) => {
