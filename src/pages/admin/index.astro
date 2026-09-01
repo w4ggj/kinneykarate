@@ -227,6 +227,9 @@ const authed = cookie?.value === 'authenticated';
       <optgroup label="Mobile App">
         <option value="app-downloads">Download App</option>
       </optgroup>
+      <optgroup label="Account">
+        <option value="__logout__">Sign Out</option>
+      </optgroup>
     </select>
   </div>
   <nav class="admin-nav">
@@ -300,7 +303,9 @@ navLinks.forEach(a => {
 const mobileNavSelect = document.getElementById('admin-nav-select') as HTMLSelectElement;
 if (mobileNavSelect) {
   mobileNavSelect.addEventListener('change', () => {
-    const panel = mobileNavSelect.value as Panel;
+    const val = mobileNavSelect.value;
+    if (val === '__logout__') { window.location.href = '/admin/logout'; return; }
+    const panel = val as Panel;
     navLinks.forEach(n => {
       n.classList.toggle('active', n.dataset.panel === panel);
     });
@@ -324,16 +329,20 @@ async function loadPanel(panel: Panel) {
   const el = document.getElementById('panel-content')!;
   el.innerHTML = '<p id="loading">Loading…</p>';
 
-  if (panel === 'inventory') await renderInventory(el);
-  else if (panel === 'movements') await renderMovements(el);
-  else if (panel === 'orders') await renderOrders(el);
-  else if (panel === 'queue') await renderQueue(el);
-  else if (panel === 'pos') await renderPOS(el);
-  else if (panel === 'products') await renderProducts(el);
-  else if (panel === 'directory') await renderDirectory(el);
-  else if (panel === 'settings') await renderSettings(el);
-  else if (panel === 'app-downloads') renderAppDownloads(el);
-  else if (panel === 'instructor-library') await renderInstructorLibrary(el);
+  try {
+    if (panel === 'inventory') await renderInventory(el);
+    else if (panel === 'movements') await renderMovements(el);
+    else if (panel === 'orders') await renderOrders(el);
+    else if (panel === 'queue') await renderQueue(el);
+    else if (panel === 'pos') await renderPOS(el);
+    else if (panel === 'products') await renderProducts(el);
+    else if (panel === 'directory') await renderDirectory(el);
+    else if (panel === 'settings') await renderSettings(el);
+    else if (panel === 'app-downloads') renderAppDownloads(el);
+    else if (panel === 'instructor-library') await renderInstructorLibrary(el);
+  } catch (err: any) {
+    el.innerHTML = `<p style="color:var(--danger);padding:1rem">Error loading panel: ${esc(err?.message ?? String(err))}</p>`;
+  }
 }
 
 async function renderInventory(el: HTMLElement) {
