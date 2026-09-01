@@ -499,10 +499,11 @@ async function renderOrders(el: HTMLElement) {
           <td>${esc(o.instructor_name)}</td>
           <td>${fmt(o.total_cents)}</td>
           <td><span class="badge ${o.status}">${o.status}</span></td>
-          <td>
+          <td style="white-space:nowrap">
             <select data-order-id="${esc(o.id)}" class="status-select" style="font-size:12px;padding:4px 8px;border:1px solid var(--line);border-radius:4px">
               ${['paid','in_production','ready','picked_up','canceled'].map(s => `<option${s===o.status?' selected':''}>${s}</option>`).join('')}
             </select>
+            <button class="print-order-btn" data-order='${JSON.stringify(o).replace(/'/g,"&#39;")}' style="margin-left:6px;font-size:12px;padding:4px 8px;border:1px solid var(--line);border-radius:4px;background:#fff;cursor:pointer" title="Print order slip">🖨️</button>
           </td>
         </tr>
         <tr class="order-items-row" data-for="${esc(o.id)}" style="display:none">
@@ -536,6 +537,50 @@ async function renderOrders(el: HTMLElement) {
       });
     });
   });
+
+  el.querySelectorAll('.print-order-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const o = JSON.parse((btn as HTMLElement).dataset.order!);
+      printOrderSlip(o);
+    });
+  });
+}
+
+function printOrderSlip(o: any) {
+  const itemLines = (o.items || []).map((i: any) => {
+    const detail = [i.size, i.color].filter(Boolean).join(', ');
+    return `<tr><td style="padding:4px 8px 4px 0">${i.name_snapshot}${detail ? ` (${detail})` : ''}${i.qty > 1 ? ` ×${i.qty}` : ''}</td><td style="padding:4px 0;text-align:right">$${((i.unit_price_cents * i.qty)/100).toFixed(2)}</td></tr>`;
+  }).join('');
+  const date = new Date(o.created_at).toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' });
+  const orderId = o.id.slice(0,8).toUpperCase();
+  const html = `<!doctype html><html><head><meta charset="utf-8"><title>Order ${orderId}</title>
+<style>
+  body{font-family:Arial,sans-serif;font-size:13px;margin:0;padding:20px;color:#000}
+  h1{font-size:18px;margin:0 0 4px}
+  .label{font-size:10px;font-weight:700;text-transform:uppercase;color:#666;margin-top:12px;margin-bottom:2px}
+  table{width:100%;border-collapse:collapse;margin-top:8px}
+  tr{border-bottom:1px solid #eee}
+  .total{font-weight:700;font-size:14px;margin-top:8px;text-align:right}
+  .footer{margin-top:16px;font-size:10px;color:#999;border-top:1px dashed #ccc;padding-top:8px}
+  @media print{body{padding:10px}}
+</style></head><body>
+<h1>Kinney Karate</h1>
+<div style="font-size:11px;color:#666">Order #${orderId} &nbsp;·&nbsp; ${date}</div>
+<div class="label">Student</div><div>${o.student_name}</div>
+<div class="label">Instructor</div><div>${o.instructor_name}</div>
+<div class="label">Location</div><div>${o.location}</div>
+<div class="label">Items</div>
+<table>${itemLines}</table>
+<div class="total">Total: $${(o.total_cents/100).toFixed(2)}</div>
+<div class="footer">Status: ${o.status} &nbsp;·&nbsp; kinneykarate.com</div>
+</body></html>`;
+  const w = window.open('', '_blank', 'width=400,height=500');
+  if (!w) return;
+  w.document.write(html);
+  w.document.close();
+  w.focus();
+  w.print();
 }
 
 async function renderQueue(el: HTMLElement) {
@@ -956,6 +1001,26 @@ async function renderSettings(el: HTMLElement) {
       </div>
       <button class="btn" style="margin-top:16px" id="save-settings">Save Settings</button>
       <span id="save-msg" style="margin-left:12px;font-size:13px;color:var(--ok)"></span>
+    </div>
+
+    <div style="background:#fff;border:1px solid var(--line);border-radius:var(--r-lg);padding:28px;max-width:540px;margin-top:28px">
+      <h2 style="font-size:17px;font-weight:700;margin-bottom:4px">Instructors</h2>
+      <p style="font-size:13px;color:var(--text-soft);margin-bottom:16px">These names appear in the checkout dropdown. Each instructor receives an email notification when a student places an order with them.</p>
+      <table class="data-table" style="margin-bottom:16px">
+        <thead><tr><th>Name</th><th>Email</th><th></th></tr></thead>
+        <tbody id="instructor-list"></tbody>
+      </table>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end">
+        <div style="display:flex;flex-direction:column;gap:4px;flex:1;min-width:140px">
+          <label style="font-size:12px;font-weight:600">Name</label>
+          <input id="new-instructor-name" type="text" placeholder="Instructor name" style="border:1px solid var(--line);border-radius:var(--r);padding:8px 10px;font-size:13px" />
+        </div>
+        <div style="display:flex;flex-direction:column;gap:4px;flex:1;min-width:180px">
+          <label style="font-size:12px;font-weight:600">Email</label>
+          <input id="new-instructor-email" type="email" placeholder="instructor@email.com" style="border:1px solid var(--line);border-radius:var(--r);padding:8px 10px;font-size:13px" />
+        </div>
+        <button id="add-instructor-btn" class="btn" style="white-space:nowrap">Add Instructor</button>
+      </div>
     </div>`;
 
   document.getElementById('save-settings')?.addEventListener('click', async () => {
@@ -970,6 +1035,37 @@ async function renderSettings(el: HTMLElement) {
     });
     msg.textContent = 'Saved!';
     setTimeout(() => { msg.textContent = ''; }, 2000);
+  });
+
+  // ── Instructor management ──────────────────────────────────────────────────
+  async function loadInstructors() {
+    const list = await api('/admin/api/instructors');
+    const tbody = document.getElementById('instructor-list')!;
+    tbody.innerHTML = list.length
+      ? list.map((i: any) => `<tr>
+          <td>${esc(i.name)}</td>
+          <td>${esc(i.email)}</td>
+          <td><button class="btn btn-sm" style="font-size:12px;padding:4px 10px;background:var(--danger);color:#fff;border:none;border-radius:var(--r);cursor:pointer" data-del="${i.id}">Remove</button></td>
+        </tr>`).join('')
+      : '<tr><td colspan="3" style="color:var(--text-soft);font-size:13px">No instructors added yet.</td></tr>';
+
+    tbody.querySelectorAll('[data-del]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        await api('/admin/api/instructors', { method: 'DELETE', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ id: Number((btn as HTMLElement).dataset.del) }) });
+        await loadInstructors();
+      });
+    });
+  }
+  await loadInstructors();
+
+  document.getElementById('add-instructor-btn')?.addEventListener('click', async () => {
+    const name = (document.getElementById('new-instructor-name') as HTMLInputElement).value.trim();
+    const email = (document.getElementById('new-instructor-email') as HTMLInputElement).value.trim();
+    if (!name || !email) return;
+    await api('/admin/api/instructors', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ name, email }) });
+    (document.getElementById('new-instructor-name') as HTMLInputElement).value = '';
+    (document.getElementById('new-instructor-email') as HTMLInputElement).value = '';
+    await loadInstructors();
   });
 }
 

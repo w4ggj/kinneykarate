@@ -50,16 +50,29 @@ async function handleCheckout(session: any, env: any) {
       (i.fulfillment_type === 'made_to_order' || i.backordered ? ` — ready ~${i.produce_by}` : ' — pickup next class')
     ).join('\n');
 
-    for (const email of [
-      { to: order.contact_email, subject: `Order confirmed — Kinney Karate #${order.id.slice(0,8).toUpperCase()}`, text: `Hi ${order.student_name},\n\nYour order is confirmed:\n\n${itemLines}\n\nPickup: ${order.location} with ${order.instructor_name}\nTotal: $${(order.total_cents/100).toFixed(2)}\n\n— Kinney Karate` },
-      { to: 'balance.ma.gaming@gmail.com', subject: `New order — ${order.student_name} → ${order.instructor_name} @ ${order.location}`, text: `Student: ${order.student_name}\nEmail: ${order.contact_email}\nLocation: ${order.location}\nInstructor: ${order.instructor_name}\n\nItems:\n${itemLines}\n\nTotal: $${(order.total_cents/100).toFixed(2)}\nOrder ID: ${order.id}` },
-    ]) {
-      await fetch('https://api.resend.com/emails', {
+    const instructorRow = env.DB
+      ? await env.DB.prepare('SELECT email FROM instructors WHERE name=? AND active=1').bind(order.instructor_name).first() as any
+      : null;
+    const instructorEmail: string | null = instructorRow?.email ?? null;
+
+    const notifyRecipients = ['balance.ma.gaming@gmail.com'];
+    if (instructorEmail) notifyRecipients.push(instructorEmail);
+
+    const staffSubject = `New order — ${order.student_name} → ${order.instructor_name} @ ${order.location}`;
+    const staffText = `Student: ${order.student_name}\nEmail: ${order.contact_email}\nLocation: ${order.location}\nInstructor: ${order.instructor_name}\n\nItems:\n${itemLines}\n\nTotal: $${(order.total_cents/100).toFixed(2)}\nOrder ID: ${order.id}`;
+
+    await Promise.all([
+      fetch('https://api.resend.com/emails', {
         method: 'POST',
         headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ from: 'Kinney Karate <orders@kinneykarate.com>', ...email }),
-      });
-    }
+        body: JSON.stringify({ from: 'Kinney Karate <orders@kinneykarate.com>', to: order.contact_email, subject: `Order confirmed — Kinney Karate #${order.id.slice(0,8).toUpperCase()}`, text: `Hi ${order.student_name},\n\nYour order is confirmed:\n\n${itemLines}\n\nPickup: ${order.location} with ${order.instructor_name}\nTotal: $${(order.total_cents/100).toFixed(2)}\n\n— Kinney Karate` }),
+      }),
+      fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ from: 'Kinney Karate <orders@kinneykarate.com>', to: notifyRecipients, subject: staffSubject, text: staffText }),
+      }),
+    ]);
   }
 }
 

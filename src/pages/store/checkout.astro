@@ -52,8 +52,10 @@ const locations = [
           </select>
         </div>
         <div class="field">
-          <label for="instructor">Instructor name *</label>
-          <input type="text" id="instructor" name="instructor_name" required placeholder="Your instructor's name" />
+          <label for="instructor">Instructor *</label>
+          <select id="instructor" name="instructor_name" required>
+            <option value="">Select your instructor…</option>
+          </select>
         </div>
 
         <div class="totals" id="totals"></div>
@@ -206,6 +208,20 @@ document.addEventListener('DOMContentLoaded', async () => {
   renderSummary();
   await fetchPrices();
   renderSummary();
+
+  // Populate instructor dropdown
+  try {
+    const instructors: { name: string }[] = await fetch('/api/instructors').then(r => r.json());
+    const sel = document.getElementById('instructor') as HTMLSelectElement;
+    if (sel && instructors.length) {
+      instructors.forEach(i => {
+        const opt = document.createElement('option');
+        opt.value = i.name;
+        opt.textContent = i.name;
+        sel.appendChild(opt);
+      });
+    }
+  } catch {}
 });
 
 document.getElementById('checkout-form')?.addEventListener('submit', async (e) => {
