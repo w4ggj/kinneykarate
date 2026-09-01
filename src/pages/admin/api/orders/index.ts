@@ -9,11 +9,26 @@ export async function GET({ url, locals, cookies }: APIContext) {
 
   const limit = Math.min(parseInt(url.searchParams.get('limit') || '100'), 500);
 
-  const rows = (await env.DB.prepare(`
+  const orders = (await env.DB.prepare(`
     SELECT * FROM orders ORDER BY created_at DESC LIMIT ?
-  `).bind(limit).all()).results;
+  `).bind(limit).all()).results as any[];
 
-  return new Response(JSON.stringify(rows), { headers: { 'Content-Type': 'application/json' } });
+  if (orders.length === 0) return new Response(JSON.stringify([]), { headers: { 'Content-Type': 'application/json' } });
+
+  const ids = orders.map(o => `'${o.id.replace(/'/g, "''")}'`).join(',');
+  const items = (await env.DB.prepare(`
+    SELECT * FROM order_items WHERE order_id IN (${ids}) ORDER BY id ASC
+  `).all()).results as any[];
+
+  const itemMap: Record<string, any[]> = {};
+  for (const item of items) {
+    if (!itemMap[item.order_id]) itemMap[item.order_id] = [];
+    itemMap[item.order_id].push(item);
+  }
+
+  const result = orders.map(o => ({ ...o, items: itemMap[o.id] || [] }));
+
+  return new Response(JSON.stringify(result), { headers: { 'Content-Type': 'application/json' } });
 }
 
 function err(msg: string, status = 400) {
