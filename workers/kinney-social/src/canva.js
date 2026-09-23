@@ -1,4 +1,4 @@
-// Canva Connect helpers: OAuth (authorization code + PKCE), design creation, PNG export.
+// Canva Connect helpers: OAuth (authorization code + PKCE), design creation, PNG/MP4 export.
 //
 // Each student authorizes with their own Canva account; the design is created in their
 // account, they edit it on canva.com, and Canva's Return Navigation sends them back to
@@ -132,20 +132,29 @@ export function correlationStateFromJwt(jwt) {
   }
 }
 
-// Exports page 1 of the design as PNG and returns its bytes.
-export async function exportDesignPng(accessToken, designId) {
+// Export settings per post type. Videos take much longer for Canva to render.
+export const EXPORT_FORMATS = {
+  photo: { format: { type: "png" }, ext: "png", contentType: "image/png", pollAttempts: 20 },
+  // 4:5 portrait design, so the vertical preset.
+  video: { format: { type: "mp4", quality: "vertical_1080p" }, ext: "mp4", contentType: "video/mp4", pollAttempts: 80 },
+};
+
+// Exports the design (page 1 for PNG) and returns the download Response, so large videos
+// can be streamed straight into R2 instead of buffered.
+export async function exportDesign(accessToken, designId, kind) {
+  const { format, pollAttempts } = EXPORT_FORMATS[kind];
   let { job } = await canvaApi(accessToken, "/exports", {
     method: "POST",
-    body: JSON.stringify({ design_id: designId, format: { type: "png" } }),
+    body: JSON.stringify({ design_id: designId, format }),
   });
-  for (let i = 0; job.status === "in_progress" && i < EXPORT_POLL_ATTEMPTS; i++) {
+  for (let i = 0; job.status === "in_progress" && i < pollAttempts; i++) {
     await new Promise((r) => setTimeout(r, EXPORT_POLL_INTERVAL_MS));
     ({ job } = await canvaApi(accessToken, `/exports/${job.id}`));
   }
   if (job.status !== "success" || !job.urls?.length) {
     throw new Error(`Canva export did not finish: ${JSON.stringify(job)}`);
   }
-  const img = await fetch(job.urls[0]);
-  if (!img.ok) throw new Error(`Canva export download ${img.status}`);
-  return img.arrayBuffer();
+  const file = await fetch(job.urls[0]);
+  if (!file.ok) throw new Error(`Canva export download ${file.status}`);
+  return file;
 }

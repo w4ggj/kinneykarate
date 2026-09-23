@@ -25,7 +25,12 @@
   </div>
 
   <form class="card hidden" id="submitForm" novalidate>
-    <h2>Write a caption</h2>
+    <h2>Your post</h2>
+    <fieldset class="choice">
+      <legend>What kind of post is it?</legend>
+      <label><input type="radio" name="mediaType" value="photo" checked> <span><b>Photo</b> Pictures and text</span></label>
+      <label><input type="radio" name="mediaType" value="video"> <span><b>Video</b> Has a video or animation in it</span></label>
+    </fieldset>
     <label for="caption">Caption</label>
     <textarea id="caption" maxlength="2200" placeholder="What's your post about?"></textarea>
     <p class="hint count"><span id="count">0</span> / 2200</p>
@@ -71,12 +76,14 @@
     e.preventDefault();
     errorEl.classList.add("hidden");
     btn.disabled = true;
-    btn.textContent = "Sending… this can take a few seconds";
+    btn.textContent = form.mediaType.value === "video"
+      ? "Sending… videos can take a minute or two"
+      : "Sending… this can take a few seconds";
     try {
       const res = await fetch("/api/submissions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ session, caption: caption.value.trim() }),
+        body: JSON.stringify({ session, caption: caption.value.trim(), mediaType: form.mediaType.value }),
       });
       const out = await res.json().catch(() => ({ ok: false }));
       if (!out.ok) throw new Error(out.error || "Something went wrong. Please try again.");

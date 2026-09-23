@@ -6,7 +6,8 @@
 //   GET  /canva-callback     OAuth redirect: creates a blank design, sends student to the editor
 //   GET  /canva-return       Canva Return Navigation: sends student to /submit?s=<session>
 //   GET  /api/canva/session  ?s=<session> -> { ok, editUrl }
-//   POST /api/submissions    { session, caption } -> { ok: true, id }  (exports PNG to R2)
+//   POST /api/submissions    { session, caption, mediaType } -> { ok: true, id }
+//                            mediaType "photo" exports PNG, "video" exports MP4, into R2
 //   GET  /media/...          approved/posted submission images only
 //
 // Design notes (read before changing):
@@ -34,7 +35,8 @@ import {
   createDesign,
   editUrlWithReturn,
   exchangeCode,
-  exportDesignPng,
+  EXPORT_FORMATS,
+  exportDesign,
   randomToken,
   refreshTokens,
 } from "./canva.js";
@@ -229,17 +231,27 @@ async function handleSessionInfo(request, env) {
   return json({ ok: true, editUrl: editUrlWithReturn(session.edit_url, session.id) });
 }
 
-async function exportWithRefresh(env, session) {
+async function exportWithRefresh(env, session, kind) {
   try {
-    return await exportDesignPng(session.access_token, session.design_id);
+    return await exportDesign(session.access_token, session.design_id, kind);
   } catch (err) {
     if (err.status !== 401 || !session.refresh_token) throw err;
     const tokens = await refreshTokens(env, session.refresh_token);
     await env.DB.prepare(`UPDATE canva_sessions SET access_token = ?, refresh_token = ? WHERE id = ?`)
       .bind(tokens.access_token, tokens.refresh_token, session.id)
       .run();
-    return exportDesignPng(tokens.access_token, session.design_id);
+    return exportDesign(tokens.access_token, session.design_id, kind);
   }
+}
+
+// R2 only accepts a stream whose length is known up front. Stream when the download says
+// how big it is (large videos); otherwise buffer it.
+async function r2Body(res) {
+  const length = Number(res.headers.get("Content-Length"));
+  if (!length) return res.arrayBuffer();
+  const { readable, writable } = new FixedLengthStream(length);
+  res.body.pipeTo(writable);
+  return readable;
 }
 
 function escapeRegExp(s) {
@@ -256,7 +268,7 @@ function captionHasName(caption, student) {
   return [last, full].some((n) => n && new RegExp(`\\b${escapeRegExp(n)}\\b`).test(text));
 }
 
-// POST /api/submissions { session, caption } -> { ok, id }
+// POST /api/submissions { session, caption, mediaType } -> { ok, id }
 async function handleCreateSubmission(request, env) {
   let body;
   try {
@@ -266,6 +278,10 @@ async function handleCreateSubmission(request, env) {
   }
 
   const { caption } = body;
+  const mediaType = body.mediaType || "photo";
+  if (!Object.hasOwn(EXPORT_FORMATS, mediaType)) {
+    return json({ ok: false, error: "Choose photo or video." }, 400);
+  }
   if (caption != null && (typeof caption !== "string" || caption.length > MAX_CAPTION_LENGTH)) {
     return json({ ok: false, error: `Caption must be ${MAX_CAPTION_LENGTH} characters or less.` }, 400);
   }
@@ -284,16 +300,18 @@ async function handleCreateSubmission(request, env) {
     return json({ ok: false, error: "Please leave your name out of the caption." }, 400);
   }
 
-  let png;
+  const { ext, contentType } = EXPORT_FORMATS[mediaType];
+  let file;
   try {
-    png = await exportWithRefresh(env, session);
+    file = await exportWithRefresh(env, session, mediaType);
   } catch (err) {
     console.error("Canva export error:", err.message);
-    return json({ ok: false, error: "We couldn't get your design from Canva. Please try again." }, 502);
+    const hint = mediaType === "video" ? " If your design has no video in it, choose Photo instead." : "";
+    return json({ ok: false, error: `We couldn't get your design from Canva. Please try again.${hint}` }, 502);
   }
 
-  const mediaKey = `submissions/${crypto.randomUUID()}.png`;
-  await env.MEDIA.put(mediaKey, png, { httpMetadata: { contentType: "image/png" } });
+  const mediaKey = `submissions/${crypto.randomUUID()}.${ext}`;
+  await env.MEDIA.put(mediaKey, await r2Body(file), { httpMetadata: { contentType } });
 
   const insertRes = await fetch(`${env.SUPABASE_URL}/rest/v1/social_submissions`, {
     method: "POST",
@@ -321,12 +339,13 @@ async function handleCreateSubmission(request, env) {
   return json({ ok: true, id: inserted.id });
 }
 
-// GET /media/submissions/<uuid>.png — public only once staff has approved the submission,
+// GET /media/submissions/<uuid>.{png,mp4} — public only once staff has approved the submission,
 // since Instagram's publish API needs to fetch the image by URL. Pending/rejected images
 // 404 here; the staff queue should read them through its own authenticated path.
 async function handleMedia(request, env, pathname) {
   const key = pathname.slice("/media/".length);
-  if (!/^submissions\/[0-9a-f-]{36}\.png$/.test(key)) return json({ error: "Not found" }, 404);
+  const match = /^submissions\/[0-9a-f-]{36}\.(png|mp4)$/.exec(key);
+  if (!match) return json({ error: "Not found" }, 404);
 
   const mediaUrl = encodeURIComponent(`${env.PUBLIC_SITE_URL}/media/${key}`);
   const res = await fetch(
@@ -338,7 +357,11 @@ async function handleMedia(request, env, pathname) {
   const obj = await env.MEDIA.get(key);
   if (!obj) return json({ error: "Not found" }, 404);
   return new Response(obj.body, {
-    headers: { "Content-Type": "image/png", "Cache-Control": "public, max-age=3600" },
+    headers: {
+      "Content-Type": match[1] === "mp4" ? "video/mp4" : "image/png",
+      "Content-Length": String(obj.size),
+      "Cache-Control": "public, max-age=3600",
+    },
   });
 }
 
