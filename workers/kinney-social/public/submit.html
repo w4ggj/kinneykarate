@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Send Your Post · Kinney Karate</title>
+  <link rel="stylesheet" href="/style.css">
+  <link rel="icon" type="image/png" href="/kklogo.png">
+</head>
+<body>
+<header class="hdr"><a href="https://kinneykarate.com"><img src="/kklogo.png" alt="" width="36" height="36"> Kinney Karate</a></header>
+<div class="belt"><span class="w"></span><span class="y"></span><span class="g"></span><span class="b"></span><span class="k"></span></div>
+<section class="hero"><div>
+  <p class="eyebrow">Almost done</p>
+  <h1>Send in your post</h1>
+</div></section>
+
+<main>
+  <div id="error" class="alert alert-error hidden" role="alert"></div>
+
+  <div id="done" class="card hidden">
+    <h2>Sent!</h2>
+    <p>Staff will look at your post soon. If they approve it, it'll show up on the Kinney Karate Instagram.</p>
+    <a class="btn btn-outline" href="/">Make another post</a>
+  </div>
+
+  <form class="card hidden" id="submitForm" novalidate>
+    <h2>Your post</h2>
+    <fieldset class="choice">
+      <legend>What kind of post is it?</legend>
+      <label><input type="radio" name="mediaType" value="photo" checked> <span><b>Photo</b> Pictures and text</span></label>
+      <label><input type="radio" name="mediaType" value="video"> <span><b>Video</b> Has a video or animation in it</span></label>
+    </fieldset>
+    <label for="caption">Caption</label>
+    <textarea id="caption" maxlength="2200" placeholder="What's your post about?"></textarea>
+    <p class="hint count"><span id="count">0</span> / 2200</p>
+    <p class="hint">Don't put your name, school, or anything personal in the caption.</p>
+    <button class="btn" id="sendBtn" type="submit">Send for approval</button>
+    <a class="btn btn-outline" id="editLink" href="#">Keep editing in Canva</a>
+  </form>
+
+  <p id="startOver" class="hidden"><a class="btn btn-outline" href="/">Start over</a></p>
+</main>
+
+<script>
+  const session = new URLSearchParams(location.search).get("s");
+  const form = document.getElementById("submitForm");
+  const errorEl = document.getElementById("error");
+  const btn = document.getElementById("sendBtn");
+  const caption = document.getElementById("caption");
+
+  function showError(msg) {
+    errorEl.textContent = msg;
+    errorEl.classList.remove("hidden");
+  }
+  function fatal(msg) {
+    showError(msg);
+    form.classList.add("hidden");
+    document.getElementById("startOver").classList.remove("hidden");
+  }
+
+  caption.addEventListener("input", () => {
+    document.getElementById("count").textContent = caption.value.length;
+  });
+
+  (async () => {
+    if (!session) return fatal("This link has expired. Please start over.");
+    const res = await fetch("/api/canva/session?s=" + encodeURIComponent(session));
+    const info = await res.json().catch(() => ({ ok: false }));
+    if (!info.ok) return fatal(info.error || "This link has expired. Please start over.");
+    document.getElementById("editLink").href = info.editUrl;
+    form.classList.remove("hidden");
+  })();
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    errorEl.classList.add("hidden");
+    btn.disabled = true;
+    btn.textContent = form.mediaType.value === "video"
+      ? "Sending… videos can take a minute or two"
+      : "Sending… this can take a few seconds";
+    try {
+      const res = await fetch("/api/submissions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ session, caption: caption.value.trim(), mediaType: form.mediaType.value }),
+      });
+      const out = await res.json().catch(() => ({ ok: false }));
+      if (!out.ok) throw new Error(out.error || "Something went wrong. Please try again.");
+      form.classList.add("hidden");
+      document.getElementById("done").classList.remove("hidden");
+      history.replaceState(null, "", "/submit");
+    } catch (err) {
+      showError(err.message);
+      btn.disabled = false;
+      btn.textContent = "Send for approval";
+    }
+  });
+</script>
+</body>
+</html>

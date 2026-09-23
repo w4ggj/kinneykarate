@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex">
+  <title>Post Queue · Kinney Karate Staff</title>
+  <link rel="stylesheet" href="/style.css">
+  <link rel="icon" type="image/png" href="/kklogo.png">
+</head>
+<body>
+<header class="hdr hdr-admin">
+  <a href="/admin"><img src="/kklogo.png" alt="" width="36" height="36"> Post Queue</a>
+  <span id="who" class="hidden"><span id="whoName"></span> · <button class="linkbtn" id="logoutBtn">Sign out</button></span>
+</header>
+<div class="belt"><span class="w"></span><span class="y"></span><span class="g"></span><span class="b"></span><span class="k"></span></div>
+
+<main class="wide">
+  <div id="error" class="alert alert-error hidden" role="alert"></div>
+  <div id="notice" class="alert alert-ok hidden" role="status"></div>
+
+  <form class="card narrow hidden" id="loginForm" novalidate>
+    <h2>Staff sign in</h2>
+    <p class="hint">Use your Balance Your World staff login.</p>
+    <label for="email">Email</label>
+    <input id="email" type="email" autocomplete="username" required>
+    <label for="password">Password</label>
+    <input id="password" type="password" autocomplete="current-password" required>
+    <button class="btn" id="loginBtn" type="submit">Sign in</button>
+  </form>
+
+  <section id="queue" class="hidden">
+    <nav class="tabs" id="tabs">
+      <button data-status="pending" class="active">Pending</button>
+      <button data-status="approved">Approved</button>
+      <button data-status="posted">Posted</button>
+      <button data-status="rejected">Rejected</button>
+      <button data-status="rewards">Rewards due</button>
+    </nav>
+    <p id="empty" class="hint hidden">Nothing here.</p>
+    <div id="list" class="grid"></div>
+  </section>
+</main>
+
+<template id="cardTpl">
+  <article class="card sub">
+    <div class="sub-media"></div>
+    <div class="sub-body">
+      <p class="sub-meta"><b class="sub-student"></b> <span class="sub-when"></span></p>
+      <p class="sub-status hint"></p>
+      <label>Caption</label>
+      <textarea class="sub-caption" maxlength="2200"></textarea>
+      <p class="hint sub-links"></p>
+      <button class="btn btn-ok act-publish hidden">Post to Instagram</button>
+      <div class="sub-reward hidden">
+        <label>Reward notes (optional)</label>
+        <input class="sub-reward-notes" maxlength="900" placeholder="e.g. gave a KK sticker pack">
+        <button class="btn btn-ok act-reward">Mark reward given</button>
+      </div>
+      <div class="sub-actions">
+        <button class="btn btn-ok act-approve">Approve &amp; post</button>
+        <button class="btn btn-outline act-reject">Reject</button>
+      </div>
+      <div class="sub-reject hidden">
+        <label>Reason (staff only, optional)</label>
+        <input class="sub-reason" maxlength="1000" placeholder="e.g. shows another student's face">
+        <div class="sub-actions">
+          <button class="btn act-confirm-reject">Confirm reject</button>
+          <button class="btn btn-outline act-cancel">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </article>
+</template>
+
+<script>
+  const $ = (id) => document.getElementById(id);
+  let status = "pending";
+  let refreshTimer;
+
+  function showError(msg) {
+    $("error").textContent = msg;
+    $("error").classList.toggle("hidden", !msg);
+    if (msg) $("notice").classList.add("hidden");
+  }
+
+  function showNotice(msg) {
+    $("notice").textContent = msg;
+    $("notice").classList.toggle("hidden", !msg);
+  }
+
+  // What happened with the Instagram post after approving / retrying.
+  function publishMessage(p) {
+    if (!p) return "";
+    if (p.state === "error") return `Instagram post failed: ${p.error}`;
+    if (p.state === "processing" || p.state === "creating") return "Sending to Instagram. Videos can take a few minutes to process.";
+    if (p.state === "publishing" || p.state === "published") return "Posting to Instagram…";
+    if (p.state === "done") return "Posted to Instagram.";
+    return "";
+  }
+
+  async function api(path, body) {
+    const res = await fetch(path, body === undefined ? {} : {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    const out = await res.json().catch(() => ({ ok: false, error: "Something went wrong." }));
+    if (res.status === 401 && path !== "/api/admin/login") showLogin();
+    return out;
+  }
+
+  function showLogin() {
+    $("queue").classList.add("hidden");
+    $("who").classList.add("hidden");
+    $("loginForm").classList.remove("hidden");
+  }
+
+  function showQueue(name) {
+    $("whoName").textContent = name;
+    $("who").classList.remove("hidden");
+    $("loginForm").classList.add("hidden");
+    $("queue").classList.remove("hidden");
+    load();
+  }
+
+  const fmt = new Intl.DateTimeFormat("en-US", { dateStyle: "medium", timeStyle: "short" });
+
+  function statusLine(s) {
+    const by = s.reviewer?.name ? ` by ${s.reviewer.name}` : "";
+    const when = s.reviewed_at ? ` ${fmt.format(new Date(s.reviewed_at))}` : "";
+    if (s.status === "approved") return `Approved${by}${when}. ${publishMessage(s.publish) || "Not posted to Instagram yet."}`;
+    if (s.status === "rejected") return `Rejected${by}${when}${s.rejection_reason ? ": " + s.rejection_reason : ""}`;
+    if (s.status === "posted") {
+      const stats = [`${s.likes_count} likes`, `${s.comments_count} comments`];
+      if (s.reach_count) stats.push(`${s.reach_count} reach`);
+      const checked = s.last_stats_check_at ? ` (updated ${fmt.format(new Date(s.last_stats_check_at))})` : " (stats update hourly)";
+      const engagement = s.likes_count + s.comments_count;
+      let reward = "";
+      if (s.reward_status === "flagged") reward = " · 🎉 Reward earned, not given yet";
+      else if (s.reward_status === "given") reward = ` · Reward given ${fmt.format(new Date(s.reward_given_at))}${s.reward_notes ? ": " + s.reward_notes : ""}`;
+      else if (s.reward_threshold) reward = ` · ${Math.min(engagement, s.reward_threshold)}/${s.reward_threshold} toward reward`;
+      return `Posted${s.posted_at ? " " + fmt.format(new Date(s.posted_at)) : ""} · ${stats.join(" · ")}${checked}${reward}`;
+    }
+    return "";
+  }
+
+  function render(s) {
+    const el = $("cardTpl").content.firstElementChild.cloneNode(true);
+    const media = el.querySelector(".sub-media");
+    if (s.media) {
+      const m = document.createElement(s.mediaType === "video" ? "video" : "img");
+      m.src = s.media;
+      if (s.mediaType === "video") { m.controls = true; m.preload = "metadata"; m.playsInline = true; }
+      else m.alt = "Submitted design";
+      media.append(m);
+    } else {
+      media.textContent = "No media";
+    }
+    el.querySelector(".sub-student").textContent = s.student ? `${s.student.first_name} ${s.student.last_name}` : "Unknown student";
+    el.querySelector(".sub-when").textContent = fmt.format(new Date(s.submitted_at));
+    el.querySelector(".sub-status").textContent = statusLine(s);
+
+    const caption = el.querySelector(".sub-caption");
+    caption.value = s.caption || "";
+    const links = el.querySelector(".sub-links");
+    // No Canva link: the design lives in the student's own Canva account, so staff can't open it.
+    if (s.instagram_permalink) {
+      links.append(Object.assign(document.createElement("a"), {
+        href: s.instagram_permalink, textContent: "View on Instagram", target: "_blank", rel: "noopener",
+      }));
+    }
+
+    const pending = s.status === "pending";
+    caption.readOnly = !pending;
+    const rewardBox = el.querySelector(".sub-reward");
+    if (s.status === "posted" && s.reward_status === "flagged") {
+      rewardBox.classList.remove("hidden");
+      const btn = el.querySelector(".act-reward");
+      btn.onclick = async () => {
+        btn.disabled = true;
+        showError("");
+        const out = await api(`/api/admin/submissions/${s.id}/reward`, { notes: el.querySelector(".sub-reward-notes").value });
+        if (!out.ok) { btn.disabled = false; return showError(out.error || "Couldn't save."); }
+        showNotice("Reward marked as given.");
+        load(true);
+      };
+    } else {
+      rewardBox.remove();
+    }
+
+    if (!pending) {
+      el.querySelectorAll(".sub-actions, .sub-reject").forEach((n) => n.remove());
+      const canRetry = s.status === "approved" && (!s.publish || s.publish.state === "error");
+      const retry = el.querySelector(".act-publish");
+      if (canRetry) {
+        retry.classList.remove("hidden");
+        if (s.publish) retry.textContent = "Retry Instagram post";
+        retry.onclick = async () => {
+          retry.disabled = true;
+          showError("");
+          const out = await api(`/api/admin/submissions/${s.id}/publish`, {});
+          if (!out.ok) { retry.disabled = false; return showError(out.error || "Couldn't post."); }
+          if (out.publish?.state === "error") showError(publishMessage(out.publish));
+          else showNotice(publishMessage(out.publish));
+          load(true);
+        };
+      } else {
+        retry.remove();
+      }
+      return el;
+    }
+    el.querySelector(".act-publish").remove();
+
+    const rejectBox = el.querySelector(".sub-reject");
+    const actions = el.querySelector(".sub-actions");
+    const busy = (on) => el.querySelectorAll("button").forEach((b) => (b.disabled = on));
+    async function act(path, body) {
+      busy(true);
+      showError("");
+      showNotice("");
+      const out = await api(`/api/admin/submissions/${s.id}/${path}`, body);
+      if (!out.ok) {
+        busy(false);
+        return showError(out.error || "Couldn't save.");
+      }
+      if (out.publish?.state === "error") showError(`Approved, but ${publishMessage(out.publish).replace(/^I/, "i")} Retry it from the Approved tab.`);
+      else if (out.publish) showNotice(`Approved. ${publishMessage(out.publish)}`);
+      else showNotice("Rejected.");
+      el.remove();
+      if (!$("list").children.length) $("empty").classList.remove("hidden");
+    }
+    el.querySelector(".act-approve").onclick = () => act("approve", { caption: caption.value });
+    el.querySelector(".act-reject").onclick = () => { actions.classList.add("hidden"); rejectBox.classList.remove("hidden"); };
+    el.querySelector(".act-cancel").onclick = () => { rejectBox.classList.add("hidden"); actions.classList.remove("hidden"); };
+    el.querySelector(".act-confirm-reject").onclick = () => act("reject", { reason: el.querySelector(".sub-reason").value });
+    return el;
+  }
+
+  async function load(keepMessages) {
+    if (!keepMessages) { showError(""); showNotice(""); }
+    $("list").replaceChildren();
+    $("empty").classList.add("hidden");
+    const out = await api(`/api/admin/submissions?status=${status}`);
+    if (!out.ok) return out.error !== "Please sign in." && showError(out.error);
+    $("list").append(...out.submissions.map(render));
+    $("empty").classList.toggle("hidden", out.submissions.length > 0);
+
+    // Keep the Approved tab fresh while videos finish processing on Instagram.
+    clearTimeout(refreshTimer);
+    const inFlight = out.submissions.some((s) => s.publish && !["done", "error"].includes(s.publish.state));
+    if (status === "approved" && inFlight) refreshTimer = setTimeout(() => status === "approved" && load(true), 15000);
+  }
+
+  $("tabs").addEventListener("click", (e) => {
+    const b = e.target.closest("button[data-status]");
+    if (!b) return;
+    status = b.dataset.status;
+    $("tabs").querySelectorAll("button").forEach((x) => x.classList.toggle("active", x === b));
+    load();
+  });
+
+  $("loginForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    showError("");
+    $("loginBtn").disabled = true;
+    const out = await api("/api/admin/login", { email: $("email").value, password: $("password").value });
+    $("loginBtn").disabled = false;
+    if (!out.ok) return showError(out.error);
+    $("password").value = "";
+    showQueue(out.name);
+  });
+
+  $("logoutBtn").onclick = async () => { await api("/api/admin/logout", {}); showLogin(); };
+
+  (async () => {
+    const me = await api("/api/admin/me");
+    if (me.ok) showQueue(me.name); else showLogin();
+  })();
+</script>
+</body>
+</html>
