@@ -8,7 +8,8 @@
 //   GET  /api/canva/session  ?s=<session> -> { ok, editUrl }
 //   POST /api/submissions    { session, caption, mediaType } -> { ok: true, id }
 //                            mediaType "photo" exports PNG, "video" exports MP4, into R2
-//   GET  /media/...          approved/posted submission images only
+//   GET  /media/...          approved/posted submission media only
+//   /admin, /api/admin/*     staff approval queue (Supabase Auth login) — see admin.js
 //
 // Design notes (read before changing):
 // - The `students` table lives in Balance Your World's Supabase project and holds real
@@ -40,28 +41,13 @@ import {
   randomToken,
   refreshTokens,
 } from "./canva.js";
+import { json, MEDIA_KEY_RE, redirect, sbHeaders, serveMediaObject, UUID_RE } from "./lib.js";
+import { handleAdmin } from "./admin.js";
 
 const LOCKOUT_WINDOW_MINUTES = 15;
 const LOCKOUT_AFTER_FAILURES = 8;
 const SESSION_TTL_HOURS = 24;
 const MAX_CAPTION_LENGTH = 2200; // Instagram's caption limit
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-function json(data, status = 200) {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: { "Content-Type": "application/json" },
-  });
-}
-
-function sbHeaders(env) {
-  return {
-    apikey: env.SUPABASE_SERVICE_ROLE_KEY,
-    Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,
-    "Content-Type": "application/json",
-  };
-}
-
 async function isLockedOut(db, ip) {
   const cutoff = new Date(Date.now() - LOCKOUT_WINDOW_MINUTES * 60000).toISOString();
   const row = await db
@@ -146,10 +132,6 @@ async function getActiveStudent(env, studentId, select = "id") {
   }
   const rows = await res.json();
   return rows[0] || null;
-}
-
-function redirect(location) {
-  return new Response(null, { status: 302, headers: { Location: location } });
 }
 
 async function getSession(env, sessionId) {
@@ -344,8 +326,7 @@ async function handleCreateSubmission(request, env) {
 // 404 here; the staff queue should read them through its own authenticated path.
 async function handleMedia(request, env, pathname) {
   const key = pathname.slice("/media/".length);
-  const match = /^submissions\/[0-9a-f-]{36}\.(png|mp4)$/.exec(key);
-  if (!match) return json({ error: "Not found" }, 404);
+  if (!MEDIA_KEY_RE.test(key)) return json({ error: "Not found" }, 404);
 
   const mediaUrl = encodeURIComponent(`${env.PUBLIC_SITE_URL}/media/${key}`);
   const res = await fetch(
@@ -354,15 +335,7 @@ async function handleMedia(request, env, pathname) {
   );
   if (!res.ok || !(await res.json()).length) return json({ error: "Not found" }, 404);
 
-  const obj = await env.MEDIA.get(key);
-  if (!obj) return json({ error: "Not found" }, 404);
-  return new Response(obj.body, {
-    headers: {
-      "Content-Type": match[1] === "mp4" ? "video/mp4" : "image/png",
-      "Content-Length": String(obj.size),
-      "Cache-Control": "public, max-age=3600",
-    },
-  });
+  return serveMediaObject(request, env, key, "public, max-age=3600");
 }
 
 export default {
@@ -390,6 +363,9 @@ export default {
       }
       if (pathname === "/canva-return") {
         return await handleCanvaReturn(request, env);
+      }
+      if (pathname.startsWith("/api/admin/")) {
+        return await handleAdmin(request, env, pathname);
       }
       if (pathname.startsWith("/media/") && request.method === "GET") {
         return await handleMedia(request, env, pathname);
