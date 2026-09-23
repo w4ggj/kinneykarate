@@ -11,6 +11,7 @@
 //   GET  /media/...          approved/posted submission media only
 //   /admin, /api/admin/*     staff approval queue (Supabase Auth login) — see admin.js
 //   cron (every minute)      finishes Instagram publishing for videos — see instagram.js
+//   cron (hourly)            refreshes likes/comments/reach and flags rewards
 //
 // Design notes (read before changing):
 // - The `students` table lives in Balance Your World's Supabase project and holds real
@@ -44,11 +45,13 @@ import {
 } from "./canva.js";
 import { json, MEDIA_KEY_RE, redirect, sbHeaders, serveMediaObject, UUID_RE } from "./lib.js";
 import { handleAdmin } from "./admin.js";
-import { processPublishQueue } from "./instagram.js";
+import { pollEngagement, processPublishQueue } from "./instagram.js";
 
 const LOCKOUT_WINDOW_MINUTES = 15;
 const LOCKOUT_AFTER_FAILURES = 8;
 const SESSION_TTL_HOURS = 24;
+// Must match the second cron in wrangler.toml.
+const ENGAGEMENT_CRON = "17 * * * *";
 const MAX_CAPTION_LENGTH = 2200; // Instagram's caption limit
 async function isLockedOut(db, ip) {
   const cutoff = new Date(Date.now() - LOCKOUT_WINDOW_MINUTES * 60000).toISOString();
@@ -384,6 +387,7 @@ export default {
   },
 
   async scheduled(event, env, ctx) {
-    ctx.waitUntil(processPublishQueue(env));
+    if (event.cron === ENGAGEMENT_CRON) ctx.waitUntil(pollEngagement(env));
+    else ctx.waitUntil(processPublishQueue(env));
   },
 };

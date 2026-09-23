@@ -20,9 +20,11 @@ database_id = "0554dc39-d3cd-4ec7-8c2b-addee8512b86"
 binding = "MEDIA"
 bucket_name = "kinney-social-media"
 
-# Finishes Instagram publishing (video processing) and retries status updates.
+# Every minute: finish Instagram publishing (video processing), retry status updates.
+# Hourly (:17): refresh engagement stats and flag rewards. Keep in sync with
+# ENGAGEMENT_CRON in src/index.js.
 [triggers]
-crons = ["* * * * *"]
+crons = ["* * * * *", "17 * * * *"]
 
 [vars]
 # No trailing slash. Must match the Canva app's registered redirect/return URLs.
@@ -35,6 +37,9 @@ IG_USER_ID = ""
 # Instagram Login token.
 GRAPH_HOST = "graph.facebook.com"
 GRAPH_VERSION = "v23.0"
+# Likes + comments a post needs to flag the student's reward. Saved on each post when it's
+# published, so changing this only affects new posts.
+REWARD_THRESHOLD = "25"
 
 # Secrets — set with `wrangler secret put NAME`, never in this file:
 #   SUPABASE_URL                BYW project (ref uhurmdyqsrzevpzghzen), same value

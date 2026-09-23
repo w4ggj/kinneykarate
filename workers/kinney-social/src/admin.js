@@ -4,9 +4,11 @@
 //   POST /api/admin/logout
 //   GET  /api/admin/me                        -> { ok, name }
 //   GET  /api/admin/submissions?status=       pending (default) | approved | rejected | posted
+//                                             | rewards (posted, reward flagged, not yet given)
 //   POST /api/admin/submissions/<id>/approve  { caption? }  approves, then posts to Instagram
 //   POST /api/admin/submissions/<id>/reject   { reason? }
 //   POST /api/admin/submissions/<id>/publish  (re)try the Instagram post for an approved one
+//   POST /api/admin/submissions/<id>/reward   { notes? }  marks a flagged reward as given
 //   GET  /api/admin/media/submissions/<file>  any status, staff only
 //
 // Auth is the BYW project's real Supabase Auth: staff sign in with the same email/password
@@ -20,7 +22,7 @@ import { json, MEDIA_KEY_RE, sbHeaders, serveMediaObject, UUID_RE } from "./lib.
 const ACCESS_COOKIE = "kss_at";
 const REFRESH_COOKIE = "kss_rt";
 const REFRESH_MAX_AGE = 7 * 24 * 3600;
-const STATUSES = ["pending", "approved", "rejected", "posted"];
+const STATUSES = ["pending", "approved", "rejected", "posted", "rewards"];
 const LIST_LIMIT = 100;
 
 function readCookie(request, name) {
@@ -133,16 +135,18 @@ async function handleList(request, env) {
   const status = new URL(request.url).searchParams.get("status") || "pending";
   if (!STATUSES.includes(status)) return json({ ok: false, error: "Bad status" }, 400);
 
-  // Oldest first for the pending queue, newest first for the history tabs.
-  const order = status === "pending" ? "submitted_at.asc" : "submitted_at.desc";
+  // Oldest first for work queues (pending, rewards due), newest first for history tabs.
+  const order = status === "pending" || status === "rewards" ? "submitted_at.asc" : "submitted_at.desc";
+  const filter = status === "rewards" ? "status=eq.posted&reward_status=eq.flagged" : `status=eq.${status}`;
   const select = [
     "id,caption,media_url,status,rejection_reason,submitted_at,reviewed_at",
-    "instagram_permalink,likes_count,comments_count,reward_status",
+    "instagram_permalink,posted_at,likes_count,comments_count,reach_count,last_stats_check_at",
+    "reward_threshold,reward_status,reward_given_at,reward_notes",
     "student:students(first_name,last_name)",
     "reviewer:staff(name)",
   ].join(",");
   const res = await fetch(
-    `${env.SUPABASE_URL}/rest/v1/social_submissions?status=eq.${status}&order=${order}&limit=${LIST_LIMIT}&select=${select}`,
+    `${env.SUPABASE_URL}/rest/v1/social_submissions?${filter}&order=${order}&limit=${LIST_LIMIT}&select=${select}`,
     { headers: sbHeaders(env) }
   );
   if (!res.ok) {
@@ -215,6 +219,34 @@ async function handlePublish(env, id) {
   return publishResult(await startPublish(env, row));
 }
 
+async function handleReward(request, env, id, staff) {
+  const { notes } = await readJson(request);
+  if (notes != null && (typeof notes !== "string" || notes.length > 1000)) {
+    return json({ ok: false, error: "Notes are too long." }, 400);
+  }
+  const res = await fetch(
+    `${env.SUPABASE_URL}/rest/v1/social_submissions?id=eq.${id}&status=eq.posted&reward_status=eq.flagged`,
+    {
+      method: "PATCH",
+      headers: { ...sbHeaders(env), Prefer: "return=representation" },
+      body: JSON.stringify({
+        reward_status: "given",
+        reward_given_at: new Date().toISOString(),
+        // Record who handed it out alongside whatever staff typed.
+        reward_notes: [notes?.trim(), `(${staff.name})`].filter(Boolean).join(" "),
+      }),
+    }
+  );
+  if (!res.ok) {
+    console.error("Supabase reward error:", res.status, await res.text());
+    return json({ ok: false, error: "Couldn't save. Please try again." }, 502);
+  }
+  if (!(await res.json()).length) {
+    return json({ ok: false, error: "That reward isn't due, or was already marked given. Refresh the list." }, 409);
+  }
+  return json({ ok: true });
+}
+
 async function handleReject(request, env, id, staff) {
   const { reason } = await readJson(request);
   if (reason != null && (typeof reason !== "string" || reason.length > 1000)) {
@@ -243,7 +275,7 @@ export async function handleAdmin(request, env, pathname) {
   const { staff, cookies } = auth;
 
   let res;
-  const action = /^\/api\/admin\/submissions\/([0-9a-f-]{36})\/(approve|reject|publish)$/i.exec(pathname);
+  const action = /^\/api\/admin\/submissions\/([0-9a-f-]{36})\/(approve|reject|publish|reward)$/i.exec(pathname);
   if (pathname === "/api/admin/me" && method === "GET") {
     res = json({ ok: true, name: staff.name });
   } else if (pathname === "/api/admin/submissions" && method === "GET") {
@@ -252,6 +284,7 @@ export async function handleAdmin(request, env, pathname) {
     const [, id, verb] = action;
     if (verb === "approve") res = await handleApprove(request, env, id, staff);
     else if (verb === "reject") res = await handleReject(request, env, id, staff);
+    else if (verb === "reward") res = await handleReward(request, env, id, staff);
     else res = await handlePublish(env, id);
   } else if (pathname.startsWith("/api/admin/media/") && method === "GET") {
     const key = pathname.slice("/api/admin/media/".length);

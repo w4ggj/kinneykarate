@@ -101,3 +101,5 @@ main.wide { max-width: 1120px; }
 .btn-ok:hover { background: #256641; }
 .sub-links:empty { display: none; }
 .sub-body > .act-publish { margin-top: auto; }
+.sub-reward { margin-top: auto; }
+.sub-reward .btn { margin-top: 10px; }

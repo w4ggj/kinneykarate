@@ -35,6 +35,7 @@
       <button data-status="approved">Approved</button>
       <button data-status="posted">Posted</button>
       <button data-status="rejected">Rejected</button>
+      <button data-status="rewards">Rewards due</button>
     </nav>
     <p id="empty" class="hint hidden">Nothing here.</p>
     <div id="list" class="grid"></div>
@@ -51,6 +52,11 @@
       <textarea class="sub-caption" maxlength="2200"></textarea>
       <p class="hint sub-links"></p>
       <button class="btn btn-ok act-publish hidden">Post to Instagram</button>
+      <div class="sub-reward hidden">
+        <label>Reward notes (optional)</label>
+        <input class="sub-reward-notes" maxlength="900" placeholder="e.g. gave a KK sticker pack">
+        <button class="btn btn-ok act-reward">Mark reward given</button>
+      </div>
       <div class="sub-actions">
         <button class="btn btn-ok act-approve">Approve &amp; post</button>
         <button class="btn btn-outline act-reject">Reject</button>
@@ -125,7 +131,17 @@
     const when = s.reviewed_at ? ` ${fmt.format(new Date(s.reviewed_at))}` : "";
     if (s.status === "approved") return `Approved${by}${when}. ${publishMessage(s.publish) || "Not posted to Instagram yet."}`;
     if (s.status === "rejected") return `Rejected${by}${when}${s.rejection_reason ? ": " + s.rejection_reason : ""}`;
-    if (s.status === "posted") return `Posted · ${s.likes_count} likes · ${s.comments_count} comments · reward: ${s.reward_status.replace("_", " ")}`;
+    if (s.status === "posted") {
+      const stats = [`${s.likes_count} likes`, `${s.comments_count} comments`];
+      if (s.reach_count) stats.push(`${s.reach_count} reach`);
+      const checked = s.last_stats_check_at ? ` (updated ${fmt.format(new Date(s.last_stats_check_at))})` : " (stats update hourly)";
+      const engagement = s.likes_count + s.comments_count;
+      let reward = "";
+      if (s.reward_status === "flagged") reward = " · 🎉 Reward earned, not given yet";
+      else if (s.reward_status === "given") reward = ` · Reward given ${fmt.format(new Date(s.reward_given_at))}${s.reward_notes ? ": " + s.reward_notes : ""}`;
+      else if (s.reward_threshold) reward = ` · ${Math.min(engagement, s.reward_threshold)}/${s.reward_threshold} toward reward`;
+      return `Posted${s.posted_at ? " " + fmt.format(new Date(s.posted_at)) : ""} · ${stats.join(" · ")}${checked}${reward}`;
+    }
     return "";
   }
 
@@ -157,6 +173,22 @@
 
     const pending = s.status === "pending";
     caption.readOnly = !pending;
+    const rewardBox = el.querySelector(".sub-reward");
+    if (s.status === "posted" && s.reward_status === "flagged") {
+      rewardBox.classList.remove("hidden");
+      const btn = el.querySelector(".act-reward");
+      btn.onclick = async () => {
+        btn.disabled = true;
+        showError("");
+        const out = await api(`/api/admin/submissions/${s.id}/reward`, { notes: el.querySelector(".sub-reward-notes").value });
+        if (!out.ok) { btn.disabled = false; return showError(out.error || "Couldn't save."); }
+        showNotice("Reward marked as given.");
+        load(true);
+      };
+    } else {
+      rewardBox.remove();
+    }
+
     if (!pending) {
       el.querySelectorAll(".sub-actions, .sub-reject").forEach((n) => n.remove());
       const canRetry = s.status === "approved" && (!s.publish || s.publish.state === "error");

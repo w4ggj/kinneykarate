@@ -18,12 +18,25 @@ const CONTAINER_TIMEOUT_MINUTES = 60;
 // A 'creating'/'publishing' claim older than this means the request died mid-call.
 const STALE_CLAIM_MINUTES = 10;
 
+// Engagement polling: re-check each post at most this often, for this long after posting.
+const STATS_INTERVAL_HOURS = 3;
+const STATS_WINDOW_DAYS = 30;
+const STATS_BATCH = 25;
+const DEFAULT_REWARD_THRESHOLD = 25;
+
 function now() {
   return new Date().toISOString();
 }
 
 function minutesAgo(minutes) {
   return new Date(Date.now() - minutes * 60000).toISOString();
+}
+
+// Likes + comments a post needs before the student's reward is flagged. Stored on each
+// submission when it's posted, so changing the var later doesn't move existing goalposts.
+export function rewardThreshold(env) {
+  const n = parseInt(env.REWARD_THRESHOLD, 10);
+  return n > 0 ? n : DEFAULT_REWARD_THRESHOLD;
 }
 
 function graphBase(env) {
@@ -158,6 +171,7 @@ async function markPosted(env, row) {
         instagram_post_id: row.media_id,
         instagram_permalink: permalink,
         posted_at: now(),
+        reward_threshold: rewardThreshold(env),
       }),
     }
   );
@@ -201,4 +215,75 @@ export async function publishStates(env, submissionIds) {
     .bind(...submissionIds)
     .all();
   return Object.fromEntries(results.map((r) => [r.submission_id, { state: r.state, error: r.error }]));
+}
+
+async function patchSubmission(env, filter, fields) {
+  const res = await fetch(`${env.SUPABASE_URL}/rest/v1/social_submissions?${filter}`, {
+    method: "PATCH",
+    headers: sbHeaders(env),
+    body: JSON.stringify(fields),
+  });
+  if (!res.ok) throw new Error(`Supabase update ${res.status}: ${await res.text()}`);
+}
+
+// Reach comes from the insights endpoint, which can fail on its own (e.g. very new posts);
+// likes/comments still get saved when it does.
+async function fetchStats(env, mediaId) {
+  const { like_count = 0, comments_count = 0 } = await graph(env, `/${mediaId}`, {
+    fields: "like_count,comments_count",
+  });
+  let reach = null;
+  try {
+    const { data } = await graph(env, `/${mediaId}/insights`, { metric: "reach" });
+    reach = data?.find((m) => m.name === "reach")?.values?.[0]?.value ?? null;
+  } catch (err) {
+    console.error(`Instagram insights ${mediaId}:`, err.message);
+  }
+  return { likes: like_count, comments: comments_count, reach };
+}
+
+// Hourly cron: refresh likes/comments/reach on recent posts and flag rewards that crossed
+// their threshold. Only ever moves reward_status not_yet -> flagged; staff mark it given.
+export async function pollEngagement(env) {
+  if (!isConfigured(env)) return;
+  const statsCutoff = minutesAgo(STATS_INTERVAL_HOURS * 60);
+  const windowStart = minutesAgo(STATS_WINDOW_DAYS * 24 * 60);
+  const res = await fetch(
+    `${env.SUPABASE_URL}/rest/v1/social_submissions?status=eq.posted&instagram_post_id=not.is.null` +
+      `&posted_at=gte.${windowStart}&or=(last_stats_check_at.is.null,last_stats_check_at.lt.${statsCutoff})` +
+      `&order=last_stats_check_at.asc.nullsfirst&limit=${STATS_BATCH}` +
+      `&select=id,instagram_post_id,reward_threshold,reward_status`,
+    { headers: sbHeaders(env) }
+  );
+  if (!res.ok) {
+    console.error("Supabase engagement list error:", res.status, await res.text());
+    return;
+  }
+
+  for (const post of await res.json()) {
+    try {
+      const fields = { last_stats_check_at: now() };
+      let stats = null;
+      try {
+        stats = await fetchStats(env, post.instagram_post_id);
+      } catch (err) {
+        // Still stamp last_stats_check_at so a deleted post isn't retried every hour.
+        console.error(`Instagram stats ${post.id}:`, err.message);
+      }
+      if (stats) {
+        fields.likes_count = stats.likes;
+        fields.comments_count = stats.comments;
+        if (stats.reach != null) fields.reach_count = stats.reach;
+      }
+      const threshold = post.reward_threshold ?? rewardThreshold(env);
+      if (post.reward_threshold == null) fields.reward_threshold = threshold;
+      await patchSubmission(env, `id=eq.${post.id}`, fields);
+
+      if (stats && post.reward_status === "not_yet" && stats.likes + stats.comments >= threshold) {
+        await patchSubmission(env, `id=eq.${post.id}&reward_status=eq.not_yet`, { reward_status: "flagged" });
+      }
+    } catch (err) {
+      console.error(`Engagement poll ${post.id}:`, err.message || err);
+    }
+  }
 }
