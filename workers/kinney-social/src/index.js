@@ -7,9 +7,10 @@
 //   GET  /canva-return       Canva Return Navigation: sends student to /submit?s=<session>
 //   GET  /api/canva/session  ?s=<session> -> { ok, editUrl }
 //   POST /api/submissions    { session, caption, mediaType } -> { ok: true, id }
-//                            mediaType "photo" exports PNG, "video" exports MP4, into R2
+//                            mediaType "photo" exports JPG, "video" exports MP4, into R2
 //   GET  /media/...          approved/posted submission media only
 //   /admin, /api/admin/*     staff approval queue (Supabase Auth login) — see admin.js
+//   cron (every minute)      finishes Instagram publishing for videos — see instagram.js
 //
 // Design notes (read before changing):
 // - The `students` table lives in Balance Your World's Supabase project and holds real
@@ -43,6 +44,7 @@ import {
 } from "./canva.js";
 import { json, MEDIA_KEY_RE, redirect, sbHeaders, serveMediaObject, UUID_RE } from "./lib.js";
 import { handleAdmin } from "./admin.js";
+import { processPublishQueue } from "./instagram.js";
 
 const LOCKOUT_WINDOW_MINUTES = 15;
 const LOCKOUT_AFTER_FAILURES = 8;
@@ -321,7 +323,7 @@ async function handleCreateSubmission(request, env) {
   return json({ ok: true, id: inserted.id });
 }
 
-// GET /media/submissions/<uuid>.{png,mp4} — public only once staff has approved the submission,
+// GET /media/submissions/<uuid>.{jpg,mp4} — public only once staff has approved the submission,
 // since Instagram's publish API needs to fetch the image by URL. Pending/rejected images
 // 404 here; the staff queue should read them through its own authenticated path.
 async function handleMedia(request, env, pathname) {
@@ -379,5 +381,9 @@ export default {
       if (pathname.startsWith("/canva-")) return redirect("/?error=canva");
       return json({ error: "Internal server error" }, 500);
     }
+  },
+
+  async scheduled(event, env, ctx) {
+    ctx.waitUntil(processPublishQueue(env));
   },
 };

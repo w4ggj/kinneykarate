@@ -1,4 +1,4 @@
-// Canva Connect helpers: OAuth (authorization code + PKCE), design creation, PNG/MP4 export.
+// Canva Connect helpers: OAuth (authorization code + PKCE), design creation, JPG/MP4 export.
 //
 // Each student authorizes with their own Canva account; the design is created in their
 // account, they edit it on canva.com, and Canva's Return Navigation sends them back to
@@ -134,12 +134,13 @@ export function correlationStateFromJwt(jwt) {
 
 // Export settings per post type. Videos take much longer for Canva to render.
 export const EXPORT_FORMATS = {
-  photo: { format: { type: "png" }, ext: "png", contentType: "image/png", pollAttempts: 20 },
+  // JPEG, not PNG: the Instagram publish API only accepts JPEG images.
+  photo: { format: { type: "jpg", quality: 90 }, ext: "jpg", contentType: "image/jpeg", pollAttempts: 20 },
   // 4:5 portrait design, so the vertical preset.
   video: { format: { type: "mp4", quality: "vertical_1080p" }, ext: "mp4", contentType: "video/mp4", pollAttempts: 80 },
 };
 
-// Exports the design (page 1 for PNG) and returns the download Response, so large videos
+// Exports the design (page 1 for JPG) and returns the download Response, so large videos
 // can be streamed straight into R2 instead of buffered.
 export async function exportDesign(accessToken, designId, kind) {
   const { format, pollAttempts } = EXPORT_FORMATS[kind];

@@ -100,3 +100,4 @@ main.wide { max-width: 1120px; }
 .btn-ok { background: var(--ok); }
 .btn-ok:hover { background: #256641; }
 .sub-links:empty { display: none; }
+.sub-body > .act-publish { margin-top: auto; }

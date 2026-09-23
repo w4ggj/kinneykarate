@@ -1,7 +1,7 @@
 // Helpers shared by the student and staff sides of the worker.
 
 export const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-export const MEDIA_KEY_RE = /^submissions\/[0-9a-f-]{36}\.(png|mp4)$/;
+export const MEDIA_KEY_RE = /^submissions\/[0-9a-f-]{36}\.(jpg|mp4)$/;
 
 export function json(data, status = 200, headers = {}) {
   return new Response(JSON.stringify(data), {
@@ -29,7 +29,7 @@ export async function serveMediaObject(request, env, key, cacheControl) {
   if (!obj) return json({ error: "Not found" }, 404);
 
   const headers = new Headers({
-    "Content-Type": ext === "mp4" ? "video/mp4" : "image/png",
+    "Content-Type": ext === "mp4" ? "video/mp4" : "image/jpeg",
     "Accept-Ranges": "bytes",
     "Cache-Control": cacheControl,
   });

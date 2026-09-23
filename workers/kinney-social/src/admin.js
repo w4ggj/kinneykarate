@@ -4,8 +4,9 @@
 //   POST /api/admin/logout
 //   GET  /api/admin/me                        -> { ok, name }
 //   GET  /api/admin/submissions?status=       pending (default) | approved | rejected | posted
-//   POST /api/admin/submissions/<id>/approve  { caption? }  (caption lets staff fix typos)
+//   POST /api/admin/submissions/<id>/approve  { caption? }  approves, then posts to Instagram
 //   POST /api/admin/submissions/<id>/reject   { reason? }
+//   POST /api/admin/submissions/<id>/publish  (re)try the Instagram post for an approved one
 //   GET  /api/admin/media/submissions/<file>  any status, staff only
 //
 // Auth is the BYW project's real Supabase Auth: staff sign in with the same email/password
@@ -13,6 +14,7 @@
 // (same rule as is_staff()). Tokens live only in HttpOnly SameSite=Strict cookies, and
 // state-changing requests must come from our own origin.
 
+import { publishStates, startPublish } from "./instagram.js";
 import { json, MEDIA_KEY_RE, sbHeaders, serveMediaObject, UUID_RE } from "./lib.js";
 
 const ACCESS_COOKIE = "kss_at";
@@ -148,18 +150,21 @@ async function handleList(request, env) {
     return json({ ok: false, error: "Couldn't load submissions." }, 502);
   }
   const rows = await res.json();
+  const publish = status === "approved" ? await publishStates(env, rows.map((r) => r.id)) : {};
   return json({
     ok: true,
     submissions: rows.map(({ media_url, ...row }) => ({
       ...row,
       media: adminMediaPath(env, media_url),
       mediaType: media_url?.endsWith(".mp4") ? "video" : "photo",
+      publish: publish[row.id] || null,
     })),
   });
 }
 
 // Only pending submissions can be reviewed, so two staff acting at once can't flip a
-// decision (or un-post something) — the second one gets a 409.
+// decision (or un-post something) — the second one gets a 409. Returns the updated row, or
+// an error Response.
 async function review(env, id, staff, fields) {
   const res = await fetch(`${env.SUPABASE_URL}/rest/v1/social_submissions?id=eq.${id}&status=eq.pending`, {
     method: "PATCH",
@@ -170,10 +175,15 @@ async function review(env, id, staff, fields) {
     console.error("Supabase review error:", res.status, await res.text());
     return json({ ok: false, error: "Couldn't save. Please try again." }, 502);
   }
-  if (!(await res.json()).length) {
+  const [row] = await res.json();
+  if (!row) {
     return json({ ok: false, error: "Someone already reviewed this one. Refresh the list." }, 409);
   }
-  return json({ ok: true });
+  return row;
+}
+
+function publishResult(row) {
+  return json({ ok: true, publish: row && { state: row.state, error: row.error } });
 }
 
 async function handleApprove(request, env, id, staff) {
@@ -185,7 +195,24 @@ async function handleApprove(request, env, id, staff) {
     }
     fields.caption = caption?.trim() || null;
   }
-  return review(env, id, staff, fields);
+  const row = await review(env, id, staff, fields);
+  if (row instanceof Response) return row;
+  // Approval sticks even if Instagram fails; staff can retry from the Approved tab.
+  return publishResult(await startPublish(env, row));
+}
+
+async function handlePublish(env, id) {
+  const res = await fetch(
+    `${env.SUPABASE_URL}/rest/v1/social_submissions?id=eq.${id}&status=eq.approved&select=id,caption,media_url`,
+    { headers: sbHeaders(env) }
+  );
+  if (!res.ok) {
+    console.error("Supabase publish lookup error:", res.status, await res.text());
+    return json({ ok: false, error: "Couldn't load that submission." }, 502);
+  }
+  const [row] = await res.json();
+  if (!row) return json({ ok: false, error: "Only approved posts can be sent to Instagram." }, 409);
+  return publishResult(await startPublish(env, row));
 }
 
 async function handleReject(request, env, id, staff) {
@@ -193,7 +220,8 @@ async function handleReject(request, env, id, staff) {
   if (reason != null && (typeof reason !== "string" || reason.length > 1000)) {
     return json({ ok: false, error: "Reason is too long." }, 400);
   }
-  return review(env, id, staff, { status: "rejected", rejection_reason: reason?.trim() || null });
+  const row = await review(env, id, staff, { status: "rejected", rejection_reason: reason?.trim() || null });
+  return row instanceof Response ? row : json({ ok: true });
 }
 
 export async function handleAdmin(request, env, pathname) {
@@ -215,15 +243,16 @@ export async function handleAdmin(request, env, pathname) {
   const { staff, cookies } = auth;
 
   let res;
-  const action = /^\/api\/admin\/submissions\/([0-9a-f-]{36})\/(approve|reject)$/i.exec(pathname);
+  const action = /^\/api\/admin\/submissions\/([0-9a-f-]{36})\/(approve|reject|publish)$/i.exec(pathname);
   if (pathname === "/api/admin/me" && method === "GET") {
     res = json({ ok: true, name: staff.name });
   } else if (pathname === "/api/admin/submissions" && method === "GET") {
     res = await handleList(request, env);
   } else if (action && method === "POST") {
-    res = action[2] === "approve"
-      ? await handleApprove(request, env, action[1], staff)
-      : await handleReject(request, env, action[1], staff);
+    const [, id, verb] = action;
+    if (verb === "approve") res = await handleApprove(request, env, id, staff);
+    else if (verb === "reject") res = await handleReject(request, env, id, staff);
+    else res = await handlePublish(env, id);
   } else if (pathname.startsWith("/api/admin/media/") && method === "GET") {
     const key = pathname.slice("/api/admin/media/".length);
     res = MEDIA_KEY_RE.test(key)
