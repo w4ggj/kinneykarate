@@ -1,0 +1,21 @@
+name = "kinney-social"
+main = "src/index.js"
+compatibility_date = "2026-09-23"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "kinney-social"
+database_id = "0554dc39-d3cd-4ec7-8c2b-addee8512b86"
+
+# Set these as secrets, not plain vars — never commit the service role key:
+#   wrangler secret put SUPABASE_URL
+#   wrangler secret put SUPABASE_SERVICE_ROLE_KEY
+#
+# SUPABASE_URL is the BYW project's URL (project ref uhurmdyqsrzevpzghzen), the same
+# one byw-checkin-worker and byw-stripe-webhook already point at — reuse those values.
+
+# Route this worker at social.kinneykarate.com once DNS/route is set up in the dashboard,
+# same way kinney-camp is routed at camp.kinneykarate.com.
+
+# D1 schema:
+#   npx wrangler d1 execute kinney-social --remote --file migrations/0001_lookup_attempts.sql
