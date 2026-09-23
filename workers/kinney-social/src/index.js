@@ -1,8 +1,13 @@
-// kinney-social — student lookup + submission API
+// kinney-social — student lookup, Canva design flow, and submission API
 //
-// Two public endpoints:
-//   POST /api/lookup       { firstName, lastName, dob }  -> { ok: true, studentId } | { ok: false }
-//   POST /api/submissions  { studentId, caption, canvaDesignId?, canvaEditUrl?, mediaUrl? } -> { ok: true, id }
+// Serves the static student frontend from ./public, plus:
+//   POST /api/lookup         { firstName, lastName, dob } -> { ok: true, studentId } | { ok: false }
+//   POST /api/canva/start    { studentId } -> { ok, authorizeUrl }   (Canva OAuth)
+//   GET  /canva-callback     OAuth redirect: creates a blank design, sends student to the editor
+//   GET  /canva-return       Canva Return Navigation: sends student to /submit?s=<session>
+//   GET  /api/canva/session  ?s=<session> -> { ok, editUrl }
+//   POST /api/submissions    { session, caption } -> { ok: true, id }  (exports PNG to R2)
+//   GET  /media/...          approved/posted submission images only
 //
 // Design notes (read before changing):
 // - The `students` table lives in Balance Your World's Supabase project and holds real
@@ -14,22 +19,36 @@
 //   kinney-camp's admin login lockout: 8 failed lookups in 15 minutes locks that IP out
 //   for the rest of the window. This is deliberately looser than a login lockout (5) since
 //   legitimate kids will typo their own name/DOB more than adults typo a PIN.
-// - /api/submissions re-validates studentId server-side against `students` (active status)
-//   before inserting — never trust a studentId handed back by the browser without checking
-//   it's still a real, active student. This is cheap insurance against someone crafting a
-//   raw POST with a guessed or stale UUID.
+// - /api/canva/start and /api/submissions re-validate the student server-side against
+//   `students` (active status) — never trust a studentId handed back by the browser without
+//   checking it's still a real, active student.
+// - The browser never supplies a Canva design id or media URL. After /api/canva/start the
+//   student is identified only by an opaque 256-bit session id (D1 canva_sessions), and the
+//   design id, edit URL, and exported image all come from our own records.
 // - No student names or DOBs are ever written to social_submissions beyond the student_id
 //   FK. Caption/media are exactly what the student submitted; nothing is auto-approved.
 
+import {
+  buildAuthorizeUrl,
+  correlationStateFromJwt,
+  createDesign,
+  editUrlWithReturn,
+  exchangeCode,
+  exportDesignPng,
+  randomToken,
+  refreshTokens,
+} from "./canva.js";
+
 const LOCKOUT_WINDOW_MINUTES = 15;
 const LOCKOUT_AFTER_FAILURES = 8;
+const SESSION_TTL_HOURS = 24;
 const MAX_CAPTION_LENGTH = 2200; // Instagram's caption limit
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function json(data, status = 200) {
   return new Response(JSON.stringify(data), {
     status,
-    headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+    headers: { "Content-Type": "application/json" },
   });
 }
 
@@ -112,6 +131,132 @@ async function handleLookup(request, env) {
   return json({ ok: true, studentId: match.id });
 }
 
+// Fetches an active student by id, or null. Every endpoint that acts for a student goes
+// through this — never trust a studentId the browser hands back without re-verifying it.
+async function getActiveStudent(env, studentId, select = "id") {
+  if (typeof studentId !== "string" || !UUID_RE.test(studentId)) return null;
+  const res = await fetch(
+    `${env.SUPABASE_URL}/rest/v1/students?id=eq.${studentId}&status=eq.active&select=${select}`,
+    { headers: sbHeaders(env) }
+  );
+  if (!res.ok) {
+    throw new Error(`Supabase student check ${res.status}: ${await res.text()}`);
+  }
+  const rows = await res.json();
+  return rows[0] || null;
+}
+
+function redirect(location) {
+  return new Response(null, { status: 302, headers: { Location: location } });
+}
+
+async function getSession(env, sessionId) {
+  if (typeof sessionId !== "string" || !sessionId) return null;
+  const cutoff = new Date(Date.now() - SESSION_TTL_HOURS * 3600000).toISOString();
+  return env.DB.prepare(`SELECT * FROM canva_sessions WHERE id = ? AND created_at > ?`)
+    .bind(sessionId, cutoff)
+    .first();
+}
+
+// POST /api/canva/start { studentId } -> { ok, authorizeUrl }
+async function handleCanvaStart(request, env) {
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return json({ ok: false, error: "Invalid request" }, 400);
+  }
+  if (!(await getActiveStudent(env, body.studentId))) {
+    return json({ ok: false, error: "We couldn't verify that student. Please start over." }, 404);
+  }
+
+  const cutoff = new Date(Date.now() - SESSION_TTL_HOURS * 3600000).toISOString();
+  await env.DB.prepare(`DELETE FROM canva_sessions WHERE created_at <= ?`).bind(cutoff).run();
+
+  const sessionId = randomToken();
+  const oauthState = randomToken();
+  const codeVerifier = randomToken(48);
+  await env.DB.prepare(
+    `INSERT INTO canva_sessions (id, student_id, oauth_state, code_verifier, created_at) VALUES (?, ?, ?, ?, ?)`
+  )
+    .bind(sessionId, body.studentId, oauthState, codeVerifier, new Date().toISOString())
+    .run();
+
+  return json({ ok: true, authorizeUrl: await buildAuthorizeUrl(env, oauthState, codeVerifier) });
+}
+
+// GET /canva-callback?code&state — OAuth redirect. Exchanges the code, creates a blank
+// design in the student's Canva account, and sends them into the Canva editor.
+async function handleCanvaCallback(request, env) {
+  const url = new URL(request.url);
+  const code = url.searchParams.get("code");
+  const state = url.searchParams.get("state");
+  if (!code || !state) return redirect("/?error=canva_denied");
+
+  const session = await env.DB.prepare(`SELECT * FROM canva_sessions WHERE oauth_state = ?`)
+    .bind(state)
+    .first();
+  if (!session) return redirect("/?error=expired");
+
+  const tokens = await exchangeCode(env, code, session.code_verifier);
+  const { designId, editUrl } = await createDesign(tokens.access_token);
+
+  await env.DB.prepare(
+    `UPDATE canva_sessions SET oauth_state = NULL, code_verifier = NULL, access_token = ?, refresh_token = ?,
+       design_id = ?, edit_url = ? WHERE id = ?`
+  )
+    .bind(tokens.access_token, tokens.refresh_token, designId, editUrl, session.id)
+    .run();
+
+  return redirect(editUrlWithReturn(editUrl, session.id));
+}
+
+// GET /canva-return?correlation_jwt — Canva's Return Navigation lands here after editing.
+async function handleCanvaReturn(request, env) {
+  const url = new URL(request.url);
+  const sessionId = correlationStateFromJwt(url.searchParams.get("correlation_jwt"));
+  const session = await getSession(env, sessionId);
+  if (!session?.design_id) return redirect("/?error=expired");
+  return redirect(`/submit?s=${encodeURIComponent(session.id)}`);
+}
+
+// GET /api/canva/session?s= -> { ok, editUrl } for the submit page's "keep editing" link.
+async function handleSessionInfo(request, env) {
+  const session = await getSession(env, new URL(request.url).searchParams.get("s"));
+  if (!session?.design_id) {
+    return json({ ok: false, error: "This link has expired. Please start over." }, 404);
+  }
+  return json({ ok: true, editUrl: editUrlWithReturn(session.edit_url, session.id) });
+}
+
+async function exportWithRefresh(env, session) {
+  try {
+    return await exportDesignPng(session.access_token, session.design_id);
+  } catch (err) {
+    if (err.status !== 401 || !session.refresh_token) throw err;
+    const tokens = await refreshTokens(env, session.refresh_token);
+    await env.DB.prepare(`UPDATE canva_sessions SET access_token = ?, refresh_token = ? WHERE id = ?`)
+      .bind(tokens.access_token, tokens.refresh_token, session.id)
+      .run();
+    return exportDesignPng(tokens.access_token, session.design_id);
+  }
+}
+
+function escapeRegExp(s) {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+// Catches the obvious ways a student's name ends up in a public caption. First names alone
+// aren't checked — too many are ordinary words ("Will", "Grace") — staff approval covers
+// the rest.
+function captionHasName(caption, student) {
+  const last = normalize(student.last_name);
+  const full = `${normalize(student.first_name)} ${last}`;
+  const text = normalize(caption);
+  return [last, full].some((n) => n && new RegExp(`\\b${escapeRegExp(n)}\\b`).test(text));
+}
+
+// POST /api/submissions { session, caption } -> { ok, id }
 async function handleCreateSubmission(request, env) {
   let body;
   try {
@@ -120,65 +265,86 @@ async function handleCreateSubmission(request, env) {
     return json({ ok: false, error: "Invalid request" }, 400);
   }
 
-  const { studentId, caption, canvaDesignId, canvaEditUrl, mediaUrl } = body;
-  // studentId is interpolated into a PostgREST filter below — reject anything that isn't a
-  // bare UUID so it can't smuggle in extra query params/filters.
-  if (typeof studentId !== "string" || !UUID_RE.test(studentId)) {
-    return json({ ok: false, error: "studentId is required" }, 400);
-  }
+  const { caption } = body;
   if (caption != null && (typeof caption !== "string" || caption.length > MAX_CAPTION_LENGTH)) {
     return json({ ok: false, error: `Caption must be ${MAX_CAPTION_LENGTH} characters or less.` }, 400);
   }
 
-  // Re-check the student is real and active before writing anything — never trust a
-  // studentId the browser hands back without re-verifying it server-side.
-  const checkRes = await fetch(
-    `${env.SUPABASE_URL}/rest/v1/students?id=eq.${studentId}&status=eq.active&select=id`,
-    { headers: sbHeaders(env) }
-  );
-  if (!checkRes.ok) {
-    console.error("Supabase student check error:", checkRes.status, await checkRes.text());
-    return json({ ok: false, error: "Something went wrong. Please try again." }, 502);
+  const session = await getSession(env, body.session);
+  if (!session?.design_id) {
+    return json({ ok: false, error: "This link has expired. Please start over." }, 404);
   }
-  const checkRows = await checkRes.json();
-  if (!checkRows.length) {
+
+  // Re-check the student is still real and active before writing anything.
+  const student = await getActiveStudent(env, session.student_id, "id,first_name,last_name");
+  if (!student) {
     return json({ ok: false, error: "We couldn't verify that student. Please start over." }, 404);
   }
+  if (caption && captionHasName(caption, student)) {
+    return json({ ok: false, error: "Please leave your name out of the caption." }, 400);
+  }
+
+  let png;
+  try {
+    png = await exportWithRefresh(env, session);
+  } catch (err) {
+    console.error("Canva export error:", err.message);
+    return json({ ok: false, error: "We couldn't get your design from Canva. Please try again." }, 502);
+  }
+
+  const mediaKey = `submissions/${crypto.randomUUID()}.png`;
+  await env.MEDIA.put(mediaKey, png, { httpMetadata: { contentType: "image/png" } });
 
   const insertRes = await fetch(`${env.SUPABASE_URL}/rest/v1/social_submissions`, {
     method: "POST",
     headers: { ...sbHeaders(env), Prefer: "return=representation" },
     body: JSON.stringify({
-      student_id: studentId,
+      student_id: student.id,
       caption: caption || null,
-      canva_design_id: canvaDesignId || null,
-      canva_edit_url: canvaEditUrl || null,
-      media_url: mediaUrl || null,
+      canva_design_id: session.design_id,
+      canva_edit_url: session.edit_url,
+      media_url: `${env.PUBLIC_SITE_URL}/media/${mediaKey}`,
       status: "pending",
     }),
   });
 
   if (!insertRes.ok) {
     console.error("Supabase insert error:", insertRes.status, await insertRes.text());
+    await env.MEDIA.delete(mediaKey);
     return json({ ok: false, error: "Couldn't save your submission. Please try again." }, 502);
   }
   const [inserted] = await insertRes.json();
+
+  // One submission per Canva session; drop the tokens now that we're done with them.
+  await env.DB.prepare(`DELETE FROM canva_sessions WHERE id = ?`).bind(session.id).run();
+
   return json({ ok: true, id: inserted.id });
+}
+
+// GET /media/submissions/<uuid>.png — public only once staff has approved the submission,
+// since Instagram's publish API needs to fetch the image by URL. Pending/rejected images
+// 404 here; the staff queue should read them through its own authenticated path.
+async function handleMedia(request, env, pathname) {
+  const key = pathname.slice("/media/".length);
+  if (!/^submissions\/[0-9a-f-]{36}\.png$/.test(key)) return json({ error: "Not found" }, 404);
+
+  const mediaUrl = encodeURIComponent(`${env.PUBLIC_SITE_URL}/media/${key}`);
+  const res = await fetch(
+    `${env.SUPABASE_URL}/rest/v1/social_submissions?media_url=eq.${mediaUrl}&status=in.(approved,posted)&select=id`,
+    { headers: sbHeaders(env) }
+  );
+  if (!res.ok || !(await res.json()).length) return json({ error: "Not found" }, 404);
+
+  const obj = await env.MEDIA.get(key);
+  if (!obj) return json({ error: "Not found" }, 404);
+  return new Response(obj.body, {
+    headers: { "Content-Type": "image/png", "Cache-Control": "public, max-age=3600" },
+  });
 }
 
 export default {
   async fetch(request, env, ctx) {
     const { pathname } = new URL(request.url);
-
-    if (request.method === "OPTIONS") {
-      return new Response(null, {
-        headers: {
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Methods": "POST, OPTIONS",
-          "Access-Control-Allow-Headers": "Content-Type",
-        },
-      });
-    }
 
     try {
       if (pathname === "/api/health") {
@@ -187,8 +353,23 @@ export default {
       if (pathname === "/api/lookup" && request.method === "POST") {
         return await handleLookup(request, env);
       }
+      if (pathname === "/api/canva/start" && request.method === "POST") {
+        return await handleCanvaStart(request, env);
+      }
+      if (pathname === "/api/canva/session" && request.method === "GET") {
+        return await handleSessionInfo(request, env);
+      }
       if (pathname === "/api/submissions" && request.method === "POST") {
         return await handleCreateSubmission(request, env);
+      }
+      if (pathname === "/canva-callback") {
+        return await handleCanvaCallback(request, env);
+      }
+      if (pathname === "/canva-return") {
+        return await handleCanvaReturn(request, env);
+      }
+      if (pathname.startsWith("/media/") && request.method === "GET") {
+        return await handleMedia(request, env, pathname);
       }
       if (env.ASSETS) {
         return env.ASSETS.fetch(request);
@@ -196,6 +377,7 @@ export default {
       return json({ error: "Not found" }, 404);
     } catch (err) {
       console.error("Worker error:", err.stack || err.message || err);
+      if (pathname.startsWith("/canva-")) return redirect("/?error=canva");
       return json({ error: "Internal server error" }, 500);
     }
   },

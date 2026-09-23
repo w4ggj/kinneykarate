@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Make a Post · Kinney Karate</title>
+  <link rel="stylesheet" href="/style.css">
+  <link rel="icon" type="image/png" href="/kklogo.png">
+</head>
+<body>
+<header class="hdr"><a href="https://kinneykarate.com"><img src="/kklogo.png" alt="" width="36" height="36"> Kinney Karate</a></header>
+<div class="belt"><span class="w"></span><span class="y"></span><span class="g"></span><span class="b"></span><span class="k"></span></div>
+<section class="hero"><div>
+  <p class="eyebrow">Students</p>
+  <h1>Make a post for our Instagram</h1>
+  <p>Design a post in Canva. If staff approve it, it goes up on the Kinney Karate Instagram.</p>
+</div></section>
+
+<main>
+  <div id="error" class="alert alert-error hidden" role="alert"></div>
+
+  <div class="card">
+    <h2>How it works</h2>
+    <ol class="steps">
+      <li>Tell us who you are.</li>
+      <li>Sign in to Canva and design your post.</li>
+      <li>Click <b>Return</b> in Canva, write a caption, and send it in.</li>
+      <li>Staff check it before anything gets posted.</li>
+    </ol>
+    <p class="hint">You'll need a Canva account.</p>
+  </div>
+
+  <form class="card" id="lookupForm" novalidate>
+    <h2>Who are you?</h2>
+    <div class="row">
+      <div><label for="firstName">First name</label><input id="firstName" autocomplete="given-name" required></div>
+      <div><label for="lastName">Last name</label><input id="lastName" autocomplete="family-name" required></div>
+    </div>
+    <label for="dob">Birthday</label>
+    <input id="dob" type="date" required>
+    <p class="hint">Only used to find you in our student list. It never goes on Instagram.</p>
+    <button class="btn" id="goBtn" type="submit">Start designing</button>
+  </form>
+</main>
+
+<script>
+  const ERRORS = {
+    canva_denied: "Canva sign-in was cancelled. Try again when you're ready.",
+    expired: "That link expired. Please start over.",
+    canva: "Something went wrong with Canva. Please try again.",
+  };
+  const errorEl = document.getElementById("error");
+  function showError(msg) {
+    errorEl.textContent = msg;
+    errorEl.classList.remove("hidden");
+    errorEl.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+  const initialError = new URLSearchParams(location.search).get("error");
+  if (initialError) showError(ERRORS[initialError] || ERRORS.canva);
+
+  async function post(path, body) {
+    const res = await fetch(path, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    return res.json().catch(() => ({ ok: false, error: "Something went wrong. Please try again." }));
+  }
+
+  const form = document.getElementById("lookupForm");
+  const btn = document.getElementById("goBtn");
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    errorEl.classList.add("hidden");
+    btn.disabled = true;
+    btn.textContent = "Checking…";
+    try {
+      const lookup = await post("/api/lookup", {
+        firstName: form.firstName.value,
+        lastName: form.lastName.value,
+        dob: form.dob.value,
+      });
+      if (!lookup.ok) throw new Error(lookup.error);
+      btn.textContent = "Opening Canva…";
+      const start = await post("/api/canva/start", { studentId: lookup.studentId });
+      if (!start.ok) throw new Error(start.error);
+      location.href = start.authorizeUrl;
+    } catch (err) {
+      showError(err.message || "Something went wrong. Please try again.");
+      btn.disabled = false;
+      btn.textContent = "Start designing";
+    }
+  });
+</script>
+</body>
+</html>
