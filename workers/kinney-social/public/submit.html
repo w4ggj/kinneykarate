@@ -34,6 +34,8 @@
     <label for="caption">Caption</label>
     <textarea id="caption" maxlength="2200" placeholder="What's your post about?"></textarea>
     <p class="hint count"><span id="count">0</span> / 2200</p>
+    <button class="btn btn-outline" id="suggestBtn" type="button" style="margin-bottom:0.25rem">✨ Suggest a caption with AI</button>
+    <p id="suggestStatus" class="hint hidden"></p>
     <p class="hint">Don't put your name, school, or anything personal in the caption.</p>
     <button class="btn" id="sendBtn" type="submit">Send for approval</button>
     <a class="btn btn-outline" id="editLink" href="#">Keep editing in Canva</a>
@@ -61,6 +63,34 @@
 
   caption.addEventListener("input", () => {
     document.getElementById("count").textContent = caption.value.length;
+  });
+
+  document.getElementById("suggestBtn").addEventListener("click", async () => {
+    const btn = document.getElementById("suggestBtn");
+    const status = document.getElementById("suggestStatus");
+    btn.disabled = true;
+    btn.textContent = "✨ Thinking…";
+    status.textContent = "";
+    status.classList.add("hidden");
+    try {
+      const res = await fetch("/api/suggest-caption", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ session }),
+      });
+      const out = await res.json().catch(() => ({ ok: false }));
+      if (!out.ok) throw new Error(out.error || "Couldn't generate a caption. Try again or write your own.");
+      caption.value = out.caption;
+      document.getElementById("count").textContent = caption.value.length;
+      status.textContent = "Caption added! Feel free to edit it.";
+      status.classList.remove("hidden");
+    } catch (err) {
+      status.textContent = err.message;
+      status.classList.remove("hidden");
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "✨ Suggest a caption with AI";
+    }
   });
 
   (async () => {

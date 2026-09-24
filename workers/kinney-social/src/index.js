@@ -326,6 +326,59 @@ async function handleCreateSubmission(request, env) {
   return json({ ok: true, id: inserted.id });
 }
 
+// POST /api/suggest-caption { session } -> { ok, caption }
+// Fetches the exported design image from R2 and asks Gemini to write a caption.
+// Only works for photo sessions (videos aren't worth sending to a vision model).
+async function handleSuggestCaption(request, env) {
+  if (!env.GEMINI_API_KEY) return json({ ok: false, error: "Caption suggestions not available." }, 503);
+
+  let body;
+  try { body = await request.json(); } catch { return json({ ok: false, error: "Invalid request." }, 400); }
+
+  const session = await getSession(env, body.session);
+  if (!session?.design_id) return json({ ok: false, error: "Session expired. Please start over." }, 404);
+
+  // Export the design as a photo so Gemini can look at it.
+  let imageBytes;
+  try {
+    const file = await exportWithRefresh(env, session, "photo");
+    imageBytes = await file.arrayBuffer();
+  } catch (err) {
+    console.error("Gemini caption export error:", err.message);
+    return json({ ok: false, error: "Couldn't get your design. Please try again." }, 502);
+  }
+
+  const b64 = btoa(String.fromCharCode(...new Uint8Array(imageBytes)));
+  const geminiRes = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${env.GEMINI_API_KEY}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{
+          parts: [
+            { inline_data: { mime_type: "image/jpeg", data: b64 } },
+            { text: "You are writing an Instagram caption for a karate school. Look at this student-designed post and write a short, fun, energetic caption (2–3 sentences max). Use 2–3 relevant emojis. Do NOT include any names, hashtags, or personal info. Keep it upbeat and inspiring. Return only the caption text, nothing else." },
+          ],
+        }],
+        generationConfig: { maxOutputTokens: 200, temperature: 0.9 },
+      }),
+    }
+  );
+
+  if (!geminiRes.ok) {
+    const errText = await geminiRes.text();
+    console.error("Gemini error:", geminiRes.status, errText);
+    return json({ ok: false, error: "Couldn't generate a caption right now. Try again or write your own." }, 502);
+  }
+
+  const geminiData = await geminiRes.json();
+  const caption = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+  if (!caption) return json({ ok: false, error: "No caption returned. Try again or write your own." }, 502);
+
+  return json({ ok: true, caption });
+}
+
 // GET /media/submissions/<uuid>.{jpg,mp4} — public only once staff has approved the submission,
 // since Instagram's publish API needs to fetch the image by URL. Pending/rejected images
 // 404 here; the staff queue should read them through its own authenticated path.
@@ -362,6 +415,9 @@ export default {
       }
       if (pathname === "/api/submissions" && request.method === "POST") {
         return await handleCreateSubmission(request, env);
+      }
+      if (pathname === "/api/suggest-caption" && request.method === "POST") {
+        return await handleSuggestCaption(request, env);
       }
       if (pathname === "/canva-callback") {
         return await handleCanvaCallback(request, env);
