@@ -361,7 +361,7 @@ async function handleSuggestCaption(request, env) {
             {
               parts: [
                 { inline_data: { mime_type: "image/jpeg", data: b64 } },
-                { text: "Look at this image carefully. Write an Instagram caption for a karate school post based specifically on what is shown in the image. Write 2-3 energetic sentences with 2-3 emojis and 3-5 hashtags at the end. Do not include anyone's name. Output only the caption text, no quotes, no intro." },
+                { text: "Look at this image carefully and describe exactly what you see — the people, activity, setting, and any objects or text visible. Then write an Instagram caption for Kinney Karate's account that is specifically about what is literally shown in the image. Do NOT write generic karate content if the image shows something else. Write 2-3 energetic sentences with 2-3 emojis and 3-5 relevant hashtags at the end. Do not include anyone's name. Output only the caption text, no quotes, no intro, no description preamble." },
               ],
             },
           ],
