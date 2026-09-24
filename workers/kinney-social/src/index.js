@@ -337,6 +337,7 @@ async function handleSuggestCaption(request, env) {
   if (!session?.design_id) return json({ ok: false, error: "Session expired. Please start over." }, 404);
   const hint = typeof body.hint === "string" && body.hint.length > 0 && body.hint.length <= 500
     ? body.hint : null;
+  console.log("suggest-caption hint:", JSON.stringify(hint));
 
   let imageBytes;
   try {
@@ -363,7 +364,7 @@ async function handleSuggestCaption(request, env) {
             {
               parts: [
                 { inline_data: { mime_type: "image/jpeg", data: b64 } },
-                { text: `Look at this image carefully and describe exactly what you see — the people, activity, setting, and any objects or text visible.${hint ? ` The student has also provided this context about the image: "${hint}". Use this to better understand what is happening.` : ""} Then write an Instagram caption for Kinney Karate's account that is specifically about what is literally shown in the image. Do NOT write generic karate content if the image shows something different. Write 2-3 energetic sentences with 2-3 emojis and 3-5 relevant hashtags at the end. Do not include anyone's name. Output only the caption text, no quotes, no intro, no description preamble.` },
+                { text: `${hint ? `IMPORTANT CONTEXT: The student says this image is about: "${hint}". Use this to understand what is shown.\n\n` : ""}Write an Instagram caption for Kinney Karate's account about this image. Look at the image carefully — describe the actual people, activity, and setting you see. Your caption must reflect what is literally happening in the photo. Do NOT write generic karate content if the image shows something else (like gaming, a tournament, a celebration, etc). Write 2-3 energetic sentences with 2-3 emojis and 3-5 relevant hashtags at the end. Do not include anyone's name. Output only the caption text, no quotes, no intro.` },
               ],
             },
           ],
