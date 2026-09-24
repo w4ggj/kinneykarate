@@ -363,7 +363,7 @@ async function handleSuggestCaption(request, env) {
     return json({ ok: true, caption });
   } catch (err) {
     console.error("Workers AI error:", err.message);
-    return json({ ok: false, error: "Couldn't generate a caption right now. Try again or write your own." }, 502);
+    return json({ ok: false, error: `AI error: ${err.message}` }, 502);
   }
 }
 
