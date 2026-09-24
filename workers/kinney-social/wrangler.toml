@@ -26,6 +26,9 @@ bucket_name = "kinney-social-media"
 [triggers]
 crons = ["* * * * *", "17 * * * *"]
 
+[ai]
+binding = "AI"
+
 [vars]
 # No trailing slash. Must match the Canva app's registered redirect/return URLs.
 PUBLIC_SITE_URL = "https://social.kinneykarate.com"
