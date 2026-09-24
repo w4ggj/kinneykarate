@@ -364,7 +364,7 @@ async function handleSuggestCaption(request, env) {
             {
               parts: [
                 { inline_data: { mime_type: "image/jpeg", data: b64 } },
-                { text: `${hint ? `IMPORTANT CONTEXT: The student says this image is about: "${hint}". Use this to understand what is shown.\n\n` : ""}Write an Instagram caption for Kinney Karate's account about this image. Look at the image carefully — describe the actual people, activity, and setting you see. Your caption must reflect what is literally happening in the photo. Do NOT write generic karate content if the image shows something else (like gaming, a tournament, a celebration, etc). Write 2-3 energetic sentences with 2-3 emojis and 3-5 relevant hashtags at the end. Do not include anyone's name. Output only the caption text, no quotes, no intro.` },
+                { text: `${hint ? `CONTEXT: The student describes this image as: "${hint}". Use this exact description — including any specific names, brands, or events mentioned — to write the caption.\n\n` : ""}Write an Instagram caption for Kinney Karate's account about what is shown in this image. Your caption must reflect the actual activity or event shown — use the specific names and details from the context above, not generic substitutes. Write 2-3 energetic sentences with 2-3 emojis and 3-5 relevant hashtags at the end. Do not include anyone's personal name. Output only the caption text, no quotes, no intro.` },
               ],
             },
           ],
