@@ -29,6 +29,7 @@ crons = ["* * * * *", "17 * * * *"]
 [vars]
 # No trailing slash. Must match the Canva app's registered redirect/return URLs.
 PUBLIC_SITE_URL = "https://social.kinneykarate.com"
+SUPABASE_URL = "https://uhurmdyqsrzevpzghzen.supabase.co"
 # Kinney Karate's Instagram professional account id (not the @handle). Fill in from the
 # same Meta app setup balance-social uses; publishing stays off until this and
 # IG_ACCESS_TOKEN are set.
