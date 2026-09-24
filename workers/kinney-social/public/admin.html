@@ -237,6 +237,22 @@
       el.remove();
       if (!$("list").children.length) $("empty").classList.remove("hidden");
     }
+    const saveBtn = document.createElement("button");
+    saveBtn.className = "btn btn-outline act-save";
+    saveBtn.type = "button";
+    saveBtn.textContent = "Save caption";
+    caption.after(saveBtn);
+    saveBtn.onclick = async () => {
+      saveBtn.disabled = true;
+      saveBtn.textContent = "Saving…";
+      showError(""); showNotice("");
+      const out = await api(`/api/admin/submissions/${s.id}/save`, { caption: caption.value });
+      saveBtn.disabled = false;
+      saveBtn.textContent = "Save caption";
+      if (!out.ok) return showError(out.error || "Couldn't save.");
+      showNotice("Caption saved.");
+    };
+
     el.querySelector(".act-approve").onclick = () => act("approve", { caption: caption.value });
     el.querySelector(".act-reject").onclick = () => { actions.classList.add("hidden"); rejectBox.classList.remove("hidden"); };
     el.querySelector(".act-cancel").onclick = () => { rejectBox.classList.add("hidden"); actions.classList.remove("hidden"); };

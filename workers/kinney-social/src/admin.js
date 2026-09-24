@@ -247,6 +247,29 @@ async function handleReward(request, env, id, staff) {
   return json({ ok: true });
 }
 
+async function handleSaveCaption(request, env, id) {
+  const { caption } = await readJson(request);
+  if (caption !== undefined && caption !== null && (typeof caption !== "string" || caption.length > 2200)) {
+    return json({ ok: false, error: "Caption must be 2200 characters or less." }, 400);
+  }
+  const res = await fetch(
+    `${env.SUPABASE_URL}/rest/v1/social_submissions?id=eq.${id}&status=eq.pending`,
+    {
+      method: "PATCH",
+      headers: { ...sbHeaders(env), Prefer: "return=representation" },
+      body: JSON.stringify({ caption: (typeof caption === "string" ? caption.trim() : null) || null }),
+    }
+  );
+  if (!res.ok) {
+    console.error("Supabase save error:", res.status, await res.text());
+    return json({ ok: false, error: "Couldn't save. Please try again." }, 502);
+  }
+  if (!(await res.json()).length) {
+    return json({ ok: false, error: "Only pending posts can be edited. Refresh the list." }, 409);
+  }
+  return json({ ok: true });
+}
+
 async function handleReject(request, env, id, staff) {
   const { reason } = await readJson(request);
   if (reason != null && (typeof reason !== "string" || reason.length > 1000)) {
@@ -309,7 +332,7 @@ export async function handleAdmin(request, env, pathname) {
   const { staff, cookies } = auth;
 
   let res;
-  const action = /^\/api\/admin\/submissions\/([0-9a-f-]{36})\/(approve|reject|publish|reward)$/i.exec(pathname);
+  const action = /^\/api\/admin\/submissions\/([0-9a-f-]{36})\/(approve|reject|publish|reward|save)$/i.exec(pathname);
   if (pathname === "/api/admin/me" && method === "GET") {
     res = json({ ok: true, name: staff.name });
   } else if (pathname === "/api/admin/students" && method === "GET") {
@@ -321,6 +344,7 @@ export async function handleAdmin(request, env, pathname) {
     if (verb === "approve") res = await handleApprove(request, env, id, staff);
     else if (verb === "reject") res = await handleReject(request, env, id, staff);
     else if (verb === "reward") res = await handleReward(request, env, id, staff);
+    else if (verb === "save") res = await handleSaveCaption(request, env, id);
     else res = await handlePublish(env, id);
   } else if (pathname.startsWith("/api/admin/media/") && method === "GET") {
     const key = pathname.slice("/api/admin/media/".length);
