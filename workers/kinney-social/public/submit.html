@@ -76,7 +76,7 @@
       const res = await fetch("/api/suggest-caption", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ session }),
+        body: JSON.stringify({ session, hint: caption.value.trim() }),
       });
       const out = await res.json().catch(() => ({ ok: false }));
       if (!out.ok) throw new Error(out.error || "Couldn't generate a caption. Try again or write your own.");

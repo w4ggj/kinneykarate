@@ -335,6 +335,8 @@ async function handleSuggestCaption(request, env) {
 
   const session = await getSession(env, body.session);
   if (!session?.design_id) return json({ ok: false, error: "Session expired. Please start over." }, 404);
+  const hint = typeof body.hint === "string" && body.hint.length > 0 && body.hint.length <= 500
+    ? body.hint : null;
 
   let imageBytes;
   try {
@@ -361,7 +363,7 @@ async function handleSuggestCaption(request, env) {
             {
               parts: [
                 { inline_data: { mime_type: "image/jpeg", data: b64 } },
-                { text: "Look at this image carefully and describe exactly what you see — the people, activity, setting, and any objects or text visible. Then write an Instagram caption for Kinney Karate's account that is specifically about what is literally shown in the image. Do NOT write generic karate content if the image shows something else. Write 2-3 energetic sentences with 2-3 emojis and 3-5 relevant hashtags at the end. Do not include anyone's name. Output only the caption text, no quotes, no intro, no description preamble." },
+                { text: `Look at this image carefully and describe exactly what you see — the people, activity, setting, and any objects or text visible.${hint ? ` The student has also provided this context about the image: "${hint}". Use this to better understand what is happening.` : ""} Then write an Instagram caption for Kinney Karate's account that is specifically about what is literally shown in the image. Do NOT write generic karate content if the image shows something different. Write 2-3 energetic sentences with 2-3 emojis and 3-5 relevant hashtags at the end. Do not include anyone's name. Output only the caption text, no quotes, no intro, no description preamble.` },
               ],
             },
           ],
