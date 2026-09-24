@@ -1,0 +1,61 @@
+# kinney-social — student social poster at social.kinneykarate.com.
+# One Worker serves both the static frontend (./public) and the API, same shape as
+# kinney-camp, so there's no CORS to configure.
+
+name = "kinney-social"
+main = "src/index.js"
+compatibility_date = "2026-09-23"
+
+[assets]
+directory = "./public"
+binding = "ASSETS"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "kinney-social"
+database_id = "0554dc39-d3cd-4ec7-8c2b-addee8512b86"
+
+# Exported Canva designs. Create first:  npx wrangler r2 bucket create kinney-social-media
+[[r2_buckets]]
+binding = "MEDIA"
+bucket_name = "kinney-social-media"
+
+# Every minute: finish Instagram publishing (video processing), retry status updates.
+# Hourly (:17): refresh engagement stats and flag rewards. Keep in sync with
+# ENGAGEMENT_CRON in src/index.js.
+[triggers]
+crons = ["* * * * *", "17 * * * *"]
+
+[ai]
+binding = "AI"
+
+[vars]
+# No trailing slash. Must match the Canva app's registered redirect/return URLs.
+PUBLIC_SITE_URL = "https://social.kinneykarate.com"
+SUPABASE_URL = "https://uhurmdyqsrzevpzghzen.supabase.co"
+# Kinney Karate's Instagram professional account id (not the @handle). Fill in from the
+# same Meta app setup balance-social uses; publishing stays off until this and
+# IG_ACCESS_TOKEN are set.
+IG_USER_ID = ""
+# graph.facebook.com for a Facebook Login (Page) token, graph.instagram.com for an
+# Instagram Login token.
+GRAPH_HOST = "graph.facebook.com"
+GRAPH_VERSION = "v23.0"
+# Likes + comments a post needs to flag the student's reward. Saved on each post when it's
+# published, so changing this only affects new posts.
+REWARD_THRESHOLD = "25"
+
+# Secrets — set with `wrangler secret put NAME`, never in this file:
+#   SUPABASE_URL                BYW project (ref uhurmdyqsrzevpzghzen), same value
+#   SUPABASE_SERVICE_ROLE_KEY   byw-checkin-worker uses — reuse, don't create new ones
+#   CANVA_CLIENT_ID             "student creation" Canva app (AAHOGI6-fG0) — get from Joe
+#   CANVA_CLIENT_SECRET
+#   IG_ACCESS_TOKEN             long-lived token with instagram_content_publish for KK's account
+#
+# D1 schema:
+#   npx wrangler d1 execute kinney-social --remote --file migrations/0001_lookup_attempts.sql
+#   npx wrangler d1 execute kinney-social --remote --file migrations/0002_canva_sessions.sql
+#   npx wrangler d1 execute kinney-social --remote --file migrations/0003_ig_publish.sql
+#
+# Route this worker at social.kinneykarate.com in the dashboard, same way kinney-camp is
+# routed at camp.kinneykarate.com.
