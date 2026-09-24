@@ -347,9 +347,9 @@ async function handleSuggestCaption(request, env) {
   }
 
   try {
-    const result = await env.AI.run("@cf/llava-hf/llava-1.5-7b-hf", {
+    const result = await env.AI.run("@cf/meta/llama-3.2-11b-vision-instruct", {
       image: [...new Uint8Array(imageBytes)],
-      prompt: "You are writing an Instagram caption for a karate school. Look at this student-designed post and write a short, fun, energetic caption (2-3 sentences max). Use 2-3 relevant emojis. Do NOT include any names, hashtags, or personal info. Keep it upbeat and inspiring. Return only the caption text, nothing else.",
+      prompt: "Look at this image and describe what you see in it. Then write a short Instagram caption (2-3 sentences) for a karate school based specifically on what is in the image. Use 2-3 emojis. Do NOT use hashtags. Do NOT include names. Return only the caption text with no quotes around it.",
       max_tokens: 200,
     });
     const caption = (result?.description || result?.response || "").trim();
