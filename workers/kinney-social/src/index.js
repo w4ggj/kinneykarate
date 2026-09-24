@@ -372,7 +372,7 @@ async function handleSuggestCaption(request, env) {
   if (!geminiRes.ok) {
     const errText = await geminiRes.text();
     console.error("Gemini error:", geminiRes.status, errText);
-    return json({ ok: false, error: "Couldn't generate a caption right now. Try again or write your own." }, 502);
+    return json({ ok: false, error: `Gemini ${geminiRes.status}: ${errText.slice(0, 300)}` }, 502);
   }
 
   const geminiData = await geminiRes.json();
