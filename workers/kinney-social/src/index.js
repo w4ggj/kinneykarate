@@ -348,7 +348,10 @@ async function handleSuggestCaption(request, env) {
     return json({ ok: false, error: "Couldn't get your design. Please try again." }, 502);
   }
 
-  const b64 = btoa(String.fromCharCode(...new Uint8Array(imageBytes)));
+  const bytes = new Uint8Array(imageBytes);
+  let binary = "";
+  for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]);
+  const b64 = btoa(binary);
   const geminiRes = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${env.GEMINI_API_KEY}`,
     {
