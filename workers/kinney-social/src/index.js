@@ -349,7 +349,10 @@ async function handleSuggestCaption(request, env) {
   try {
     // Accept the Meta community license before the vision call.
     await env.AI.run("@cf/meta/llama-3.2-11b-vision-instruct", { prompt: "agree" }).catch(() => {});
-    const b64 = btoa(String.fromCharCode(...new Uint8Array(imageBytes.slice(0, 500000))));
+    const bytes = new Uint8Array(imageBytes);
+    let binary = "";
+    for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]);
+    const b64 = btoa(binary);
     const result = await env.AI.run("@cf/meta/llama-3.2-11b-vision-instruct", {
       messages: [
         {
