@@ -356,7 +356,7 @@ async function handleSuggestCaption(request, env) {
     `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent`,
     {
       method: "POST",
-      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${env.GEMINI_API_KEY}` },
+      headers: { "Content-Type": "application/json", "x-goog-api-key": env.GEMINI_API_KEY },
       body: JSON.stringify({
         contents: [{
           parts: [
