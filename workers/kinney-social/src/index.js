@@ -357,8 +357,13 @@ async function handleSuggestCaption(request, env) {
       body: JSON.stringify({
         model: "gemini-3.8-flash",
         input: [
-          { inline_data: { mime_type: "image/jpeg", data: b64 } },
-          "Look at this image carefully. Write an Instagram caption for a karate school post based specifically on what is shown in the image. Write 2-3 energetic sentences with 2-3 emojis and 3-5 hashtags at the end. Do not include anyone's name. Output only the caption text, no quotes, no intro.",
+          {
+            role: "user",
+            parts: [
+              { inline_data: { mime_type: "image/jpeg", data: b64 } },
+              { text: "Look at this image carefully. Write an Instagram caption for a karate school post based specifically on what is shown in the image. Write 2-3 energetic sentences with 2-3 emojis and 3-5 hashtags at the end. Do not include anyone's name. Output only the caption text, no quotes, no intro." },
+            ],
+          },
         ],
       }),
     });
