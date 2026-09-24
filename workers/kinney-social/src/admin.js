@@ -256,6 +256,40 @@ async function handleReject(request, env, id, staff) {
   return row instanceof Response ? row : json({ ok: true });
 }
 
+async function handleStudents(env) {
+  const res = await fetch(
+    `${env.SUPABASE_URL}/rest/v1/social_submissions?select=id,status,submitted_at,posted_at,likes_count,comments_count,reach_count,student:students(id,first_name,last_name)&order=submitted_at.desc`,
+    { headers: sbHeaders(env) }
+  );
+  if (!res.ok) {
+    console.error("Supabase students error:", res.status, await res.text());
+    return json({ ok: false, error: "Couldn't load student data." }, 502);
+  }
+  const rows = await res.json();
+  const map = new Map();
+  for (const r of rows) {
+    const st = r.student;
+    if (!st) continue;
+    if (!map.has(st.id)) {
+      map.set(st.id, {
+        id: st.id,
+        name: `${st.first_name} ${st.last_name}`,
+        total: 0, pending: 0, approved: 0, rejected: 0, posted: 0,
+        likes: 0, comments: 0, reach: 0,
+      });
+    }
+    const s = map.get(st.id);
+    s.total++;
+    if (r.status in s) s[r.status]++;
+    if (r.status === "posted") {
+      s.likes += r.likes_count || 0;
+      s.comments += r.comments_count || 0;
+      s.reach += r.reach_count || 0;
+    }
+  }
+  return json({ ok: true, students: [...map.values()].sort((a, b) => b.total - a.total) });
+}
+
 export async function handleAdmin(request, env, pathname) {
   const method = request.method;
 
@@ -278,6 +312,8 @@ export async function handleAdmin(request, env, pathname) {
   const action = /^\/api\/admin\/submissions\/([0-9a-f-]{36})\/(approve|reject|publish|reward)$/i.exec(pathname);
   if (pathname === "/api/admin/me" && method === "GET") {
     res = json({ ok: true, name: staff.name });
+  } else if (pathname === "/api/admin/students" && method === "GET") {
+    res = await handleStudents(env);
   } else if (pathname === "/api/admin/submissions" && method === "GET") {
     res = await handleList(request, env);
   } else if (action && method === "POST") {

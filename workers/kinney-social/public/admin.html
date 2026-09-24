@@ -36,9 +36,16 @@
       <button data-status="posted">Posted</button>
       <button data-status="rejected">Rejected</button>
       <button data-status="rewards">Rewards due</button>
+      <button data-status="students">Students</button>
     </nav>
     <p id="empty" class="hint hidden">Nothing here.</p>
     <div id="list" class="grid"></div>
+    <div id="studentTable" class="hidden">
+      <table class="admin-table">
+        <thead><tr><th>Student</th><th>Posts</th><th>Live</th><th>Pending</th><th>Rejected</th><th>Likes</th><th>Comments</th><th>Reach</th></tr></thead>
+        <tbody id="studentRows"></tbody>
+      </table>
+    </div>
   </section>
 </main>
 
@@ -252,12 +259,39 @@
     if (status === "approved" && inFlight) refreshTimer = setTimeout(() => status === "approved" && load(true), 15000);
   }
 
+  async function loadStudents() {
+    $("list").classList.add("hidden");
+    $("empty").classList.add("hidden");
+    $("studentTable").classList.remove("hidden");
+    $("studentRows").replaceChildren();
+    const out = await api("/api/admin/students");
+    if (!out.ok) return showError(out.error);
+    if (!out.students.length) {
+      $("studentTable").classList.add("hidden");
+      $("empty").classList.remove("hidden");
+      return;
+    }
+    for (const s of out.students) {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `<td>${s.name}</td><td>${s.total}</td><td>${s.posted}</td><td>${s.pending + s.approved}</td><td>${s.rejected}</td><td>${s.likes}</td><td>${s.comments}</td><td>${s.reach || "—"}</td>`;
+      $("studentRows").append(tr);
+    }
+  }
+
   $("tabs").addEventListener("click", (e) => {
     const b = e.target.closest("button[data-status]");
     if (!b) return;
     status = b.dataset.status;
     $("tabs").querySelectorAll("button").forEach((x) => x.classList.toggle("active", x === b));
-    load();
+    if (status === "students") {
+      clearTimeout(refreshTimer);
+      showError(""); showNotice("");
+      loadStudents();
+    } else {
+      $("studentTable").classList.add("hidden");
+      $("list").classList.remove("hidden");
+      load();
+    }
   });
 
   $("loginForm").addEventListener("submit", async (e) => {
