@@ -349,12 +349,15 @@ async function handleSuggestCaption(request, env) {
   try {
     // Accept the Meta community license before the vision call.
     await env.AI.run("@cf/meta/llama-3.2-11b-vision-instruct", { prompt: "agree" }).catch(() => {});
+    const b64 = btoa(String.fromCharCode(...new Uint8Array(imageBytes.slice(0, 500000))));
     const result = await env.AI.run("@cf/meta/llama-3.2-11b-vision-instruct", {
-      image: [...new Uint8Array(imageBytes)],
       messages: [
         {
           role: "user",
-          content: "Look at this image carefully. Write an Instagram caption for a karate school post based specifically on what is shown in the image. Write 2-3 energetic sentences with 2-3 emojis and 3-5 hashtags at the end. Do not include anyone's name. Output only the caption text, no quotes, no intro.",
+          content: [
+            { type: "image_url", image_url: { url: `data:image/jpeg;base64,${b64}` } },
+            { type: "text", text: "Look at this image carefully. Write an Instagram caption for a karate school post based specifically on what is shown in the image. Write 2-3 energetic sentences with 2-3 emojis and 3-5 hashtags at the end. Do not include anyone's name. Output only the caption text, no quotes, no intro." },
+          ],
         },
       ],
       max_tokens: 200,
