@@ -329,7 +329,6 @@ async function handleCreateSubmission(request, env) {
 // POST /api/suggest-caption { session } -> { ok, caption }
 // Fetches the exported design image and uses Cloudflare Workers AI (vision model) to write a caption.
 async function handleSuggestCaption(request, env) {
-  if (!env.AI) return json({ ok: false, error: "Caption suggestions not available." }, 503);
 
   let body;
   try { body = await request.json(); } catch { return json({ ok: false, error: "Invalid request." }, 400); }
@@ -347,25 +346,29 @@ async function handleSuggestCaption(request, env) {
   }
 
   try {
-    // Accept the Meta community license before the vision call.
-    await env.AI.run("@cf/meta/llama-3.2-11b-vision-instruct", { prompt: "agree" }).catch(() => {});
+    if (!env.GEMINI_API_KEY) return json({ ok: false, error: "Caption suggestions not available." }, 503);
     const bytes = new Uint8Array(imageBytes);
     let binary = "";
     for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]);
     const b64 = btoa(binary);
-    const result = await env.AI.run("@cf/meta/llama-3.2-11b-vision-instruct", {
-      messages: [
-        {
-          role: "user",
-          content: [
-            { type: "image_url", image_url: { url: `data:image/jpeg;base64,${b64}` } },
-            { type: "text", text: "Look at this image carefully. Write an Instagram caption for a karate school post based specifically on what is shown in the image. Write 2-3 energetic sentences with 2-3 emojis and 3-5 hashtags at the end. Do not include anyone's name. Output only the caption text, no quotes, no intro." },
-          ],
-        },
-      ],
-      max_tokens: 200,
+    const geminiRes = await fetch("https://generativelanguage.googleapis.com/v1beta/interactions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-goog-api-key": env.GEMINI_API_KEY },
+      body: JSON.stringify({
+        model: "gemini-3.8-flash",
+        input: [
+          { inline_data: { mime_type: "image/jpeg", data: b64 } },
+          "Look at this image carefully. Write an Instagram caption for a karate school post based specifically on what is shown in the image. Write 2-3 energetic sentences with 2-3 emojis and 3-5 hashtags at the end. Do not include anyone's name. Output only the caption text, no quotes, no intro.",
+        ],
+      }),
     });
-    const raw = (result?.description || result?.response || "").trim();
+    if (!geminiRes.ok) {
+      const errText = await geminiRes.text();
+      console.error("Gemini error:", geminiRes.status, errText);
+      return json({ ok: false, error: `AI error: ${geminiRes.status}: ${errText.slice(0, 200)}` }, 502);
+    }
+    const geminiData = await geminiRes.json();
+    const raw = (geminiData?.output_text || "").trim();
     const caption = raw.replace(/^["']|["']$/g, "").trim();
     if (!caption) return json({ ok: false, error: "No caption returned. Try again or write your own." }, 502);
     return json({ ok: true, caption });
